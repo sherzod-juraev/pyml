@@ -2,7 +2,7 @@ from scipy.spatial.distance import cdist
 from scipy import stats
 from typing import Literal
 import numpy as np
-from ml_collection.exception.notfitted import NotFitted
+from ml_collection.exception import NotFitted
 
 
 class KNNClassifier:
@@ -13,7 +13,7 @@ class KNNClassifier:
     ----------
     k : int, default=3
         Number of nearest neighbors to consider for classification.
-    metric : {'euclidean', 'manhattan', 'chebyshev', 'cosine'}, default='euclidean'
+    metric : {'euclidean', 'cityblock', 'chebyshev', 'cosine'}, default='euclidean'
         Distance metric to use for calculating distances between points.
     weighting : {'uniform', 'distance'}, default='uniform'
         Weighting method for neighbor votes:
@@ -33,7 +33,7 @@ class KNNClassifier:
     def __init__(
             self,
             k: int = 3,
-            metric: Literal['euclidean', 'manhattan', 'chebyshev', 'cosine'] = 'euclidean',
+            metric: Literal['euclidean', 'cityblock', 'chebyshev', 'cosine'] = 'euclidean',
             weighting: Literal['uniform', 'distance'] = 'uniform'
     ):
 
@@ -55,7 +55,7 @@ class KNNClassifier:
 
         Returns
         -------
-        self : KNNClassification
+        self : KNNClassifier
             Fitted classifier instance.
         """
 
