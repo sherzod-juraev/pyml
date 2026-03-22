@@ -16,7 +16,7 @@ class KNNRegression:
     k : int, default=3
         Number of nearest neighbors to consider.
 
-    metric : {'euclidean', 'chebyshev', 'manhattan'}, default='euclidean'
+    metric : {'euclidean', 'chebyshev', 'cityblock'}, default='euclidean'
         Distance metric to use:
         - 'euclidean' : Euclidean distance
         - 'chebyshev' : Chebyshev distance
