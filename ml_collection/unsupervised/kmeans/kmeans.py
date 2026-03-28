@@ -6,7 +6,43 @@ from ml_collection.exception import NotFitted
 
 
 class Kmeans:
+    """
+    K-Means clustering algorithm.
 
+    This implementation supports both random (uniform) initialization
+    and K-Means++ initialization. Clustering is performed by iteratively
+    assigning points to the nearest centroid and updating centroids
+    until convergence.
+
+    Parameters
+    ----------
+    k : int, default=3
+        Number of clusters.
+
+    max_iter : int, default=100
+        Maximum number of iterations.
+
+    tol : float, default=1e-3
+        Tolerance for convergence. Training stops when centroid
+        movement is less than this value.
+
+    init : {'uniform', 'kmeans++'}, default='kmeans++'
+        Method for centroid initialization.
+
+    metric : {'euclidean', 'chebyshev', 'cityblock'}, default='euclidean'
+        Distance metric used for clustering.
+
+    random_state : int or None, default=None
+        Seed for reproducibility.
+
+    Attributes
+    ----------
+    centroids : np.ndarray of shape (k, n_features)
+        Cluster centers after fitting.
+
+    __fitted : bool
+        Indicates whether the model has been fitted.
+    """
     def __init__(
             self,
             k: int = 3,
@@ -38,6 +74,19 @@ class Kmeans:
             self.centroids = kmeanspp.centroids
 
     def fit(self, X: np.ndarray) -> 'Kmeans':
+        """
+        Fit the K-Means model to the data.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+            Training data.
+
+        Returns
+        -------
+        self : Kmeans
+            Fitted model.
+        """
 
         for i in range(self.max_iter):
             labels = self.__cal_labels(X)
@@ -49,12 +98,34 @@ class Kmeans:
         return self
 
     def __cal_labels(self, X: np.ndarray) -> np.ndarray:
+        """
+        Assign each sample to the nearest centroid.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+
+        Returns
+        -------
+        labels : np.ndarray of shape (n_samples,)
+            Cluster indices for each sample.
+        """
 
         distances = cdist(X, self.centroids, metric=self.metric)
         labels = np.argmin(distances, axis=1)
         return labels
 
     def __update_centroids(self, X: np.ndarray, labels: np.ndarray) -> None:
+        """
+        Update centroids as the mean of assigned points.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+
+        labels : np.ndarray of shape (n_samples,)
+            Cluster assignments.
+        """
 
         for i in range(self.k):
             neighbors = X[labels == i]
@@ -62,6 +133,23 @@ class Kmeans:
                 self.centroids[i, :] = neighbors.mean(axis=0)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict cluster labels for new data.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+
+        Returns
+        -------
+        labels : np.ndarray of shape (n_samples,)
+            Predicted cluster indices.
+
+        Raises
+        ------
+        NotFitted
+            If the model has not been fitted yet.
+        """
 
         if not self.__fitted:
             raise NotFitted("Kmeans not fitted yet")
