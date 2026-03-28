@@ -2,6 +2,10 @@
 __pycache__/
 *.py[codz]
 *$py.class
+Pipfile
+Pipfile.lock
+.idea
+
 
 # C extensions
 *.so
