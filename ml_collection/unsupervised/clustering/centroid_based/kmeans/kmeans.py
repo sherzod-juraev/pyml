@@ -88,6 +88,7 @@ class Kmeans:
             Fitted model.
         """
 
+        self.__initialize_centroids(X)
         for i in range(self.max_iter):
             labels = self.__cal_labels(X)
             old_centroids = self.centroids.copy()
@@ -110,8 +111,8 @@ class Kmeans:
         labels : np.ndarray of shape (n_samples,)
             Cluster indices for each sample.
         """
-
-        distances = cdist(X, self.centroids, metric=self.metric)
+        centroids = self.centroids if self.centroids.ndim == 2 else np.array([self.centroids])
+        distances = cdist(X, centroids, metric=self.metric)
         labels = np.argmin(distances, axis=1)
         return labels
 
