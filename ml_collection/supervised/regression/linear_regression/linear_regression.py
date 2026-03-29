@@ -1,5 +1,4 @@
 import numpy as np
-from typing import Literal
 from ml_collection.exception import NotFitted
 from ml_collection.errors import Error
 
@@ -16,12 +15,6 @@ class LinearRegression:
         Maximum number of iterations for training.
     tol : float, default=1e-3
         Tolerance for convergence. Training stops if the change in loss is below this threshold.
-    mode : {'batch', 'stochastic'}, default='batch'
-            Gradient descent mode:
-            - 'batch': full batch gradient descent
-            - 'stochastic': stochastic gradient descent (SGD)
-    batch_size : int, default=32
-        Batch size for mini-batch gradient descent. Ignored if mode is 'batch' or 'stochastic'.
 
     Attributes
     ----------
@@ -37,16 +30,12 @@ class LinearRegression:
             self,
             eta: float = 1e-1,
             max_iter: int = 100,
-            tol: float = 1e-3,
-            mode: Literal['batch', 'stochastic'] = 'batch'
+            tol: float = 1e-3
     ):
 
         self.eta = eta
         self.max_iter = max_iter
         self.tol = tol
-        self.mode = mode
-        self.coef = None
-        self.intercept = None
         self.__fitted = False
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'LinearRegression':
@@ -70,28 +59,6 @@ class LinearRegression:
 
         self.coef = np.zeros(X.shape[1])
         self.intercept = 0
-        if self.mode == 'batch':
-            return self.__fit_batch(X, y)
-        else:
-            return self.__fit_stochastic(X, y)
-
-    def __fit_batch(self, X: np.ndarray, y: np.ndarray) -> 'LinearRegression':
-        """
-        Perform full batch gradient descent.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Input features.
-        y : np.ndarray
-            Target values.
-
-        Returns
-        -------
-        self : LinearRegression
-            Model after fitting.
-        """
-
         J_last, J_old = None, None
         n = X.shape[0]
         for _ in range(self.max_iter):
@@ -106,43 +73,7 @@ class LinearRegression:
         self.__fitted = True
         return self
 
-    def __fit_stochastic(self, X: np.ndarray, y: np.ndarray) -> 'LinearRegression':
-        """
-        Perform stochastic gradient descent (SGD).
-
-        Updates the model weights for each individual sample.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Input features.
-        y : np.ndarray
-            Target values.
-
-        Returns
-        -------
-        self : LinearRegression
-            Model after fitting.
-        """
-
-        J_last, J_old = None, None
-        n = X.shape[0]
-        for _ in range(self.max_iter):
-            J_last = 0
-            for i in range(n):
-                y_pred = self.__cal_y(X[i, :])
-                error_i = y[i] - y_pred
-                self.coef += self.eta * 2 * error_i * X[i, :]
-                self.intercept += self.eta * 2 * error_i
-            y_pred = self.__cal_y(X)
-            J_last += Error.mse(y, y_pred)
-            if J_old is not None and np.abs(J_last - J_old) <= self.tol:
-                break
-            J_old = J_last
-        self.__fitted = True
-        return self
-
-    def __cal_y(self, x: np.ndarray) -> np.ndarray:
+    def __cal_y(self, X: np.ndarray) -> np.ndarray:
         """
          Calculate predicted values for given input using current coefficients.
 
@@ -157,8 +88,7 @@ class LinearRegression:
              Predicted target values.
          """
 
-        y_pred = x @ self.coef + self.intercept
-        return y_pred
+        return X @ self.coef + self.intercept
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -182,4 +112,4 @@ class LinearRegression:
 
         if not self.__fitted:
             raise NotFitted('LinearRegression not fitted yet')
-        return X @ self.coef + self.intercept
+        return self.__cal_y(X)
