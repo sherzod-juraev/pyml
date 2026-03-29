@@ -16,11 +16,6 @@ class LinearRegression:
         Maximum number of iterations for training.
     tol : float, default=1e-3
         Tolerance for convergence. Training stops if the change in loss is below this threshold.
-    loss_func : {'mse', 'rmse', 'mae'}, default='mse'
-        Loss function used to evaluate model performance:
-            - 'mse': Mean Squared Error
-            - 'rmse': Root Mean Squared Error
-            - 'mae': Mean Absolute Error
     mode : {'batch', 'stochastic'}, default='batch'
             Gradient descent mode:
             - 'batch': full batch gradient descent
@@ -43,14 +38,12 @@ class LinearRegression:
             eta: float = 1e-1,
             max_iter: int = 100,
             tol: float = 1e-3,
-            loss_func: Literal['mse', 'rmse', 'mae'] = 'mse',
             mode: Literal['batch', 'stochastic'] = 'batch'
     ):
 
         self.eta = eta
         self.max_iter = max_iter
         self.tol = tol
-        self.loss_func = loss_func
         self.mode = mode
         self.coef = None
         self.intercept = None
@@ -106,7 +99,7 @@ class LinearRegression:
             error = y - y_pred
             self.coef += self.eta * (2 / n) * X.T @ error
             self.intercept += self.eta * (2 / n) * np.sum(error)
-            J_last = self.__cal_loss(y, y_pred)
+            J_last = Error.mse(y, y_pred)
             if J_old is not None and np.abs(J_last - J_old) <= self.tol:
                 break
             J_old = J_last
@@ -141,7 +134,8 @@ class LinearRegression:
                 error_i = y[i] - y_pred
                 self.coef += self.eta * 2 * error_i * X[i, :]
                 self.intercept += self.eta * 2 * error_i
-                J_last += self.__cal_loss(y[i], y_pred)
+            y_pred = self.__cal_y(X)
+            J_last += Error.mse(y, y_pred)
             if J_old is not None and np.abs(J_last - J_old) <= self.tol:
                 break
             J_old = J_last
@@ -165,30 +159,6 @@ class LinearRegression:
 
         y_pred = x @ self.coef + self.intercept
         return y_pred
-
-    def __cal_loss(self, y_true: np.ndarray, y_pred: np.ndarray):
-        """
-        Compute the selected loss between true and predicted values.
-
-        Parameters
-        ----------
-        y_true : np.ndarray
-            True target values.
-        y_pred : np.ndarray
-            Predicted target values.
-
-        Returns
-        -------
-        loss : float
-            Computed loss value according to the chosen loss function.
-        """
-
-        if self.loss_func == 'mse':
-            return Error.mse(y_true, y_pred)
-        elif self.loss_func == 'rmse':
-            return Error.rmse(y_true, y_pred)
-        else:
-            return Error.mae(y_true, y_pred)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """

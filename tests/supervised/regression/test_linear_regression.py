@@ -11,7 +11,6 @@ def test_init():
     assert hasattr(lr, 'eta')
     assert hasattr(lr, 'max_iter')
     assert hasattr(lr, 'tol')
-    assert hasattr(lr, 'loss_func')
     assert hasattr(lr, 'mode')
     assert hasattr(lr, '_LinearRegression__fitted')
     assert getattr(lr, '_LinearRegression__fitted') == False
@@ -24,7 +23,6 @@ def test_fit():
     )
 
     lr = LinearRegression(
-        loss_func='mse',
         mode='batch'
     )
     res = lr.fit(X, y)
@@ -38,7 +36,6 @@ def test_fit():
     assert getattr(lr, '_LinearRegression__fitted') == True
 
     lr = LinearRegression(
-        loss_func='rmse',
         mode='stochastic'
     )
     res = lr.fit(X, y)
@@ -51,9 +48,7 @@ def test_fit():
     assert isinstance(res, LinearRegression)
     assert getattr(lr, '_LinearRegression__fitted') == True
 
-    lr = LinearRegression(
-        loss_func='mae'
-    )
+    lr = LinearRegression()
     res = lr.fit(X, y)
 
     assert hasattr(lr, 'coef')
@@ -71,7 +66,6 @@ def test_predict():
     )
 
     lr = LinearRegression(
-        loss_func='mse',
         mode='batch'
     )
     X_train, X_test = X[:150, :], X[150:, :]
@@ -89,7 +83,6 @@ def test_notfitted():
     )
 
     lr = LinearRegression(
-        loss_func='mse',
         mode='batch'
     )
 
