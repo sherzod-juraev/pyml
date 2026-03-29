@@ -42,7 +42,7 @@ class LinearRegression:
             self,
             eta: float = 1e-1,
             max_iter: int = 100,
-            tol: int | float = 1e-3,
+            tol: float = 1e-3,
             loss_func: Literal['mse', 'rmse', 'mae'] = 'mse',
             mode: Literal['batch', 'stochastic'] = 'batch'
     ):
