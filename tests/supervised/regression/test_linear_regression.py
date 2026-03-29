@@ -19,7 +19,8 @@ def test_init():
 
 def test_fit():
     X, y = make_regression(
-        n_samples=200
+        n_samples=200,
+        random_state=42
     )
 
     lr = LinearRegression(
@@ -83,7 +84,8 @@ def test_predict():
 
 def test_notfitted():
     X, y = make_regression(
-        n_samples=200
+        n_samples=200,
+        random_state=42
     )
 
     lr = LinearRegression(

@@ -135,11 +135,16 @@ class LinearRegression:
         J_last, J_old = None, None
         n = X.shape[0]
         for _ in range(self.max_iter):
+            J_last = 0
             for i in range(n):
                 y_pred = self.__cal_y(X[i, :])
                 error_i = y[i] - y_pred
                 self.coef += self.eta * 2 * error_i * X[i, :]
                 self.intercept += self.eta * 2 * error_i
+                J_last += self.__cal_loss(y[i], y_pred)
+            if J_old is not None and np.abs(J_last - J_old) <= self.tol:
+                break
+            J_old = J_last
         self.__fitted = True
         return self
 
