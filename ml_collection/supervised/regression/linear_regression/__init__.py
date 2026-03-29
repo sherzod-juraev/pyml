@@ -1,2 +1,1 @@
-from .knn import KNNRegression
 from .linear_regression import LinearRegression
