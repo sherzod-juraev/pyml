@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ml_collection.supervised.regression.knn import KNNRegression
+from ml_collection.regression.knn import KNNRegression
 from ml_collection.exception import NotFitted
 
 
