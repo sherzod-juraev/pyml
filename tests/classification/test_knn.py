@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ml_collection.supervised.classification.knn import KNNClassifier
+from ml_collection.classification import KNNClassifier
 from ml_collection.exception import NotFitted
 
 

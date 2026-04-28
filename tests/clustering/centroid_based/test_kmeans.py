@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ml_collection.unsupervised.clustering.centroid_based.kmeans import Kmeans
+from ml_collection.clustering.centroid_based.kmeans import Kmeans
 from ml_collection.exception import NotFitted
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
