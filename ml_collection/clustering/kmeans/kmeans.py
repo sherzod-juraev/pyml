@@ -3,6 +3,7 @@ from typing import Literal
 from scipy.spatial.distance import cdist
 from .kmeans_pp import KmeansPP
 from ml_collection.exception import NotFitted
+import warnings
 
 
 class Kmeans:
@@ -43,6 +44,7 @@ class Kmeans:
     __fitted : bool
         Indicates whether the model has been fitted.
     """
+
     def __init__(
             self,
             k: int = 3,
@@ -62,7 +64,7 @@ class Kmeans:
         self.random_state = random_state
         self.__fitted = False
 
-    def __initialize_centroids(self, X: np.ndarray) -> None:
+    def initialize_centroids(self, X: np.ndarray) -> None:
 
         if self.init == 'uniform':
             rng = np.random.default_rng(self.random_state)
@@ -88,17 +90,30 @@ class Kmeans:
             Fitted model.
         """
 
-        self.__initialize_centroids(X)
+        self.initialize_centroids(X)
         for i in range(self.max_iter):
-            labels = self.__cal_labels(X)
-            old_centroids = self.centroids.copy()
-            self.__update_centroids(X, labels)
-            if np.all(np.abs(old_centroids - self.centroids) < self.tol):
+            labels = self.cal_labels(X)
+            C_old = self.centroids.copy()
+            self.update_centroids(X, labels)
+            if  self.convergence(C_old):
                 break
         self.__fitted = True
         return self
 
-    def __cal_labels(self, X: np.ndarray) -> np.ndarray:
+    def convergence(self, C_old: np.ndarray) -> bool:
+
+        dif = self.centroids - C_old
+        if self.metric == 'euclidean':
+            dist = np.linalg.norm(dif, ord=2, axis=1)
+        elif self.metric == 'chebyshev':
+            dist = np.max(np.abs(dif), axis=1)
+        else:
+            dist = np.linalg.norm(dif, ord=1, axis=1)
+        if np.all(dist < self.tol):
+            return True
+        return False
+
+    def cal_labels(self, X: np.ndarray) -> np.ndarray:
         """
         Assign each sample to the nearest centroid.
 
@@ -116,7 +131,7 @@ class Kmeans:
         labels = np.argmin(distances, axis=1)
         return labels
 
-    def __update_centroids(self, X: np.ndarray, labels: np.ndarray) -> None:
+    def update_centroids(self, X: np.ndarray, labels: np.ndarray) -> None:
         """
         Update centroids as the mean of assigned points.
 
@@ -131,7 +146,11 @@ class Kmeans:
         for i in range(self.k):
             neighbors = X[labels == i]
             if neighbors.shape[0] != 0:
-                self.centroids[i, :] = neighbors.mean(axis=0)
+                self.centroids[i] = neighbors.mean(axis=0)
+            else:
+                dist = cdist(self.centroids, X, metric=self.metric)
+                self.centroids[i] = X[np.argmax(np.min(dist, axis=0))].copy()
+                warnings.warn(f"Cluster {i} is empty. Reinitializing centroid.", RuntimeWarning)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -154,5 +173,5 @@ class Kmeans:
 
         if not self.__fitted:
             raise NotFitted("Kmeans not fitted yet")
-        labels = self.__cal_labels(X)
+        labels = self.cal_labels(X)
         return labels

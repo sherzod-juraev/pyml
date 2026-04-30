@@ -1,1 +1,1 @@
-from .centroid_based import Kmeans
+from .kmeans import Kmeans
