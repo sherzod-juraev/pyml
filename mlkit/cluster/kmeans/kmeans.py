@@ -2,17 +2,17 @@ import numpy as np
 from typing import Literal
 from scipy.spatial.distance import cdist
 from .kmeans_pp import KmeansPP
-from ml_collection.exception import NotFitted
+from mlkit.exc import NotFitted
 import warnings
 
 
 class Kmeans:
     """
-    K-Means clustering algorithm.
+    K-Means cluster algorithm.
 
     This implementation supports both random (uniform) initialization
     and K-Means++ initialization. Clustering is performed by iteratively
-    assigning points to the nearest centroid and updating centroids
+    assigning points to the nearest centroid and updating centroids_
     until convergence.
 
     Parameters
@@ -31,14 +31,14 @@ class Kmeans:
         Method for centroid initialization.
 
     metric : {'euclidean', 'chebyshev', 'cityblock'}, default='euclidean'
-        Distance metric used for clustering.
+        Distance metric used for cluster.
 
     random_state : int or None, default=None
         Seed for reproducibility.
 
     Attributes
     ----------
-    centroids : np.ndarray of shape (k, n_features)
+    centroids_ : np.ndarray of shape (k, n_features)
         Cluster centers after fitting.
 
     __fitted : bool
@@ -59,21 +59,21 @@ class Kmeans:
         self.max_iter = max_iter
         self.tol = tol
         self.init = init
-        self.centroids = None
+        self.centroids_ = None
         self.metric = metric
         self.random_state = random_state
         self.__fitted = False
 
-    def initialize_centroids(self, X: np.ndarray) -> None:
+    def initialize_centroids_(self, X: np.ndarray) -> None:
 
         if self.init == 'uniform':
             rng = np.random.default_rng(self.random_state)
             ind = rng.choice(X.shape[0], size=self.k, replace=False)
-            self.centroids = X[ind, :].copy()
+            self.centroids_ = X[ind, :].copy()
         else:
             kmeanspp = KmeansPP(k=self.k, metric=self.metric, random_state=self.random_state)
             kmeanspp.initialize(X)
-            self.centroids = kmeanspp.centroids
+            self.centroids_ = kmeanspp.centroids_
 
     def fit(self, X: np.ndarray) -> 'Kmeans':
         """
@@ -90,11 +90,11 @@ class Kmeans:
             Fitted model.
         """
 
-        self.initialize_centroids(X)
+        self.initialize_centroids_(X)
         for i in range(self.max_iter):
             labels = self.cal_labels(X)
-            C_old = self.centroids.copy()
-            self.update_centroids(X, labels)
+            C_old = self.centroids_.copy()
+            self.update_centroids_(X, labels)
             if  self.convergence(C_old):
                 break
         self.__fitted = True
@@ -102,7 +102,7 @@ class Kmeans:
 
     def convergence(self, C_old: np.ndarray) -> bool:
 
-        dif = self.centroids - C_old
+        dif = self.centroids_ - C_old
         if self.metric == 'euclidean':
             dist = np.linalg.norm(dif, ord=2, axis=1)
         elif self.metric == 'chebyshev':
@@ -126,14 +126,14 @@ class Kmeans:
         labels : np.ndarray of shape (n_samples,)
             Cluster indices for each sample.
         """
-        centroids = self.centroids if self.centroids.ndim == 2 else np.array([self.centroids])
-        distances = cdist(X, centroids, metric=self.metric)
+        centroids_ = self.centroids_ if self.centroids_.ndim == 2 else np.array([self.centroids_])
+        distances = cdist(X, centroids_, metric=self.metric)
         labels = np.argmin(distances, axis=1)
         return labels
 
-    def update_centroids(self, X: np.ndarray, labels: np.ndarray) -> None:
+    def update_centroids_(self, X: np.ndarray, labels: np.ndarray) -> None:
         """
-        Update centroids as the mean of assigned points.
+        Update centroids_ as the mean of assigned points.
 
         Parameters
         ----------
@@ -146,10 +146,10 @@ class Kmeans:
         for i in range(self.k):
             neighbors = X[labels == i]
             if neighbors.shape[0] != 0:
-                self.centroids[i] = neighbors.mean(axis=0)
+                self.centroids_[i] = neighbors.mean(axis=0)
             else:
-                dist = cdist(self.centroids, X, metric=self.metric)
-                self.centroids[i] = X[np.argmax(np.min(dist, axis=0))].copy()
+                dist = cdist(self.centroids_, X, metric=self.metric)
+                self.centroids_[i] = X[np.argmax(np.min(dist, axis=0))].copy()
                 warnings.warn(f"Cluster {i} is empty. Reinitializing centroid.", RuntimeWarning)
 
     def predict(self, X: np.ndarray) -> np.ndarray:

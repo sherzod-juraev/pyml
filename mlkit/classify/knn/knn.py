@@ -2,7 +2,7 @@ from scipy.spatial.distance import cdist
 from scipy import stats
 from typing import Literal
 import numpy as np
-from ml_collection.exception import NotFitted
+from mlkit.exc import NotFitted
 
 
 class KNNClassifier:
@@ -12,7 +12,7 @@ class KNNClassifier:
     Parameters
     ----------
     k : int, default=3
-        Number of nearest neighbors to consider for classification.
+        Number of nearest neighbors to consider for classify.
     metric : {'euclidean', 'cityblock', 'chebyshev', 'cosine'}, default='euclidean'
         Distance metric to use for calculating distances between points.
     weighting : {'uniform', 'distance'}, default='uniform'
@@ -22,9 +22,9 @@ class KNNClassifier:
 
     Attributes
     ----------
-    X_train : np.ndarray
+    X_ : np.ndarray
         Training feature matrix stored after fit.
-    y_train : np.ndarray
+    y_ : np.ndarray
         Training labels stored after fit.
     __fitted : bool
         Flag indicating whether the classifier has been fitted.
@@ -59,8 +59,8 @@ class KNNClassifier:
             Fitted classifier instance.
         """
 
-        self.X_train = np.asarray(X)
-        self.y_train = np.asarray(y)
+        self.X_ = np.asarray(X)
+        self.y_ = np.asarray(y)
         self.__fitted = True
         return self
 
@@ -85,7 +85,7 @@ class KNNClassifier:
             Predicted labels for each sample.
         """
 
-        labels = self.y_train[neigh_ind]
+        labels = self.y_[neigh_ind]
         if self.weighting == 'uniform':
             y_pred = stats.mode(labels, axis=1, keepdims=False)[0]
             return y_pred
@@ -123,7 +123,7 @@ class KNNClassifier:
             raise NotFitted(f"KNNClassifier not fitted yet")
         X = np.asarray(X)
         X = np.array([X]) if X.ndim == 1 else X
-        dist = cdist(X, self.X_train, self.metric)
+        dist = cdist(X, self.X_, self.metric)
         neigh_ind = np.argpartition(dist, self.k - 1, axis=1)[:, :self.k]
         neigh_dist = np.take_along_axis(dist, neigh_ind, axis=1)
         return self.__predict_label(neigh_ind, neigh_dist)

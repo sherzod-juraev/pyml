@@ -4,7 +4,7 @@ DTClassifier uchun to'liq pytest test suite.
 Pytest features ishlatilgan:
   - @pytest.fixture        → qayta ishlatiladigan test data va obyektlar
   - @pytest.mark.parametrize → bir xil testni ko'p input bilan ishlatish
-  - pytest.raises          → exception tekshirish
+  - pytest.raises          → exc tekshirish
   - pytest.approx          → float qiymatlarni taxminiy solishtirish
   - @pytest.mark.slow      → sekin testlarni belgilash (pytest -m "not slow")
   - conftest.py pattern    → fixture'larni modul darajasida ulashish
@@ -17,7 +17,7 @@ Ishga tushirish:
 
 import numpy as np
 import pytest
-from ml_collection.classification import DTClassifier
+from mlkit.classify import DTClassifier
 
 
 # ===========================================================================
@@ -260,7 +260,7 @@ class TestFitPredict:
 
 # ===========================================================================
 # 3. EXCEPTION TESTLARI
-# pytest.raises context manager bilan exception handling tekshiriladi.
+# pytest.raises context manager bilan exc handling tekshiriladi.
 # ===========================================================================
 
 class TestExceptions:
@@ -268,7 +268,7 @@ class TestExceptions:
 
     def test_predict_before_fit_raises_not_fitted(self):
         """
-        fit() chaqirilmay predict() qilinsa NotFitted exception chiqishi kerak.
+        fit() chaqirilmay predict() qilinsa NotFitted exc chiqishi kerak.
 
         pytest.raises(ExceptionClass) — context manager sifatida ishlatiladi.
         Ichidagi kod berilgan exceptionni raise qilishi kerak,
@@ -282,11 +282,11 @@ class TestExceptions:
 
     def test_predict_before_fit_raises_correct_type(self):
         """
-        Aniq exception type tekshirish.
+        Aniq exc type tekshirish.
         NotFitted import qilish kerak bo'lsa:
-        from ml_collection.exception import NotFitted
+        from mlkit.exc import NotFitted
         """
-        from ml_collection.exception import NotFitted
+        from mlkit.exc import NotFitted
         clf = DTClassifier()
         X = np.array([[1.0, 2.0]])
 
@@ -296,9 +296,9 @@ class TestExceptions:
     def test_predict_before_fit_error_message(self):
         """
         Exception message to'g'ri ekanligini tekshirish.
-        pytest.raises(...) as exc_info — exception obyektini olish uchun.
+        pytest.raises(...) as exc_info — exc obyektini olish uchun.
         """
-        from ml_collection.exception import NotFitted
+        from mlkit.exc import NotFitted
         clf = DTClassifier()
         X = np.array([[1.0, 2.0]])
 
@@ -567,7 +567,7 @@ class TestWithRealDatasets:
 
     @pytest.mark.parametrize("algorithm", ["gini", "entropy"])
     def test_sklearn_breast_cancer(self, algorithm):
-        """Breast cancer dataset — binary classification."""
+        """Breast cancer dataset — binary classify."""
         from sklearn.datasets import load_breast_cancer
         from sklearn.model_selection import train_test_split
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from ml_collection.regression.knn import KNNRegression
-from ml_collection.exception import NotFitted
+from mlkit.regress.knn import KNNRegression
+from mlkit.exc import NotFitted
 
 
 
@@ -23,10 +23,10 @@ def test_fit():
     y = rng.integers(1, 9, size=5)
     result = knn.fit(X, y)
 
-    assert hasattr(knn, 'X_train')
-    assert isinstance(getattr(knn, 'X_train'), np.ndarray)
-    assert hasattr(knn, 'y_train')
-    assert isinstance(getattr(knn, 'y_train'), np.ndarray)
+    assert hasattr(knn, 'X_')
+    assert isinstance(getattr(knn, 'X_'), np.ndarray)
+    assert hasattr(knn, 'y_')
+    assert isinstance(getattr(knn, 'y_'), np.ndarray)
     assert getattr(knn, '_KNNRegression__fitted') == True
     assert isinstance(result, KNNRegression)
 
@@ -35,38 +35,38 @@ def test_predict():
 
     knn = KNNRegression(weighting='distance')
     rng = np.random.default_rng(42)
-    X_train = rng.integers(1, 20, size=(20,2))
+    X_ = rng.integers(1, 20, size=(20,2))
     X_test = rng.integers(1, 20, size=(5,2))
-    y_train = rng.integers(1, 9, size=20)
-    knn.fit(X_train, y_train)
+    y_ = rng.integers(1, 9, size=20)
+    knn.fit(X_, y_)
     y_pred = knn.predict(X_test)
 
     assert y_pred.shape[0] == X_test.shape[0]
     assert y_pred.ndim == 1
 
     knn = KNNRegression(weighting='uniform')
-    knn.fit(X_train, y_train)
+    knn.fit(X_, y_)
     y_pred = knn.predict(X_test)
 
     assert y_pred.shape[0] == X_test.shape[0]
     assert y_pred.ndim == 1
 
     knn = KNNRegression(metric='euclidean')
-    knn.fit(X_train, y_train)
+    knn.fit(X_, y_)
     y_pred = knn.predict(X_test)
 
     assert y_pred.shape[0] == X_test.shape[0]
     assert y_pred.ndim == 1
 
     knn = KNNRegression(metric='chebyshev')
-    knn.fit(X_train, y_train)
+    knn.fit(X_, y_)
     y_pred = knn.predict(X_test)
 
     assert y_pred.shape[0] == X_test.shape[0]
     assert y_pred.ndim == 1
 
     knn = KNNRegression(metric='cityblock')
-    knn.fit(X_train, y_train)
+    knn.fit(X_, y_)
     y_pred = knn.predict(X_test)
 
     assert y_pred.shape[0] == X_test.shape[0]

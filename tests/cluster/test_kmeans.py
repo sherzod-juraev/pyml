@@ -18,12 +18,12 @@ class KmeansPP:
         self.k = k
         self.metric = metric
         self.random_state = random_state
-        self.centroids = None
+        self.centroids_ = None
 
     def initialize(self, X):
         rng = np.random.default_rng(self.random_state)
         idx = rng.choice(X.shape[0], size=self.k, replace=False)
-        self.centroids = X[idx].copy()
+        self.centroids_ = X[idx].copy()
         return self
 
 
@@ -37,35 +37,35 @@ class Kmeans:
         self.max_iter = max_iter
         self.tol = tol
         self.init = init
-        self.centroids = None
+        self.centroids_ = None
         self.metric = metric
         self.random_state = random_state
         self.__fitted = False
 
-    def __initialize_centroids(self, X):
+    def __initialize_centroids_(self, X):
         if self.init == "uniform":
             rng = np.random.default_rng(self.random_state)
             ind = rng.choice(X.shape[0], size=self.k, replace=False)
-            self.centroids = X[ind].copy()
+            self.centroids_ = X[ind].copy()
         else:
             kpp = KmeansPP(k=self.k, metric=self.metric,
                            random_state=self.random_state)
             kpp.initialize(X)
-            self.centroids = kpp.centroids
+            self.centroids_ = kpp.centroids_
 
     def fit(self, X):
-        self.__initialize_centroids(X)
+        self.__initialize_centroids_(X)
         for _ in range(self.max_iter):
             labels = self.__cal_labels(X)
-            C_old = self.centroids.copy()
-            self.__update_centroids(X, labels)
+            C_old = self.centroids_.copy()
+            self.__update_centroids_(X, labels)
             if self.convergence(C_old):
                 break
         self.__fitted = True
         return self
 
     def convergence(self, C_old):
-        dif = self.centroids - C_old
+        dif = self.centroids_ - C_old
         if self.metric == "euclidean":
             dist = np.linalg.norm(dif, ord=2, axis=1)
         elif self.metric == "chebyshev":
@@ -75,19 +75,19 @@ class Kmeans:
         return bool(np.all(dist < self.tol))
 
     def __cal_labels(self, X):
-        centroids = (self.centroids if self.centroids.ndim == 2
-                     else np.array([self.centroids]))
-        distances = cdist(X, centroids, metric=self.metric)
+        centroids_ = (self.centroids_ if self.centroids_.ndim == 2
+                     else np.array([self.centroids_]))
+        distances = cdist(X, centroids_, metric=self.metric)
         return np.argmin(distances, axis=1)
 
-    def __update_centroids(self, X, labels):
+    def __update_centroids_(self, X, labels):
         for i in range(self.k):
             neighbors = X[labels == i]
             if neighbors.shape[0] != 0:
-                self.centroids[i] = neighbors.mean(axis=0)
+                self.centroids_[i] = neighbors.mean(axis=0)
             else:
-                dist = cdist(self.centroids, X, metric=self.metric)
-                self.centroids[i] = X[np.argmax(np.min(dist, axis=0))].copy()
+                dist = cdist(self.centroids_, X, metric=self.metric)
+                self.centroids_[i] = X[np.argmax(np.min(dist, axis=0))].copy()
                 warnings.warn(
                     f"Cluster {i} is empty. Reinitializing centroid.",
                     RuntimeWarning,
@@ -125,41 +125,41 @@ def model_default():
 
 class TestInitialization:
 
-    def test_centroids_shape_after_fit(self, well_separated_data, model_default):
-        """After fit, centroids must have shape (k, n_features)."""
+    def test_centroids__shape_after_fit(self, well_separated_data, model_default):
+        """After fit, centroids_ must have shape (k, n_features)."""
         model_default.fit(well_separated_data)
-        assert model_default.centroids.shape == (3, 2)
+        assert model_default.centroids_.shape == (3, 2)
 
-    def test_uniform_init_produces_valid_centroids(self, well_separated_data):
+    def test_uniform_init_produces_valid_centroids_(self, well_separated_data):
         """Uniform init must pick exactly k distinct rows from X."""
         model = Kmeans(k=3, init="uniform", random_state=7)
         model.fit(well_separated_data)
-        assert model.centroids.shape == (3, 2)
+        assert model.centroids_.shape == (3, 2)
 
-    def test_kmeanspp_init_produces_valid_centroids(self, well_separated_data):
-        """KMeans++ init must produce k centroids inside the data range."""
+    def test_kmeanspp_init_produces_valid_centroids_(self, well_separated_data):
+        """KMeans++ init must produce k centroids_ inside the data range."""
         model = Kmeans(k=3, init="kmeans++", random_state=7)
         model.fit(well_separated_data)
         X = well_separated_data
-        assert np.all(model.centroids >= X.min(axis=0) - 1e-9)
-        assert np.all(model.centroids <= X.max(axis=0) + 1e-9)
+        assert np.all(model.centroids_ >= X.min(axis=0) - 1e-9)
+        assert np.all(model.centroids_ <= X.max(axis=0) + 1e-9)
 
     def test_random_state_reproducibility(self, well_separated_data):
-        """Same random_state must yield identical centroids."""
+        """Same random_state must yield identical centroids_."""
         m1 = Kmeans(k=3, random_state=42).fit(well_separated_data)
         m2 = Kmeans(k=3, random_state=42).fit(well_separated_data)
-        np.testing.assert_array_equal(m1.centroids, m2.centroids)
+        np.testing.assert_array_equal(m1.centroids_, m2.centroids_)
 
     def test_different_random_states_may_differ(self, well_separated_data):
-        """Different seeds should generally produce different centroids."""
+        """Different seeds should generally produce different centroids_."""
         m1 = Kmeans(k=3, random_state=0).fit(well_separated_data)
         m2 = Kmeans(k=3, random_state=99).fit(well_separated_data)
         # Not guaranteed, but extremely likely on well-separated data
-        assert not np.allclose(m1.centroids, m2.centroids)
+        assert not np.allclose(m1.centroids_, m2.centroids_)
 
 
 # ---------------------------------------------------------------------------
-# 2. Fit / clustering correctness tests
+# 2. Fit / cluster correctness tests
 # ---------------------------------------------------------------------------
 
 class TestFitCorrectness:
@@ -197,7 +197,7 @@ class TestFitCorrectness:
             for k in range(model.k):
                 pts = X[labels == k]
                 if len(pts):
-                    total += np.sum((pts - model.centroids[k]) ** 2)
+                    total += np.sum((pts - model.centroids_[k]) ** 2)
             return total
 
         m1 = Kmeans(k=3, max_iter=1,   random_state=0).fit(well_separated_data)
@@ -211,17 +211,17 @@ class TestFitCorrectness:
 
 class TestConvergence:
 
-    def test_convergence_returns_true_when_centroids_unchanged(self):
-        """convergence() must return True when old == new centroids."""
+    def test_convergence_returns_true_when_centroids__unchanged(self):
+        """convergence() must return True when old == new centroids_."""
         model = Kmeans(k=2, tol=1e-3)
-        model.centroids = np.array([[1.0, 2.0], [3.0, 4.0]])
-        C_old = model.centroids.copy()
+        model.centroids_ = np.array([[1.0, 2.0], [3.0, 4.0]])
+        C_old = model.centroids_.copy()
         assert model.convergence(C_old) is True
 
-    def test_convergence_returns_false_when_centroids_move(self):
+    def test_convergence_returns_false_when_centroids__move(self):
         """convergence() must return False when centroid shift > tol."""
         model = Kmeans(k=2, tol=1e-3)
-        model.centroids = np.array([[1.0, 2.0], [3.0, 4.0]])
+        model.centroids_ = np.array([[1.0, 2.0], [3.0, 4.0]])
         C_old = np.array([[0.0, 0.0], [0.0, 0.0]])
         assert model.convergence(C_old) is False
 
@@ -230,7 +230,7 @@ class TestConvergence:
         """tol should have the same geometric meaning for all three metrics."""
         model = Kmeans(k=2, tol=0.5, metric=metric)
         # Shift each centroid by exactly 0.3 in one dimension → should converge
-        model.centroids = np.array([[0.3, 0.0], [0.3, 0.0]])
+        model.centroids_ = np.array([[0.3, 0.0], [0.3, 0.0]])
         C_old = np.array([[0.0, 0.0], [0.0, 0.0]])
         assert model.convergence(C_old) is True
 
@@ -293,27 +293,27 @@ class TestEmptyCluster:
 
     def _force_empty_cluster_fit(self, model, X):
         """
-        Bypass __initialize_centroids and inject duplicate centroids manually,
+        Bypass __initialize_centroids_ and inject duplicate centroids_ manually,
         so cluster 1 is guaranteed to be empty after the first assignment step.
-        Two centroids share X[0] → argmin always picks cluster 0, leaving
+        Two centroids_ share X[0] → argmin always picks cluster 0, leaving
         cluster 1 with zero neighbours.
         """
-        forced_centroids = np.array([
+        forced_centroids_ = np.array([
             X[0].copy(),    # cluster 0 — valid, attracts many points
             X[0].copy(),    # cluster 1 — duplicate → always empty
             X[-1].copy(),   # cluster 2 — valid, attracts many points
         ], dtype=float)
 
-        # Patch private __initialize_centroids so fit() uses our centroids
+        # Patch private __initialize_centroids_ so fit() uses our centroids_
         def fake_init(self_inner, X_inner):
-            self_inner.centroids = forced_centroids.copy()
+            self_inner.centroids_ = forced_centroids_.copy()
 
-        original = Kmeans._Kmeans__initialize_centroids
-        Kmeans._Kmeans__initialize_centroids = fake_init
+        original = Kmeans._Kmeans__initialize_centroids_
+        Kmeans._Kmeans__initialize_centroids_ = fake_init
         try:
             model.fit(X)
         finally:
-            Kmeans._Kmeans__initialize_centroids = original
+            Kmeans._Kmeans__initialize_centroids_ = original
 
     def test_empty_cluster_emits_runtime_warning(self, well_separated_data):
         """An empty cluster during update must raise RuntimeWarning."""
@@ -340,9 +340,9 @@ class TestEmptyCluster:
 
         still_at_duplicate = [
             np.linalg.norm(c - duplicate_position) < 1e-9
-            for c in model.centroids
+            for c in model.centroids_
         ]
-        # After reinit + continued fitting, centroids should not all stay at X[0]
+        # After reinit + continued fitting, centroids_ should not all stay at X[0]
         assert not all(still_at_duplicate)
 
     def test_warning_message_contains_cluster_index(self, well_separated_data):
@@ -412,7 +412,7 @@ class TestEdgeCases:
         X = rng.normal(size=(200, 50))
         model = Kmeans(k=5, random_state=0)
         model.fit(X)
-        assert model.centroids.shape == (5, 50)
+        assert model.centroids_.shape == (5, 50)
 
     def test_integer_dtype_input(self, well_separated_data):
         """Integer dtype input should not cause dtype errors."""

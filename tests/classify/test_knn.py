@@ -9,7 +9,7 @@ Ishga tushirish:
 
 import numpy as np
 import pytest
-from ml_collection.classification import KNNClassifier
+from mlkit.classify import KNNClassifier
 
 
 # ===========================================================================
@@ -72,27 +72,27 @@ class TestFit:
         result = knn_default.fit(X, y)
         assert result is knn_default
 
-    def test_fit_stores_X_train(self, knn_default, simple_binary_data):
-        """fit() X_train'ni saqlashi kerak."""
+    def test_fit_stores_X_(self, knn_default, simple_binary_data):
+        """fit() X_'ni saqlashi kerak."""
         X, y = simple_binary_data
         knn_default.fit(X, y)
-        assert hasattr(knn_default, 'X_train')
-        assert knn_default.X_train.shape == X.shape
+        assert hasattr(knn_default, 'X_')
+        assert knn_default.X_.shape == X.shape
 
-    def test_fit_stores_y_train(self, knn_default, simple_binary_data):
-        """fit() y_train'ni saqlashi kerak."""
+    def test_fit_stores_y_(self, knn_default, simple_binary_data):
+        """fit() y_'ni saqlashi kerak."""
         X, y = simple_binary_data
         knn_default.fit(X, y)
-        assert hasattr(knn_default, 'y_train')
-        assert np.array_equal(knn_default.y_train, y)
+        assert hasattr(knn_default, 'y_')
+        assert np.array_equal(knn_default.y_, y)
 
     def test_fit_converts_to_numpy(self, knn_default):
         """Python list berilsa ham numpy arrayga o'girishi kerak."""
         X = [[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]
         y = [0, 1, 0]
         knn_default.fit(X, y)
-        assert isinstance(knn_default.X_train, np.ndarray)
-        assert isinstance(knn_default.y_train, np.ndarray)
+        assert isinstance(knn_default.X_, np.ndarray)
+        assert isinstance(knn_default.y_, np.ndarray)
 
     def test_refit_updates_train_data(self, simple_binary_data):
         """Qayta fit qilganda eski data yangilanishi kerak."""
@@ -104,8 +104,8 @@ class TestFit:
         y_new = np.array([9, 9])
         clf.fit(X_new, y_new)
 
-        assert clf.X_train.shape == X_new.shape
-        assert np.array_equal(clf.y_train, y_new)
+        assert clf.X_.shape == X_new.shape
+        assert np.array_equal(clf.y_, y_new)
 
 
 # ===========================================================================
@@ -168,8 +168,8 @@ class TestPredict:
 class TestExceptions:
 
     def test_predict_before_fit_raises(self):
-        """fit() chaqirilmay predict() qilinsa exception chiqishi kerak."""
-        from ml_collection.exception import NotFitted
+        """fit() chaqirilmay predict() qilinsa exc chiqishi kerak."""
+        from mlkit.exc import NotFitted
         clf = KNNClassifier()
         X = np.array([[1.0, 2.0]])
 
@@ -178,7 +178,7 @@ class TestExceptions:
 
     def test_predict_before_fit_message(self):
         """Exception message'da 'fitted' so'zi bo'lishi kerak."""
-        from ml_collection.exception import NotFitted
+        from mlkit.exc import NotFitted
         clf = KNNClassifier()
         X = np.array([[1.0, 2.0]])
 
@@ -220,10 +220,10 @@ class TestMetrics:
         k=1, Euclidean: eng yaqin qo'shni tanlashi kerak.
         [0,0] dan [0.1, 0] ko'ra [5, 5] uzoqroq.
         """
-        X_train = np.array([[0.0, 0.0], [5.0, 5.0]])
-        y_train = np.array([0, 1])
+        X_ = np.array([[0.0, 0.0], [5.0, 5.0]])
+        y_ = np.array([0, 1])
         clf = KNNClassifier(k=1, metric='euclidean')
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
 
         # (0.1, 0.0) → class 0 ga yaqin
         pred = clf.predict(np.array([[0.1, 0.0]]))
@@ -238,19 +238,19 @@ class TestMetrics:
         Manhattan va Euclidean turli natija berishi mumkin bo'lgan holat.
         Bu testda crash bo'lmasligi va valid label qaytarishi tekshiriladi.
         """
-        X_train = np.array([
+        X_ = np.array([
             [0.0, 3.0],
             [3.0, 0.0],
             [10.0, 10.0],
         ])
-        y_train = np.array([0, 1, 2])
+        y_ = np.array([0, 1, 2])
         X_test = np.array([[1.5, 1.5]])
 
         clf_eucl = KNNClassifier(k=1, metric='euclidean')
         clf_city = KNNClassifier(k=1, metric='cityblock')
 
-        clf_eucl.fit(X_train, y_train)
-        clf_city.fit(X_train, y_train)
+        clf_eucl.fit(X_, y_)
+        clf_city.fit(X_, y_)
 
         pred_e = clf_eucl.predict(X_test)
         pred_c = clf_city.predict(X_test)
@@ -285,15 +285,15 @@ class TestWeighting:
           Uniform k=3: 3 ta yaqin = [0,0], [1,0], [1.1,0] → vote: 0:1, 1:2 → label=1
           Distance k=3: [0,0] juda yaqin → og'irlik katta → label=0
         """
-        X_train = np.array([[0.0, 0.0], [1.0, 0.0], [1.1, 0.0], [1.2, 0.0]])
-        y_train = np.array([0, 1, 1, 1])
+        X_ = np.array([[0.0, 0.0], [1.0, 0.0], [1.1, 0.0], [1.2, 0.0]])
+        y_ = np.array([0, 1, 1, 1])
         X_test = np.array([[0.1, 0.0]])
 
         clf_uniform = KNNClassifier(k=3, weighting='uniform')
         clf_distance = KNNClassifier(k=3, weighting='distance')
 
-        clf_uniform.fit(X_train, y_train)
-        clf_distance.fit(X_train, y_train)
+        clf_uniform.fit(X_, y_)
+        clf_distance.fit(X_, y_)
 
         pred_u = clf_uniform.predict(X_test)[0]
         pred_d = clf_distance.predict(X_test)[0]
@@ -308,11 +308,11 @@ class TestWeighting:
         Test point train point bilan to'liq mos kelsa (distance=0),
         1/distance → inf bo'lmasligi kerak (epsilon tufayli).
         """
-        X_train = np.array([[1.0, 1.0], [5.0, 5.0], [9.0, 9.0]])
-        y_train = np.array([0, 1, 2])
+        X_ = np.array([[1.0, 1.0], [5.0, 5.0], [9.0, 9.0]])
+        y_ = np.array([0, 1, 2])
 
         clf = KNNClassifier(k=2, weighting='distance')
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
 
         # Aynan train point bilan test — distance=0 holat
         X_test = np.array([[1.0, 1.0]])
@@ -326,17 +326,17 @@ class TestWeighting:
         Uniform: ko'pchilik ovoz qoida ishlashi kerak.
         k=3, 2 ta class 0, 1 ta class 1 → class 0 yutishi kerak.
         """
-        X_train = np.array([
+        X_ = np.array([
             [0.0, 0.0],   # class 0 — yaqin
             [0.5, 0.0],   # class 0 — yaqin
             [1.0, 0.0],   # class 1 — yaqin
             [10.0, 0.0],  # class 1 — uzoq
         ])
-        y_train = np.array([0, 0, 1, 1])
+        y_ = np.array([0, 0, 1, 1])
         X_test = np.array([[0.2, 0.0]])
 
         clf = KNNClassifier(k=3, weighting='uniform')
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
         pred = clf.predict(X_test)[0]
         assert pred == 0
 
@@ -407,13 +407,13 @@ class TestArgpartitionBug:
         bu test farqni ko'rsatadi.
         """
         np.random.seed(42)
-        X_train = np.random.randn(50, 2)
-        y_train = (X_train[:, 0] > 0).astype(int)
+        X_ = np.random.randn(50, 2)
+        y_ = (X_[:, 0] > 0).astype(int)
 
         X_test = np.random.randn(10, 2)
 
         clf = KNNClassifier(k=5, weighting='distance')
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
         preds = clf.predict(X_test)
 
         # Hech bo'lmasa valid labellar qaytarishi kerak
@@ -449,11 +449,11 @@ class TestEdgeCases:
         """
         Train data 1 ta sample, k=1 — shu sampleni predict qilishi kerak.
         """
-        X_train = np.array([[3.0, 3.0]])
-        y_train = np.array([7])
+        X_ = np.array([[3.0, 3.0]])
+        y_ = np.array([7])
 
         clf = KNNClassifier(k=1)
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
 
         X_test = np.array([[0.0, 0.0], [100.0, 100.0]])
         preds = clf.predict(X_test)
@@ -462,28 +462,28 @@ class TestEdgeCases:
     def test_high_dimensional_data(self):
         """Ko'p o'lchamli datada ishlashi kerak."""
         np.random.seed(0)
-        X_train = np.random.randn(20, 100)  # 100-dim
-        y_train = np.random.randint(0, 3, 20)
+        X_ = np.random.randn(20, 100)  # 100-dim
+        y_ = np.random.randint(0, 3, 20)
 
         X_test = np.random.randn(5, 100)
 
         clf = KNNClassifier(k=3)
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
         preds = clf.predict(X_test)
 
         assert preds.shape == (5,)
-        assert np.all(np.isin(preds, np.unique(y_train)))
+        assert np.all(np.isin(preds, np.unique(y_)))
 
     def test_identical_points_different_classes(self):
         """
         Bir xil koordinatali lekin turli klassli pointlar.
         Tie-breaking ishlashi kerak.
         """
-        X_train = np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]])
-        y_train = np.array([0, 0, 1])
+        X_ = np.array([[1.0, 1.0], [1.0, 1.0], [1.0, 1.0]])
+        y_ = np.array([0, 0, 1])
 
         clf = KNNClassifier(k=3)
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
 
         X_test = np.array([[1.0, 1.0]])
         preds = clf.predict(X_test)
@@ -542,12 +542,12 @@ class TestSklearnComparison:
 
         iris = load_iris()
         X, y = iris.data, iris.target
-        X_train, X_test, y_train, y_test = train_test_split(
+        X_, X_test, y_, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
 
         clf = KNNClassifier(k=5, metric='euclidean', weighting='uniform')
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
         preds = clf.predict(X_test)
 
         accuracy = np.mean(preds == y_test)
@@ -555,7 +555,7 @@ class TestSklearnComparison:
 
     @pytest.mark.parametrize("weighting", ["uniform", "distance"])
     def test_breast_cancer_accuracy(self, weighting):
-        """Binary classification — 90%+ accuracy."""
+        """Binary classify — 90%+ accuracy."""
         from sklearn.datasets import load_breast_cancer
         from sklearn.model_selection import train_test_split
         from sklearn.preprocessing import StandardScaler
@@ -563,17 +563,17 @@ class TestSklearnComparison:
         data = load_breast_cancer()
         X, y = data.data, data.target
 
-        X_train, X_test, y_train, y_test = train_test_split(
+        X_, X_test, y_, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
 
         # KNN scale-sensitive — normalize qilish kerak
         scaler = StandardScaler()
-        X_train = scaler.fit_transform(X_train)
+        X_ = scaler.fit_transform(X_)
         X_test = scaler.transform(X_test)
 
         clf = KNNClassifier(k=7, metric='euclidean', weighting=weighting)
-        clf.fit(X_train, y_train)
+        clf.fit(X_, y_)
         preds = clf.predict(X_test)
 
         accuracy = np.mean(preds == y_test)

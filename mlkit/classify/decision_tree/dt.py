@@ -1,14 +1,14 @@
 import numpy as np
 from typing import Literal
 from .node import Node
-from ml_collection.exception import NotFitted
+from mlkit.exc import NotFitted
 
 
 class DTClassifier:
     """
     Decision Tree Classifier.
 
-    A non-parametric supervised learning method used for classification.
+    A non-parametric supervised learning method used for classify.
     The goal is to create a model that predicts the class of a target variable
     by learning simple decision rules inferred from the data features.
 
@@ -52,7 +52,7 @@ class DTClassifier:
 
     Examples
     --------
-    >>> from ml_collection.classification import DTClassifier
+    >>> from mlkit.classify import DTClassifier
     >>> import numpy as np
     >>>
     >>> X = np.array([[1, 2], [2, 3], [3, 1], [4, 4]])
@@ -116,7 +116,7 @@ class DTClassifier:
         Returns
         -------
         float
-            Gini impurity value in range [0, 0.5] for binary classification,
+            Gini impurity value in range [0, 0.5] for binary classify,
             where 0 indicates a perfectly pure node.
         """
 
