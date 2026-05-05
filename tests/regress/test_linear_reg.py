@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 from mlkit.exc import NotFitted
-from mlkit.regress import LinReg
-from mlkit.preprocess import MinMaxScaler
+from mlkit import LinReg, MinMaxScaler
 
 
 # ──────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from mlkit.regress.knn import KNNRegression
+from mlkit import KNNRegression
 from mlkit.exc import NotFitted
 
 

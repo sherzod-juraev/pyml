@@ -1,48 +1,104 @@
 import numpy as np
-from typing import Literal
+from typing import Literal, Self
 from scipy.spatial.distance import cdist
 from .kmeans_pp import KmeansPP
-from mlkit.exc import NotFitted
+from ...exc import NotFitted
 import warnings
 
 
 class Kmeans:
     """
-    K-Means cluster algorithm.
+    K-Means Clustering using Lloyd's Algorithm.
 
-    This implementation supports both random (uniform) initialization
-    and K-Means++ initialization. Clustering is performed by iteratively
-    assigning points to the nearest centroid and updating centroids_
-    until convergence.
+    Partitions :math:`n` samples into :math:`k` disjoint clusters by
+    minimizing the **Within-Cluster Sum of Squares (WCSS)**:
+
+    .. math::
+
+        J = \\sum_{j=1}^{k} \\sum_{x_i \\in C_j}
+        \\| x_i - \\mu_j \\|^2
+
+    where :math:`\\mu_j` is the centroid of cluster :math:`C_j`.
+
+    Each iteration consists of two steps:
+
+    1. **Assignment** — assign each sample to the nearest centroid:
+
+       .. math::
+
+           C_j = \\{ x_i : \\arg\\min_{l} \\, d(x_i, \\mu_l) = j \\}
+
+    2. **Update** — recompute each centroid as the mean of its members:
+
+       .. math::
+
+           \\mu_j := \\frac{1}{|C_j|} \\sum_{x_i \\in C_j} x_i
 
     Parameters
     ----------
     k : int, default=3
         Number of clusters.
-
     max_iter : int, default=100
-        Maximum number of iterations.
-
+        Maximum number of Lloyd iterations.
     tol : float, default=1e-3
-        Tolerance for convergence. Training stops when centroid
-        movement is less than this value.
+        Convergence tolerance. Training stops when the maximum centroid
+        displacement (measured by ``metric``) falls below this value:
 
-    init : {'uniform', 'kmeans++'}, default='kmeans++'
-        Method for centroid initialization.
+        :math:`\\max_j \\, d(\\mu_j^{new}, \\mu_j^{old}) < tol`
 
-    metric : {'euclidean', 'chebyshev', 'cityblock'}, default='euclidean'
-        Distance metric used for cluster.
+    init : {'kmeans++', 'uniform'}, default='kmeans++'
+        Centroid initialization strategy.
+
+        - ``'kmeans++'`` — distance-weighted probabilistic initialization,
+          reduces sensitivity to poor starting points.
+        - ``'uniform'`` — :math:`k` centroids chosen uniformly at random
+          from the training data.
+
+     metric : {'euclidean', 'cityblock', 'chebyshev'}, default='euclidean'
+        Distance metric used for both assignment and convergence check.
+
+        - ``'euclidean'`` — L2 norm:
+
+          .. math::
+
+              d(x, x') = \\sqrt{\\sum_{j=1}^{p} (x_j - x'_j)^2}
+
+        - ``'cityblock'`` — L1 norm (Manhattan):
+
+          .. math::
+
+              d(x, x') = \\sum_{j=1}^{p} |x_j - x'_j|
+
+        - ``'chebyshev'`` — L∞ norm:
+
+          .. math::
+
+              d(x, x') = \\max_j |x_j - x'_j|
+
 
     random_state : int or None, default=None
-        Seed for reproducibility.
+        Seed for the random number generator. Set for reproducibility.
 
     Attributes
     ----------
-    centroids_ : np.ndarray of shape (k, n_features)
+    centroids\\_ : np.ndarray of shape (k, n_features)
         Cluster centers after fitting.
 
-    __fitted : bool
-        Indicates whether the model has been fitted.
+    Notes
+    -----
+    K-Means is **not guaranteed** to find the global optimum of :math:`J`.
+    The result depends on initialization. ``'kmeans++'`` initialization
+    significantly improves convergence speed and solution quality.
+
+    Empty clusters are handled by reinitializing the centroid to the
+    training point furthest from any existing centroid, and a
+    ``RuntimeWarning`` is emitted.
+
+    Examples
+    --------
+    >>> model = Kmeans(k=3, init='kmeans++', random_state=42)
+    >>> model.fit(X_train)
+    >>> labels = model.predict(X_test)
     """
 
     def __init__(
@@ -53,7 +109,7 @@ class Kmeans:
             init: Literal['uniform', 'kmeans++'] = 'kmeans++',
             metric: Literal['euclidean', 'chebyshev', 'cityblock'] = 'euclidean',
             random_state: int | None = None
-    ):
+    ) -> None:
 
         self.k = k
         self.max_iter = max_iter
@@ -65,7 +121,18 @@ class Kmeans:
         self.__fitted = False
 
     def initialize_centroids_(self, X: np.ndarray) -> None:
+        """
+        Initialize cluster centroids using the chosen strategy.
 
+        For ``'uniform'`` — selects :math:`k` random samples without
+        replacement. For ``'kmeans++'`` — delegates to
+        :class:`KmeansPP` for distance-weighted initialization.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+            Training data from which centroids are chosen.
+        """
         if self.init == 'uniform':
             rng = np.random.default_rng(self.random_state)
             ind = rng.choice(X.shape[0], size=self.k, replace=False)
@@ -75,19 +142,23 @@ class Kmeans:
             kmeanspp.initialize(X)
             self.centroids_ = kmeanspp.centroids_
 
-    def fit(self, X: np.ndarray) -> 'Kmeans':
+    def fit(self, X: np.ndarray) -> Self:
         """
-        Fit the K-Means model to the data.
+        Fit the K-Means model to training data.
+
+        Initializes centroids, then alternates between assigning samples
+        to the nearest centroid and updating centroids until convergence
+        or ``max_iter`` is reached.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-            Training data.
+            Training data to cluster.
 
         Returns
         -------
         self : Kmeans
-            Fitted model.
+            Fitted model with learned ``centroids_``.
         """
 
         self.initialize_centroids_(X)
@@ -101,6 +172,27 @@ class Kmeans:
         return self
 
     def convergence(self, C_old: np.ndarray) -> bool:
+        """
+        Check whether centroids have converged.
+
+        Computes displacement of each centroid since the last iteration
+        using the chosen ``metric``, and returns ``True`` if all
+        displacements are below ``tol``:
+
+        .. math::
+
+            \\forall j: \\, d(\\mu_j^{new}, \\mu_j^{old}) < tol
+
+        Parameters
+        ----------
+        C_old : np.ndarray of shape (k, n_features)
+            Centroid positions from the previous iteration.
+
+        Returns
+        -------
+        converged : bool
+            ``True`` if all centroids moved less than ``tol``.
+        """
 
         dif = self.centroids_ - C_old
         if self.metric == 'euclidean':
@@ -117,15 +209,24 @@ class Kmeans:
         """
         Assign each sample to the nearest centroid.
 
+        Computes pairwise distances between all samples and all
+        centroids, then assigns each sample to the closest one:
+
+        .. math::
+
+            \\text{label}_i = \\arg\\min_{j} \\, d(x_i, \\mu_j)
+
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
+            Data points to assign.
 
         Returns
         -------
         labels : np.ndarray of shape (n_samples,)
-            Cluster indices for each sample.
+            Cluster index for each sample.
         """
+
         centroids_ = self.centroids_ if self.centroids_.ndim == 2 else np.array([self.centroids_])
         distances = cdist(X, centroids_, metric=self.metric)
         labels = np.argmin(distances, axis=1)
@@ -133,14 +234,22 @@ class Kmeans:
 
     def update_centroids_(self, X: np.ndarray, labels: np.ndarray) -> None:
         """
-        Update centroids_ as the mean of assigned points.
+        Update each centroid as the mean of its assigned points.
+
+        .. math::
+
+            \\mu_j := \\frac{1}{|C_j|} \\sum_{x_i \\in C_j} x_i
+
+        If a cluster is empty, its centroid is reinitialized to the
+        training point with the maximum minimum distance to any
+        existing centroid, and a ``RuntimeWarning`` is emitted.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-
+            Training data.
         labels : np.ndarray of shape (n_samples,)
-            Cluster assignments.
+            Current cluster assignments.
         """
 
         for i in range(self.k):
@@ -156,22 +265,26 @@ class Kmeans:
         """
         Predict cluster labels for new data.
 
+        Assigns each sample to the nearest centroid learned during
+        fitting using :meth:`cal_labels`.
+
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
+            Data points to assign to clusters.
 
         Returns
         -------
         labels : np.ndarray of shape (n_samples,)
-            Predicted cluster indices.
+            Predicted cluster indices in :math:`\\{0, 1, \\ldots, k-1\\}`.
 
         Raises
         ------
         NotFitted
-            If the model has not been fitted yet.
+            If called before fitting the model.
         """
 
         if not self.__fitted:
-            raise NotFitted("Kmeans not fitted yet")
+            raise NotFitted(self)
         labels = self.cal_labels(X)
         return labels

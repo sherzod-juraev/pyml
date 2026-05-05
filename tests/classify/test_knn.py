@@ -9,7 +9,7 @@ Ishga tushirish:
 
 import numpy as np
 import pytest
-from mlkit.classify import KNNClassifier
+from mlkit import KNNClassifier
 
 
 # ===========================================================================

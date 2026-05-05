@@ -6,7 +6,7 @@ class Node:
             left = None,
             right = None,
             value: int | None = None
-    ):
+    ) -> None:
         self.feature = feature
         self.threshold = threshold
         self.left = left

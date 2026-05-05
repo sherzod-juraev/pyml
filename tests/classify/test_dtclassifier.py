@@ -17,7 +17,7 @@ Ishga tushirish:
 
 import numpy as np
 import pytest
-from mlkit.classify import DTClassifier
+from mlkit import DTClassifier
 
 
 # ===========================================================================

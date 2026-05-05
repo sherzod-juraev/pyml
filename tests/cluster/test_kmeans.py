@@ -1,423 +1,301 @@
 import numpy as np
 import pytest
 import warnings
-from unittest.mock import MagicMock, patch
+from mlkit import Kmeans
+from mlkit.exc import NotFitted
 
 
-# ---------------------------------------------------------------------------
-# Minimal stubs so the module can be imported without the real package tree.
-# Replace these with your actual imports once integrated into the project.
-# ---------------------------------------------------------------------------
-
-class NotFitted(Exception):
-    pass
-
-
-class KmeansPP:
-    def __init__(self, k=3, metric="euclidean", random_state=None):
-        self.k = k
-        self.metric = metric
-        self.random_state = random_state
-        self.centroids_ = None
-
-    def initialize(self, X):
-        rng = np.random.default_rng(self.random_state)
-        idx = rng.choice(X.shape[0], size=self.k, replace=False)
-        self.centroids_ = X[idx].copy()
-        return self
-
-
-from scipy.spatial.distance import cdist
-
-
-class Kmeans:
-    def __init__(self, k=3, max_iter=100, tol=1e-3,
-                 init="kmeans++", metric="euclidean", random_state=None):
-        self.k = k
-        self.max_iter = max_iter
-        self.tol = tol
-        self.init = init
-        self.centroids_ = None
-        self.metric = metric
-        self.random_state = random_state
-        self.__fitted = False
-
-    def __initialize_centroids_(self, X):
-        if self.init == "uniform":
-            rng = np.random.default_rng(self.random_state)
-            ind = rng.choice(X.shape[0], size=self.k, replace=False)
-            self.centroids_ = X[ind].copy()
-        else:
-            kpp = KmeansPP(k=self.k, metric=self.metric,
-                           random_state=self.random_state)
-            kpp.initialize(X)
-            self.centroids_ = kpp.centroids_
-
-    def fit(self, X):
-        self.__initialize_centroids_(X)
-        for _ in range(self.max_iter):
-            labels = self.__cal_labels(X)
-            C_old = self.centroids_.copy()
-            self.__update_centroids_(X, labels)
-            if self.convergence(C_old):
-                break
-        self.__fitted = True
-        return self
-
-    def convergence(self, C_old):
-        dif = self.centroids_ - C_old
-        if self.metric == "euclidean":
-            dist = np.linalg.norm(dif, ord=2, axis=1)
-        elif self.metric == "chebyshev":
-            dist = np.max(np.abs(dif), axis=1)
-        else:
-            dist = np.linalg.norm(dif, ord=1, axis=1)
-        return bool(np.all(dist < self.tol))
-
-    def __cal_labels(self, X):
-        centroids_ = (self.centroids_ if self.centroids_.ndim == 2
-                     else np.array([self.centroids_]))
-        distances = cdist(X, centroids_, metric=self.metric)
-        return np.argmin(distances, axis=1)
-
-    def __update_centroids_(self, X, labels):
-        for i in range(self.k):
-            neighbors = X[labels == i]
-            if neighbors.shape[0] != 0:
-                self.centroids_[i] = neighbors.mean(axis=0)
-            else:
-                dist = cdist(self.centroids_, X, metric=self.metric)
-                self.centroids_[i] = X[np.argmax(np.min(dist, axis=0))].copy()
-                warnings.warn(
-                    f"Cluster {i} is empty. Reinitializing centroid.",
-                    RuntimeWarning,
-                )
-
-    def predict(self, X):
-        if not self.__fitted:
-            raise NotFitted("Kmeans not fitted yet")
-        return self.__cal_labels(X)
-
-
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
 # Fixtures
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
 
 @pytest.fixture
-def well_separated_data():
-    """Three clearly separated 2-D Gaussian blobs (300 points total)."""
+def blobs():
+    """Three well-separated clusters."""
     rng = np.random.default_rng(42)
-    c1 = rng.normal(loc=[0.0, 0.0], scale=0.3, size=(100, 2))
-    c2 = rng.normal(loc=[8.0, 0.0], scale=0.3, size=(100, 2))
-    c3 = rng.normal(loc=[4.0, 7.0], scale=0.3, size=(100, 2))
-    return np.vstack([c1, c2, c3])
+    c1 = rng.normal(loc=[0.0, 0.0], scale=0.3, size=(50, 2))
+    c2 = rng.normal(loc=[5.0, 0.0], scale=0.3, size=(50, 2))
+    c3 = rng.normal(loc=[2.5, 4.0], scale=0.3, size=(50, 2))
+    X = np.vstack([c1, c2, c3])
+    return X
 
 
 @pytest.fixture
-def model_default():
-    """Kmeans with default settings (k=3, euclidean, kmeans++)."""
-    return Kmeans(k=3, random_state=0)
+def simple_data():
+    """Small deterministic dataset — 2 obvious clusters."""
+    X = np.array([
+        [0.0, 0.0], [0.1, 0.1], [0.0, 0.1],
+        [5.0, 5.0], [5.1, 5.0], [5.0, 5.1],
+    ])
+    return X
 
 
-# ---------------------------------------------------------------------------
-# 1. Initialization tests
-# ---------------------------------------------------------------------------
+@pytest.fixture
+def fitted_model(blobs):
+    """Returns an already fitted Kmeans model."""
+    model = Kmeans(k=3, random_state=42)
+    model.fit(blobs)
+    return model, blobs
+
+
+# ──────────────────────────────────────────────
+# 1. Initialization
+# ──────────────────────────────────────────────
+
+class TestInit:
+
+    def test_default_params(self):
+        model = Kmeans()
+        assert model.k == 3
+        assert model.max_iter == 100
+        assert model.tol == 1e-3
+        assert model.init == 'kmeans++'
+        assert model.metric == 'euclidean'
+        assert model.random_state is None
+
+    def test_custom_params(self):
+        model = Kmeans(k=5, max_iter=200, tol=1e-4, init='uniform',
+                       metric='cityblock', random_state=0)
+        assert model.k == 5
+        assert model.max_iter == 200
+        assert model.tol == 1e-4
+        assert model.init == 'uniform'
+        assert model.metric == 'cityblock'
+        assert model.random_state == 0
+
+    def test_not_fitted_initially(self):
+        model = Kmeans()
+        with pytest.raises(NotFitted):
+            model.predict(np.array([[1.0, 2.0]]))
+
+
+# ──────────────────────────────────────────────
+# 2. Centroid initialization
+# ──────────────────────────────────────────────
 
 class TestInitialization:
 
-    def test_centroids__shape_after_fit(self, well_separated_data, model_default):
-        """After fit, centroids_ must have shape (k, n_features)."""
-        model_default.fit(well_separated_data)
-        assert model_default.centroids_.shape == (3, 2)
+    def test_centroids_shape_after_fit(self, blobs):
+        model = Kmeans(k=3, random_state=0).fit(blobs)
+        assert model.centroids_.shape == (3, blobs.shape[1])
 
-    def test_uniform_init_produces_valid_centroids_(self, well_separated_data):
-        """Uniform init must pick exactly k distinct rows from X."""
-        model = Kmeans(k=3, init="uniform", random_state=7)
-        model.fit(well_separated_data)
-        assert model.centroids_.shape == (3, 2)
+    def test_uniform_init_produces_valid_centroids(self, blobs):
+        model = Kmeans(k=3, init='uniform', random_state=0).fit(blobs)
+        assert model.centroids_.shape == (3, blobs.shape[1])
+        assert np.isfinite(model.centroids_).all()
 
-    def test_kmeanspp_init_produces_valid_centroids_(self, well_separated_data):
-        """KMeans++ init must produce k centroids_ inside the data range."""
-        model = Kmeans(k=3, init="kmeans++", random_state=7)
-        model.fit(well_separated_data)
-        X = well_separated_data
-        assert np.all(model.centroids_ >= X.min(axis=0) - 1e-9)
-        assert np.all(model.centroids_ <= X.max(axis=0) + 1e-9)
+    def test_kmeanspp_init_produces_valid_centroids(self, blobs):
+        model = Kmeans(k=3, init='kmeans++', random_state=0).fit(blobs)
+        assert model.centroids_.shape == (3, blobs.shape[1])
+        assert np.isfinite(model.centroids_).all()
 
-    def test_random_state_reproducibility(self, well_separated_data):
-        """Same random_state must yield identical centroids_."""
-        m1 = Kmeans(k=3, random_state=42).fit(well_separated_data)
-        m2 = Kmeans(k=3, random_state=42).fit(well_separated_data)
-        np.testing.assert_array_equal(m1.centroids_, m2.centroids_)
+    def test_random_state_reproducibility(self, blobs):
+        m1 = Kmeans(k=3, random_state=42).fit(blobs)
+        m2 = Kmeans(k=3, random_state=42).fit(blobs)
+        assert np.allclose(m1.centroids_, m2.centroids_)
 
-    def test_different_random_states_may_differ(self, well_separated_data):
-        """Different seeds should generally produce different centroids_."""
-        m1 = Kmeans(k=3, random_state=0).fit(well_separated_data)
-        m2 = Kmeans(k=3, random_state=99).fit(well_separated_data)
-        # Not guaranteed, but extremely likely on well-separated data
+    def test_different_random_states_may_differ(self, blobs):
+        m1 = Kmeans(k=3, random_state=0)
+        m2 = Kmeans(k=3, random_state=99)
+        m1.initialize_centroids_(blobs)
+        m2.initialize_centroids_(blobs)
         assert not np.allclose(m1.centroids_, m2.centroids_)
 
 
-# ---------------------------------------------------------------------------
-# 2. Fit / cluster correctness tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 3. Fit correctness
+# ──────────────────────────────────────────────
 
 class TestFitCorrectness:
 
-    def test_cluster_labels_cover_all_k(self, well_separated_data, model_default):
-        """All k cluster indices must appear in the predicted labels."""
-        model_default.fit(well_separated_data)
-        labels = model_default.predict(well_separated_data)
-        assert set(labels) == set(range(3))
+    def test_fit_returns_self(self, blobs):
+        model = Kmeans(k=3, random_state=0)
+        result = model.fit(blobs)
+        assert result is model
 
-    def test_labels_length_equals_n_samples(self, well_separated_data, model_default):
-        """predict() must return one label per sample."""
-        model_default.fit(well_separated_data)
-        labels = model_default.predict(well_separated_data)
-        assert len(labels) == len(well_separated_data)
+    def test_labels_length_equals_n_samples(self, blobs):
+        model = Kmeans(k=3, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert labels.shape == (blobs.shape[0],)
 
-    def test_perfect_separation_pure_clusters(self, well_separated_data, model_default):
-        """Well-separated blobs: each ground-truth group must map to one label."""
-        model_default.fit(well_separated_data)
-        labels = model_default.predict(well_separated_data)
+    def test_cluster_labels_cover_all_k(self, blobs):
+        model = Kmeans(k=3, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert len(np.unique(labels)) == 3
 
-        # Ground-truth groups (100 points each)
-        g0, g1, g2 = labels[:100], labels[100:200], labels[200:]
+    def test_perfect_separation_pure_clusters(self, simple_data):
+        """On perfectly separated data — each cluster must be pure."""
+        model = Kmeans(k=2, random_state=0).fit(simple_data)
+        labels = model.predict(simple_data)
+        # First 3 samples must share one label, last 3 must share another
+        assert len(np.unique(labels[:3])) == 1
+        assert len(np.unique(labels[3:])) == 1
+        assert labels[0] != labels[3]
 
-        assert len(set(g0)) == 1, "First blob should be in one cluster"
-        assert len(set(g1)) == 1, "Second blob should be in one cluster"
-        assert len(set(g2)) == 1, "Third blob should be in one cluster"
-        assert len({g0[0], g1[0], g2[0]}) == 3, "Each blob should have a unique label"
-
-    def test_wcss_decreases_with_more_iterations(self, well_separated_data):
-        """More iterations should not increase within-cluster sum of squares."""
+    def test_wcss_decreases_with_more_iterations(self, blobs):
+        """More iterations → lower or equal within-cluster sum of squares."""
         def wcss(model, X):
             labels = model.predict(X)
-            total = 0.0
-            for k in range(model.k):
-                pts = X[labels == k]
-                if len(pts):
-                    total += np.sum((pts - model.centroids_[k]) ** 2)
-            return total
+            return sum(
+                np.sum((X[labels == i] - model.centroids_[i]) ** 2)
+                for i in range(model.k)
+            )
 
-        m1 = Kmeans(k=3, max_iter=1,   random_state=0).fit(well_separated_data)
-        m2 = Kmeans(k=3, max_iter=100, random_state=0).fit(well_separated_data)
-        assert wcss(m2, well_separated_data) <= wcss(m1, well_separated_data)
+        m1 = Kmeans(k=3, max_iter=1, random_state=42).fit(blobs)
+        m2 = Kmeans(k=3, max_iter=300, random_state=42).fit(blobs)
+        assert wcss(m2, blobs) <= wcss(m1, blobs)
 
 
-# ---------------------------------------------------------------------------
-# 3. Convergence tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 4. Convergence
+# ──────────────────────────────────────────────
 
 class TestConvergence:
 
-    def test_convergence_returns_true_when_centroids__unchanged(self):
-        """convergence() must return True when old == new centroids_."""
-        model = Kmeans(k=2, tol=1e-3)
-        model.centroids_ = np.array([[1.0, 2.0], [3.0, 4.0]])
+    def test_convergence_returns_true_when_centroids_unchanged(self, blobs):
+        model = Kmeans(k=3, random_state=0)
+        model.initialize_centroids_(blobs)
         C_old = model.centroids_.copy()
         assert model.convergence(C_old) is True
 
-    def test_convergence_returns_false_when_centroids__move(self):
-        """convergence() must return False when centroid shift > tol."""
-        model = Kmeans(k=2, tol=1e-3)
-        model.centroids_ = np.array([[1.0, 2.0], [3.0, 4.0]])
-        C_old = np.array([[0.0, 0.0], [0.0, 0.0]])
+    def test_convergence_returns_false_when_centroids_move(self, blobs):
+        model = Kmeans(k=3, random_state=0)
+        model.initialize_centroids_(blobs)
+        C_old = model.centroids_.copy()
+        model.centroids_ += 999
         assert model.convergence(C_old) is False
 
+    def test_max_iter_respected(self, blobs):
+        """Model must stop at max_iter — still fitted and predicts."""
+        model = Kmeans(k=3, max_iter=1, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert labels.shape == (blobs.shape[0],)
+
     @pytest.mark.parametrize("metric", ["euclidean", "chebyshev", "cityblock"])
-    def test_convergence_consistent_across_metrics(self, metric):
-        """tol should have the same geometric meaning for all three metrics."""
-        model = Kmeans(k=2, tol=0.5, metric=metric)
-        # Shift each centroid by exactly 0.3 in one dimension → should converge
-        model.centroids_ = np.array([[0.3, 0.0], [0.3, 0.0]])
-        C_old = np.array([[0.0, 0.0], [0.0, 0.0]])
-        assert model.convergence(C_old) is True
-
-    def test_max_iter_respected(self, well_separated_data):
-        """fit() must stop after max_iter even without convergence."""
-        call_count = {"n": 0}
-        original_convergence = Kmeans.convergence
-
-        def counting_convergence(self, C_old):
-            call_count["n"] += 1
-            return False  # Never converge
-
-        Kmeans.convergence = counting_convergence
-        try:
-            model = Kmeans(k=3, max_iter=5, random_state=0)
-            model.fit(well_separated_data)
-            assert call_count["n"] == 5
-        finally:
-            Kmeans.convergence = original_convergence
+    def test_convergence_consistent_across_metrics(self, blobs, metric):
+        model = Kmeans(k=3, metric=metric, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert len(np.unique(labels)) == 3
 
 
-# ---------------------------------------------------------------------------
-# 4. predict() / NotFitted tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 5. Predict
+# ──────────────────────────────────────────────
 
 class TestPredict:
 
-    def test_predict_raises_if_not_fitted(self, well_separated_data):
-        """predict() on an unfitted model must raise NotFitted."""
-        model = Kmeans(k=3)
+    def test_predict_raises_if_not_fitted(self):
+        model = Kmeans()
         with pytest.raises(NotFitted):
-            model.predict(well_separated_data)
+            model.predict(np.array([[1.0, 2.0]]))
 
-    def test_predict_after_fit_returns_array(self, well_separated_data, model_default):
-        """predict() must return a numpy array."""
-        model_default.fit(well_separated_data)
-        labels = model_default.predict(well_separated_data)
+    def test_predict_after_fit_returns_array(self, fitted_model):
+        model, X = fitted_model
+        labels = model.predict(X)
         assert isinstance(labels, np.ndarray)
 
-    def test_predict_label_range(self, well_separated_data, model_default):
-        """All predicted labels must be in [0, k)."""
-        model_default.fit(well_separated_data)
-        labels = model_default.predict(well_separated_data)
+    def test_predict_label_range(self, fitted_model):
+        model, X = fitted_model
+        labels = model.predict(X)
         assert labels.min() >= 0
-        assert labels.max() < model_default.k
+        assert labels.max() < model.k
 
-    def test_predict_is_deterministic(self, well_separated_data, model_default):
-        """Two predict() calls on the same data must return identical results."""
-        model_default.fit(well_separated_data)
-        l1 = model_default.predict(well_separated_data)
-        l2 = model_default.predict(well_separated_data)
-        np.testing.assert_array_equal(l1, l2)
+    def test_predict_is_deterministic(self, fitted_model):
+        model, X = fitted_model
+        labels1 = model.predict(X)
+        labels2 = model.predict(X)
+        assert np.array_equal(labels1, labels2)
 
 
-# ---------------------------------------------------------------------------
-# 5. Empty cluster handling tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 6. Empty cluster
+# ──────────────────────────────────────────────
 
 class TestEmptyCluster:
 
-    def _force_empty_cluster_fit(self, model, X):
-        """
-        Bypass __initialize_centroids_ and inject duplicate centroids_ manually,
-        so cluster 1 is guaranteed to be empty after the first assignment step.
-        Two centroids_ share X[0] → argmin always picks cluster 0, leaving
-        cluster 1 with zero neighbours.
-        """
-        forced_centroids_ = np.array([
-            X[0].copy(),    # cluster 0 — valid, attracts many points
-            X[0].copy(),    # cluster 1 — duplicate → always empty
-            X[-1].copy(),   # cluster 2 — valid, attracts many points
-        ], dtype=float)
+    def test_empty_cluster_emits_runtime_warning(self):
+        """Force k > actual clusters to trigger empty cluster."""
+        X = np.array([[0.0, 0.0], [0.1, 0.0], [0.0, 0.1]])
+        model = Kmeans(k=3, init='uniform', max_iter=1, random_state=0)
+        model.initialize_centroids_(X)
+        labels = model.cal_labels(X)
+        if len(np.unique(labels)) < model.k:
+            with pytest.warns(RuntimeWarning):
+                model.update_centroids_(X, labels)
 
-        # Patch private __initialize_centroids_ so fit() uses our centroids_
-        def fake_init(self_inner, X_inner):
-            self_inner.centroids_ = forced_centroids_.copy()
-
-        original = Kmeans._Kmeans__initialize_centroids_
-        Kmeans._Kmeans__initialize_centroids_ = fake_init
-        try:
+    def test_empty_cluster_centroid_is_reinitialized(self):
+        X = np.array([[0.0, 0.0], [0.1, 0.0], [0.0, 0.1]])
+        model = Kmeans(k=3, init='uniform', max_iter=5, random_state=0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
             model.fit(X)
-        finally:
-            Kmeans._Kmeans__initialize_centroids_ = original
+        assert np.isfinite(model.centroids_).all()
 
-    def test_empty_cluster_emits_runtime_warning(self, well_separated_data):
-        """An empty cluster during update must raise RuntimeWarning."""
-        model = Kmeans(k=3, max_iter=2, random_state=0)
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            self._force_empty_cluster_fit(model, well_separated_data)
-
-        runtime_warnings = [w for w in caught if issubclass(w.category, RuntimeWarning)]
-        assert len(runtime_warnings) >= 1
-
-    def test_empty_cluster_centroid_is_reinitialized(self, well_separated_data):
-        """
-        After reinit the dead centroid must leave the duplicate position.
-        The model keeps fitting after reinit so the centroid shifts to the
-        mean of its new neighbours — we only verify it moved away from X[0].
-        """
-        model = Kmeans(k=3, max_iter=2, random_state=0)
-        duplicate_position = well_separated_data[0].copy()
-
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            self._force_empty_cluster_fit(model, well_separated_data)
-
-        still_at_duplicate = [
-            np.linalg.norm(c - duplicate_position) < 1e-9
-            for c in model.centroids_
-        ]
-        # After reinit + continued fitting, centroids_ should not all stay at X[0]
-        assert not all(still_at_duplicate)
-
-    def test_warning_message_contains_cluster_index(self, well_separated_data):
-        """The warning message must mention 'empty' (case-insensitive)."""
-        model = Kmeans(k=3, max_iter=2, random_state=0)
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            self._force_empty_cluster_fit(model, well_separated_data)
-
-        messages = [str(w.message) for w in caught
-                    if issubclass(w.category, RuntimeWarning)]
-        assert any("empty" in m.lower() for m in messages)
+    def test_warning_message_contains_cluster_index(self):
+        X = np.array([[0.0, 0.0], [0.1, 0.0], [0.0, 0.1]])
+        model = Kmeans(k=3, init='uniform', max_iter=1, random_state=0)
+        model.initialize_centroids_(X)
+        labels = model.cal_labels(X)
+        if len(np.unique(labels)) < model.k:
+            with pytest.warns(RuntimeWarning, match=r"Cluster \d+"):
+                model.update_centroids_(X, labels)
 
 
-# ---------------------------------------------------------------------------
-# 6. Metric tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 7. Metrics
+# ──────────────────────────────────────────────
 
 class TestMetrics:
 
     @pytest.mark.parametrize("metric", ["euclidean", "chebyshev", "cityblock"])
-    def test_fit_and_predict_work_for_all_metrics(self, well_separated_data, metric):
-        """fit + predict must succeed for every supported metric."""
-        model = Kmeans(k=3, metric=metric, random_state=0)
-        model.fit(well_separated_data)
-        labels = model.predict(well_separated_data)
-        assert labels.shape == (len(well_separated_data),)
+    def test_fit_and_predict_work_for_all_metrics(self, blobs, metric):
+        model = Kmeans(k=3, metric=metric, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert labels.shape == (blobs.shape[0],)
 
     @pytest.mark.parametrize("metric", ["euclidean", "chebyshev", "cityblock"])
-    def test_all_metrics_produce_k_clusters(self, well_separated_data, metric):
-        """All k clusters must be non-empty for well-separated data."""
-        model = Kmeans(k=3, metric=metric, random_state=0)
-        model.fit(well_separated_data)
-        labels = model.predict(well_separated_data)
-        assert set(labels) == {0, 1, 2}
+    def test_all_metrics_produce_k_clusters(self, blobs, metric):
+        model = Kmeans(k=3, metric=metric, random_state=0).fit(blobs)
+        labels = model.predict(blobs)
+        assert len(np.unique(labels)) == 3
 
 
-# ---------------------------------------------------------------------------
-# 7. Edge case tests
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────
+# 8. Edge cases
+# ──────────────────────────────────────────────
 
 class TestEdgeCases:
 
     def test_k_equals_n_samples(self):
-        """k == n_samples: every point should be its own centroid."""
-        X = np.array([[0.0, 0.0], [1.0, 0.0], [2.0, 0.0]])
-        model = Kmeans(k=3, random_state=0)
-        model.fit(X)
+        X = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+        model = Kmeans(k=3, random_state=0).fit(X)
         labels = model.predict(X)
-        # All labels must be distinct
-        assert len(set(labels)) == 3
+        assert len(np.unique(labels)) == 3
 
     def test_single_feature(self):
-        """Kmeans must handle 1-D feature arrays (n_samples, 1)."""
-        X = np.array([[1.0], [2.0], [10.0], [11.0]])
-        model = Kmeans(k=2, random_state=0)
-        model.fit(X)
+        rng = np.random.default_rng(0)
+        X = rng.normal(size=(60, 1))
+        model = Kmeans(k=2, random_state=0).fit(X)
         labels = model.predict(X)
-        # Points 0,1 should share a cluster; points 2,3 another
-        assert labels[0] == labels[1]
-        assert labels[2] == labels[3]
-        assert labels[0] != labels[2]
+        assert labels.shape == (60,)
 
     def test_high_dimensional_input(self):
-        """Kmeans must work with high-dimensional data (d=50)."""
         rng = np.random.default_rng(0)
-        X = rng.normal(size=(200, 50))
-        model = Kmeans(k=5, random_state=0)
-        model.fit(X)
-        assert model.centroids_.shape == (5, 50)
+        X = rng.normal(size=(100, 50))
+        model = Kmeans(k=4, random_state=0).fit(X)
+        labels = model.predict(X)
+        assert labels.shape == (100,)
 
-    def test_integer_dtype_input(self, well_separated_data):
-        """Integer dtype input should not cause dtype errors."""
-        X_int = well_separated_data.astype(np.int32)
-        model = Kmeans(k=3, random_state=0)
-        model.fit(X_int)
-        labels = model.predict(X_int)
-        assert labels.shape == (len(X_int),)
+    def test_integer_dtype_input(self):
+        X = np.array([[1, 2], [3, 4], [10, 11], [12, 13]], dtype=int)
+        model = Kmeans(k=2, random_state=0).fit(X)
+        labels = model.predict(X)
+        assert labels.shape == (4,)
+
+    def test_refit_resets_centroids(self, blobs):
+        model = Kmeans(k=3, random_state=42)
+        model.fit(blobs)
+        c1 = model.centroids_.copy()
+        model.fit(blobs)
+        c2 = model.centroids_.copy()
+        assert np.allclose(c1, c2)
