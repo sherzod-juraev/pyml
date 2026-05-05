@@ -1,3 +1,12 @@
 from .scalers import (
-MinMaxScaler
+    MinMaxScaler,
+    StandardScaler,
+    RobustScaler,
 )
+
+
+__all__ = [
+    'MinMaxScaler',
+    'StandardScaler',
+    'RobustScaler',
+]
