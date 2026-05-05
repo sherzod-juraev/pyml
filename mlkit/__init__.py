@@ -14,6 +14,7 @@ __all__ = [
     'LinReg',
     # cluster
     'Kmeans',
+    'DBSCAN',
     # preprocess
     'MinMaxScaler',
     'StandardScaler',

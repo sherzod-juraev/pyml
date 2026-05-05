@@ -147,7 +147,7 @@ class LogReg:
     .. math::
 
         w := w - \\frac{\\eta}{n}
-        \\left[ X^T(\\hat{y} - y) + \\alpha \\cdot \\text{penalty\_grad} \\right]
+        \\left[ X^T(\\hat{y} - y) + \\alpha \\cdot \\text{penalty\\_grad} \\right]
 
     .. math::
 

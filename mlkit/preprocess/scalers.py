@@ -151,7 +151,7 @@ class StandardScaler:
     Also known as Z-score normalization. The resulting distribution of each
     feature has :math:`\\mu` 0 and :math:`\\sigma` 1.
 
-    Constant features (where :math:`\sigma == 0`) are handled gracefully by
+    Constant features (where :math:`\\sigma == 0``) are handled gracefully by
     setting std to 1 while preserving the true mean, resulting in a
     zero-filled column after transformation.
 

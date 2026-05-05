@@ -5,3 +5,4 @@ Clustering Models
     :maxdepth: 1
 
     kmeans
+    dbscan
