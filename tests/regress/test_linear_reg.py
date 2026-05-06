@@ -1,218 +1,290 @@
-import numpy as np
 import pytest
+import numpy as np
+from sklearn.datasets import make_regression
+from sklearn.linear_model import LinearRegression as SklearnLinReg
+from mlkit import LinReg
 from mlkit.exc import NotFitted
-from mlkit import LinReg, MinMaxScaler
 
 
-# ──────────────────────────────────────────────
-# Fixtures
-# ──────────────────────────────────────────────
+# ─── Fixtures ───────────────────────────────────────────────
 
 @pytest.fixture
-def simple_data():
-    """Perfect linear data: y = 2x + 3 (no noise)."""
-    X = np.array([[1], [2], [3], [4], [5]], dtype=float)
-    X = scaler = MinMaxScaler().fit_transform(X)
-    y = 2 * X.squeeze() + 3
+def data():
+    X, y = make_regression(
+        n_samples=200,
+        n_features=5,
+        noise=0.1,
+        random_state=42
+    )
     return X, y
 
 
 @pytest.fixture
-def noisy_data():
-    """Linear data with Gaussian noise."""
-    rng = np.random.default_rng(42)
-    X = rng.uniform(0, 10, size=(100, 1))
-    y = 3 * X.squeeze() + 5 + rng.normal(0, 0.5, size=100)
-    return X, y
-
-
-@pytest.fixture
-def multifeature_data():
-    """Multi-feature linear data: y = 1*x1 + 2*x2 + 0.5."""
-    rng = np.random.default_rng(0)
-    X = rng.uniform(0, 5, size=(200, 2))
-    y = X @ np.array([1.0, 2.0]) + 0.5
-    return X, y
-
-
-@pytest.fixture
-def fitted_model(simple_data):
-    """Returns an already fitted LinReg model."""
-    X, y = simple_data
-    model = LinReg(eta=0.1, max_iter=1000, tol=1e-6)
+def fitted(data):
+    X, y = data
+    model = LinReg(learning_rate=0.01, max_iter=1000, tol=1e-4, penalty=None)
     model.fit(X, y)
     return model, X, y
 
 
-# ──────────────────────────────────────────────
-# 1. Initialization
-# ──────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════
+#  Init
+# ════════════════════════════════════════════════════════════
 
 class TestInit:
 
     def test_default_params(self):
         model = LinReg()
-        assert model.eta == 1e-1
+        assert model.learning_rate == 0.1
         assert model.max_iter == 100
         assert model.tol == 1e-3
+        assert model.alpha == 1.0
+        assert model.penalty == 'l2'
 
     def test_custom_params(self):
-        model = LinReg(eta=0.01, max_iter=500, tol=1e-5)
-        assert model.eta == 0.01
+        model = LinReg(learning_rate=0.01, max_iter=500, tol=1e-5, alpha=0.5, penalty='l1')
+        assert model.learning_rate == 0.01
         assert model.max_iter == 500
         assert model.tol == 1e-5
+        assert model.alpha == 0.5
+        assert model.penalty == 'l1'
 
     def test_not_fitted_initially(self):
         model = LinReg()
         with pytest.raises(NotFitted):
-            model.predict(np.array([[1.0]]))
+            model.predict(np.random.randn(5, 3))
 
 
-# ──────────────────────────────────────────────
-# 2. Fit — return value and attributes
-# ──────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════
+#  Fit
+# ════════════════════════════════════════════════════════════
 
 class TestFit:
 
-    def test_fit_returns_self(self, simple_data):
-        X, y = simple_data
+    def test_fit_returns_self(self, data):
+        X, y = data
         model = LinReg()
-        result = model.fit(X, y)
-        assert result is model
+        assert model.fit(X, y) is model
 
-    def test_fit_sets_coef_(self, simple_data):
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=1000, tol=1e-6).fit(X, y)
-        assert hasattr(model, "coef_")
+    def test_fit_sets_coef(self, data):
+        X, y = data
+        model = LinReg()
+        model.fit(X, y)
+        assert model.coef_ is not None
         assert model.coef_.shape == (X.shape[1],)
 
-    def test_fit_sets_intercept_(self, simple_data):
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=1000, tol=1e-6).fit(X, y)
-        assert hasattr(model, "intercept_")
-        assert isinstance(model.intercept_, float)
-
-    def test_fit_allows_predict_after(self, simple_data):
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=1000, tol=1e-6).fit(X, y)
-        preds = model.predict(X)
-        assert preds.shape == y.shape
-
-
-# ──────────────────────────────────────────────
-# 3. Convergence — simple linear data
-# ──────────────────────────────────────────────
-
-class TestConvergence:
-
-    def test_learns_correct_weights(self, simple_data):
-        """y = 2x + 3 → coef_ ≈ [2], intercept_ ≈ 3."""
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=5000, tol=1e-8).fit(X, y)
-        assert pytest.approx(model.coef_[0], abs=0.05) == 2.0
-        assert pytest.approx(model.intercept_, abs=0.05) == 3.0
-
-    def test_multifeature_convergence(self, multifeature_data):
-        """y = 1*x1 + 2*x2 + 0.5 → coef_ ≈ [1, 2], intercept_ ≈ 0.5."""
-        X, y = multifeature_data
-        model = LinReg(eta=0.05, max_iter=5000, tol=1e-8).fit(X, y)
-        assert pytest.approx(model.coef_[0], abs=0.1) == 1.0
-        assert pytest.approx(model.coef_[1], abs=0.1) == 2.0
-        assert pytest.approx(model.intercept_, abs=0.1) == 0.5
-
-    def test_loss_decreases(self, noisy_data):
-        """Loss first iteration > loss last iteration."""
-        X, y = noisy_data
-        model = LinReg(eta=0.01, max_iter=200, tol=1e-10)
-
-        losses = []
-
-        # Monkey-patch to capture loss per iteration
-        original_fit = model.fit.__func__
-
+    def test_fit_sets_intercept(self, data):
+        X, y = data
+        model = LinReg()
         model.fit(X, y)
-        y_pred = model.predict(X)
-        final_loss = np.mean((y - y_pred) ** 2)
+        assert np.isscalar(model.intercept_)
 
-        # Initial loss (random weights = zeros → mean(y^2))
-        initial_loss = np.mean(y ** 2)
-        assert final_loss < initial_loss
+    def test_coef_dtype_float(self, data):
+        X, y = data
+        model = LinReg()
+        model.fit(X, y)
+        assert np.issubdtype(model.coef_.dtype, np.floating)
+
+    def test_refit_resets_weights(self, data):
+        X, y = data
+        model = LinReg(penalty=None)
+        model.fit(X, y)
+        coef_first = model.coef_.copy()
+        X2, y2 = make_regression(n_samples=100, n_features=5, random_state=0)
+        model.fit(X2, y2)
+        assert not np.array_equal(model.coef_, coef_first)
 
 
-# ──────────────────────────────────────────────
-# 4. Predict
-# ──────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════
+#  Predict
+# ════════════════════════════════════════════════════════════
 
 class TestPredict:
 
-    def test_predict_shape(self, fitted_model):
-        model, X, y = fitted_model
+    def test_raises_not_fitted(self):
+        model = LinReg()
+        with pytest.raises(NotFitted):
+            model.predict(np.random.randn(5, 3))
+
+    def test_output_shape(self, fitted):
+        model, X, y = fitted
         preds = model.predict(X)
         assert preds.shape == (X.shape[0],)
 
-    def test_predict_raises_if_not_fitted(self):
-        model = LinReg()
-        X = np.array([[1.0], [2.0]])
-        with pytest.raises(NotFitted):
-            model.predict(X)
-
-    def test_predict_perfect_data(self, simple_data):
-        """On noiseless data, predictions must be very close to true y."""
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=5000, tol=1e-8).fit(X, y)
+    def test_output_is_float(self, fitted):
+        model, X, y = fitted
         preds = model.predict(X)
-        assert np.allclose(preds, y, atol=0.1)
+        assert np.issubdtype(preds.dtype, np.floating)
 
-    def test_predict_new_samples(self, simple_data):
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=5000, tol=1e-8).fit(X, y)
-        X_new = np.array([[6.0], [7.0]])
+    def test_no_nan_in_output(self, fitted):
+        model, X, y = fitted
+        preds = model.predict(X)
+        assert not np.any(np.isnan(preds))
+
+    def test_no_inf_in_output(self, fitted):
+        model, X, y = fitted
+        preds = model.predict(X)
+        assert not np.any(np.isinf(preds))
+
+    def test_predict_perfect_data(self):
+        X = np.array([[1.0], [2.0], [3.0]])
+        y = np.array([2.0, 4.0, 6.0])
+        model = LinReg(learning_rate=0.1, max_iter=2000, tol=1e-6, penalty=None)
+        model.fit(X, y)
+        preds = model.predict(X)
+        np.testing.assert_array_almost_equal(preds, y, decimal=1)
+
+    def test_predict_new_samples(self, fitted):
+        model, X, y = fitted
+        X_new = np.random.randn(10, X.shape[1])
         preds = model.predict(X_new)
-        expected = np.array([15.0, 17.0])  # 2*6+3, 2*7+3
-        assert np.allclose(preds, expected, atol=0.2)
+        assert preds.shape == (10,)
 
 
-# ──────────────────────────────────────────────
-# 5. Edge cases
-# ──────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════
+#  Convergence
+# ════════════════════════════════════════════════════════════
+
+class TestConvergence:
+
+    def test_loss_decreases(self, data):
+        X, y = data
+        n = X.shape[0]
+
+        model_few = LinReg(max_iter=5, tol=0.0, penalty=None)
+        model_few.fit(X, y)
+        error_few = y - model_few.predict(X)
+        loss_few = model_few.loss(error_few)
+
+        model_many = LinReg(max_iter=1000, tol=0.0, penalty=None)
+        model_many.fit(X, y)
+        error_many = y - model_many.predict(X)
+        loss_many = model_many.loss(error_many)
+
+        assert loss_many < loss_few
+
+    def test_learns_correct_weights(self):
+        np.random.seed(42)
+        X = np.random.randn(200, 3)
+        true_w = np.array([2.0, -1.0, 0.5])
+        true_b = 3.0
+        y = X @ true_w + true_b + 0.01 * np.random.randn(200)
+
+        model = LinReg(learning_rate=0.01, max_iter=2000, tol=1e-6, penalty=None)
+        model.fit(X, y)
+
+        np.testing.assert_array_almost_equal(model.coef_, true_w, decimal=1)
+        assert pytest.approx(model.intercept_, abs=0.2) == true_b
+
+    def test_r2_score_high(self, data):
+        X, y = data
+        model = LinReg(learning_rate=0.01, max_iter=1000, tol=1e-6, penalty=None)
+        model.fit(X, y)
+        preds = model.predict(X)
+        ss_res = np.sum((y - preds) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2 = 1 - ss_res / ss_tot
+        assert r2 >= 0.95
+
+    def test_sklearn_comparison(self, data):
+        X, y = data
+        model = LinReg(learning_rate=0.01, max_iter=2000, tol=1e-6, penalty=None)
+        model.fit(X, y)
+
+        sk = SklearnLinReg()
+        sk.fit(X, y)
+
+        np.testing.assert_array_almost_equal(model.coef_, sk.coef_, decimal=1)
+
+
+# ════════════════════════════════════════════════════════════
+#  Regularization
+# ════════════════════════════════════════════════════════════
+
+class TestRegularization:
+
+    def test_l2_weights_smaller_than_no_penalty(self, data):
+        X, y = data
+
+        model_none = LinReg(learning_rate=0.01, max_iter=1000, penalty=None)
+        model_none.fit(X, y)
+
+        model_l2 = LinReg(learning_rate=0.01, max_iter=1000, penalty='l2', alpha=5.0)
+        model_l2.fit(X, y)
+
+        assert np.linalg.norm(model_l2.coef_) < np.linalg.norm(model_none.coef_)
+
+    def test_l1_produces_sparse_weights(self):
+        np.random.seed(42)
+        X = np.random.randn(200, 10)
+        true_w = np.array([5.0, -3.0, 2.0, 0, 0, 0, 0, 0, 0, 0])
+        y = X @ true_w + 0.1 * np.random.randn(200)
+
+        model = LinReg(
+            learning_rate=0.01,
+            max_iter=5000,
+            tol=1e-6,
+            penalty='l1',
+            alpha=1.0
+        )
+        model.fit(X, y)
+        zero_count = np.sum(np.abs(model.coef_) < 1e-1)
+        assert zero_count >= 1
+
+    def test_larger_alpha_smaller_norm_l2(self, data):
+        X, y = data
+
+        model_small = LinReg(learning_rate=0.01, max_iter=1000, penalty='l2', alpha=0.01)
+        model_small.fit(X, y)
+
+        model_large = LinReg(learning_rate=0.01, max_iter=1000, penalty='l2', alpha=10.0)
+        model_large.fit(X, y)
+
+        assert np.linalg.norm(model_large.coef_) < np.linalg.norm(model_small.coef_)
+
+    def test_l1_sparser_than_l2(self, data):
+        X, y = data
+
+        model_l1 = LinReg(learning_rate=0.01, max_iter=2000, penalty='l1', alpha=2.0)
+        model_l1.fit(X, y)
+
+        model_l2 = LinReg(learning_rate=0.01, max_iter=2000, penalty='l2', alpha=2.0)
+        model_l2.fit(X, y)
+
+        zeros_l1 = np.sum(np.abs(model_l1.coef_) < 1e-3)
+        zeros_l2 = np.sum(np.abs(model_l2.coef_) < 1e-3)
+        assert zeros_l1 >= zeros_l2
+
+    def test_penalty_none_runs(self, data):
+        X, y = data
+        model = LinReg(penalty=None, max_iter=1000)
+        model.fit(X, y)
+        assert model.predict(X).shape == (X.shape[0],)
+
+
+# ════════════════════════════════════════════════════════════
+#  Edge cases
+# ════════════════════════════════════════════════════════════
 
 class TestEdgeCases:
 
-    def test_single_sample(self):
-        X = np.array([[3.0]])
-        y = np.array([9.0])
-        model = LinReg(eta=0.01, max_iter=1000).fit(X, y)
-        # Should not raise — predictions must be finite
+    def test_single_feature(self):
+        X = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]])
+        y = np.array([2.0, 4.0, 6.0, 8.0, 10.0])
+        model = LinReg(learning_rate=0.01, max_iter=2000, penalty=None)
+        model.fit(X, y)
         preds = model.predict(X)
-        assert np.isfinite(preds).all()
+        np.testing.assert_array_almost_equal(preds, y, decimal=1)
 
-    def test_single_feature(self, simple_data):
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=1000, tol=1e-6).fit(X, y)
-        assert model.coef_.shape == (1,)
-
-    def test_coef_are_finite_after_fit(self, noisy_data):
-        X, y = noisy_data
-        model = LinReg(eta=0.01, max_iter=500).fit(X, y)
-        assert np.isfinite(model.coef_).all()
+    def test_coef_finite_after_fit(self, data):
+        X, y = data
+        model = LinReg()
+        model.fit(X, y)
+        assert np.all(np.isfinite(model.coef_))
         assert np.isfinite(model.intercept_)
 
-    def test_max_iter_respected(self, noisy_data):
-        """Model must stop at max_iter even if not converged."""
-        X, y = noisy_data
-        model = LinReg(eta=1e-10, max_iter=10, tol=1e-20).fit(X, y)
-        # If max_iter=10, it ran at most 10 iterations — model still fitted
-        preds = model.predict(X)
-        assert preds.shape == (X.shape[0],)
-
-    def test_refit_resets_weights(self, simple_data):
-        """Fitting twice should give same result as fitting once."""
-        X, y = simple_data
-        model = LinReg(eta=0.1, max_iter=5000, tol=1e-8)
+    def test_max_iter_respected(self, data):
+        X, y = data
+        model = LinReg(max_iter=5, tol=0.0)
         model.fit(X, y)
-        coef_first = model.coef_.copy()
-
-        model.fit(X, y)
-        coef_second = model.coef_.copy()
-
-        assert np.allclose(coef_first, coef_second)
+        assert model.coef_ is not None

@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Self
+from typing import Self, Literal
 from ...exc import NotFitted
 
 
@@ -14,103 +14,188 @@ class LinReg:
 
         \\hat{y} = Xw + b
 
-    Parameters are learned by minimizing Mean Squared Error (MSE) loss:
+    The model minimizes the Mean Squared Error (MSE) loss with optional
+    L1 or L2 regularization:
 
     .. math::
 
         J(w, b) = \\frac{1}{n} \\sum_{i=1}^{n} (y_i - \\hat{y}_i)^2
+        + R(w)
 
-    Weights are updated iteratively using batch gradient descent:
+    where :math:`R(w)` is the regularization term:
+
+    - L1 (Lasso): :math:`R(w) = \\frac{\\alpha}{n} \\sum_{j=1}^{p} |w_j|`
+    - L2 (Ridge): :math:`R(w) = \\frac{\\alpha}{2n} \\sum_{j=1}^{p} w_j^2`
+
+    Parameters are learned via batch gradient descent, updating all
+    weights simultaneously using the full training set at each iteration.
+
+    Parameters
+    ----------
+    learning_rate : float, default=0.1
+        Step size for each gradient descent iteration. Must be positive.
+        Larger values may speed up convergence but risk overshooting;
+        smaller values are more stable but require more iterations.
+
+    max_iter : int, default=100
+        Maximum number of gradient descent iterations. Serves as an
+        upper bound to prevent infinite loops if convergence is slow.
+
+    tol : float, default=1e-3
+        Relative tolerance for convergence. Training stops early when
+        the relative change in the training loss satisfies:
+
+        .. math::
+
+            \\frac{|J_{new} - J_{old}|}{J_{old}} \\leq tol
+
+        A scale-invariant criterion suitable for datasets with varying
+        loss magnitudes.
+
+    alpha : float, default=1.0
+        Regularization strength. Must be non-negative. Larger values
+        push weights closer to zero. Ignored when ``penalty=None``.
+
+    penalty : {'l1', 'l2', None}, default='l2'
+        Type of regularization:
+            - ``'l1'`` : Lasso regression
+            - ``'l2'`` : Ridge regression (default)
+            - ``None`` : No regularization (ordinary least squares)
+
+    Attributes
+    ----------
+    coef_ : np.ndarray of shape (n_features,)
+        Learned weights after fitting. Each element corresponds to the
+        coefficient for one input feature.
+
+    intercept_ : float
+        Learned bias term after fitting. Represents the predicted value
+        when all features are zero.
+
+    Notes
+    -----
+    **Gradients**
+
+    The gradients of the MSE component with respect to weights and bias are:
+
+    .. math::
+
+        \\frac{\\partial J_{MSE}}{\\partial w} =
+        -\\frac{2}{n} X^{T}(y - \\hat{y})
+
+        \\frac{\\partial J_{MSE}}{\\partial b} =
+        -\\frac{2}{n} \\sum_{i=1}^{n} (y_i - \\hat{y}_i)
+
+    Regularization adds the following gradient contributions:
+
+    - L1: :math:`\\frac{\\partial R}{\\partial w_j} =
+      \\frac{\\alpha}{n} \\cdot \\text{sign}(w_j)`
+    - L2: :math:`\\frac{\\partial R}{\\partial w} =
+      \\frac{\\alpha}{n} w`
+
+    The intercept :math:`b` is never regularized.
+
+    **Gradient Descent Updates**
 
     .. math::
 
         w := w - \\eta \\cdot \\frac{\\partial J}{\\partial w}
-        = w + \\frac{2\\eta}{n} X^{T}(y - \\hat{y})
 
         b := b - \\eta \\cdot \\frac{\\partial J}{\\partial b}
-        = b + \\frac{2\\eta}{n} \\sum_{i=1}^{n}(y_i - \\hat{y}_i)
 
+    where :math:`\\eta` is the learning rate.
 
-    Parameters
-    ----------
-    eta : float, default=0.1
-        Learning rate controlling the step size at each iteration.
-    max_iter : int, default=100
-        Maximum number of gradient descent iterations.
-    tol : float, default=1e-3
-        Relative tolerance for convergence. Training stops early
-        when the relative change in loss falls below this threshold:
+    **Convergence**
 
-        :math:`\\frac{|J_{new} - J_{old}|}{J_{old}} \\leq tol`
+    The MSE loss is convex, guaranteeing a single global minimum.
+    With a sufficiently small learning rate, gradient descent is
+    guaranteed to converge. Convergence detection uses **relative**
+    tolerance, which is scale-invariant:
 
-    Attributes
-    ----------
-    coef\\_ : np.ndarray of shape (n_features,)
-        Learned weights after fitting.
-    intercept\\_ : float
-        Learned bias term after fitting.
+    - First iteration (:math:`J_{old} = \\infty`) is skipped
+    - If :math:`J_{old} = 0` (perfect fit), training stops immediately
 
-    Notes
-    -----
-    MSE loss is convex with respect to the model parameters,
-    guaranteeing a single global minimum. Gradient descent is
-    therefore guaranteed to converge given a sufficiently small
-    :math:`\\eta`.
+    **Regularization**
 
-    The gradients of MSE with respect to weights and bias are:
-
-    .. math::
-
-        \\frac{\\partial J}{\\partial w} = -\\frac{2}{n} X^{T}(y - \\hat{y})
-
-        \\frac{\\partial J}{\\partial b} =
-        -\\frac{2}{n} \\sum_{i=1}^{n} (y_i - \\hat{y}_i)
-
-    Convergence uses relative tolerance (scale-invariant) rather than
-    absolute tolerance to handle datasets with varying loss magnitudes.
-    Two special cases are handled explicitly:
-
-    - :math:`J_{old} = \\infty` (first iteration) — skipped via ``continue``
-    - :math:`J_{old} = 0` (perfect fit) — stopped immediately via ``break``
-
+    - L1 regularization encourages sparse weight vectors by driving
+      some coefficients exactly to zero, performing implicit feature
+      selection.
+    - L2 regularization shrinks all weights toward zero without
+      eliminating them, improving numerical stability when features
+      are correlated.
+    - The subgradient is used for L1 at :math:`w_j = 0` (treated as 0),
+      so coefficients can become exactly zero.
     Examples
     --------
-    >>> model = LinReg(eta=0.01, max_iter=500)
-    >>> model.fit(X_train, y_train)
-    >>> predictions = model.predict(X_test)
+    >>> import numpy as np
+    >>> from mlkit import LinReg
+    >>> # Generate synthetic data
+    >>> np.random.seed(42)
+    >>> X = np.random.randn(100, 3)
+    >>> true_w = np.array([1.5, -2.0, 0.5])
+    >>> true_b = 4.0
+    >>> y = X @ true_w + true_b + 0.1 * np.random.randn(100)
+    >>>
+    >>> # Fit ordinary least squares
+    >>> model = LinReg(learning_rate=0.01, max_iter=1000, penalty=None)
+    >>> model.fit(X, y)
+    >>> print(f"Coef: {model.coef_}")
+    >>> print(f"Intercept: {model.intercept_:.3f}")
+    >>>
+    >>> # Fit with L2 (Ridge) regularization
+    >>> ridge = LinReg(learning_rate=0.01, alpha=0.1, penalty='l2')
+    >>> ridge.fit(X, y)
+    >>>
+    >>> # Make predictions
+    >>> X_new = np.random.randn(10, 3)
+    >>> predictions = model.predict(X_new)
     """
 
     def __init__(
             self,
-            eta: float = 1e-1,
+            learning_rate: float = 1e-1,
             max_iter: int = 100,
-            tol: float = 1e-3
+            tol: float = 1e-3,
+            alpha: float = 1.0,
+            penalty: Literal['l1', 'l2', None] = 'l2'
     ) -> None:
 
-        self.eta = eta
+        self.learning_rate = learning_rate
         self.max_iter = max_iter
         self.tol = tol
+        self.alpha = alpha
+        self.penalty = penalty
         self.__fitted = False
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> Self:
         """
-        Fit the model to training data using batch gradient descent.
+        Fit the linear regression model to training data.
 
         Initializes weights and bias to zero, then iteratively updates
-        them using the MSE gradient. Training stops when the relative
-        change in loss falls below ``tol`` or ``max_iter`` is reached.
+        them using batch gradient descent on the MSE loss (with optional
+        regularization). Training stops when the relative change in loss
+        falls below ``tol`` or ``max_iter`` is reached.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-            Training feature matrix.
+            Training feature matrix. Should be dense and numeric.
+            If 1D, reshape to (-1, 1) before passing.
+
         y : np.ndarray of shape (n_samples,)
-            Continuous target values.
+            Continuous target values. Must have the same number of
+            samples as ``X``.
 
         Returns
         -------
         self : LinReg
-            Fitted estimator.
+            Fitted estimator instance.
+
+        Raises
+        ------
+        ValueError
+            If ``X`` and ``y`` have incompatible shapes (e.g., different
+            number of samples).
         """
 
         self.coef_ = np.zeros(X.shape[1])
@@ -120,9 +205,8 @@ class LinReg:
         for _ in range(self.max_iter):
             y_pred = self.__cal_y(X)
             error = y - y_pred
-            self.coef_ += self.eta * (2 / n) * X.T @ error
-            self.intercept_ += self.eta * (2 / n) * np.sum(error)
-            J_new = np.mean(error ** 2)
+            self.param_update(X, error)
+            J_new = self.loss(error)
             if np.isinf(J_old):
                 J_old = J_new
                 continue
@@ -133,9 +217,63 @@ class LinReg:
         self.__fitted = True
         return self
 
+    def loss(self, error: np.ndarray) -> float:
+        """
+        Compute the current value of the objective function.
+
+        Combines Mean Squared Error with the configured
+        regularization term (if any).
+
+        Parameters
+        ----------
+        error : np.ndarray of shape (n_samples,)
+            Residuals :math:`(y - \\hat{y})`.
+
+        Returns
+        -------
+        float
+            Scalar value of the loss :math:`J(w, b)`.
+        """
+
+        n = error.shape[0]
+        J_new = np.mean(error ** 2)
+        if self.penalty == 'l1':
+            J_new += (self.alpha / n) * np.sum(np.abs(self.coef_))
+        elif self.penalty == 'l2':
+            J_new += (self.alpha / (2 * n)) * np.sum(self.coef_ ** 2)
+        return J_new
+
+    def param_update(self, X: np.ndarray, error: np.ndarray) -> None:
+        """
+        Perform one gradient descent update of weights and bias.
+
+        Computes the full gradient of the loss (MSE + regularization)
+        and updates ``coef_`` and ``intercept_`` in place using the
+        configured learning rate.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+            Training feature matrix.
+
+        error : np.ndarray of shape (n_samples,)
+            Residuals :math:`(y - \\hat{y})`.
+        """
+
+        n = X.shape[0]
+        grad_w = - 2 * (X.T @ error)
+        grad_b = - 2 * np.sum(error)
+        if self.penalty == 'l1':
+            sign = np.where(self.coef_ > 0, 1, np.where(self.coef_ < 0, -1, 0))
+            grad_w += self.alpha * sign
+        elif self.penalty == 'l2':
+            grad_w += self.alpha * self.coef_
+        self.coef_ -= (self.learning_rate / n) * grad_w
+        self.intercept_ -= (self.learning_rate / n) * grad_b
+
     def __cal_y(self, X: np.ndarray) -> np.ndarray:
         """
-        Compute predictions using current weights and bias.
+        Compute predicted values using current weights and bias.
 
         Evaluates the linear model:
 
@@ -151,14 +289,14 @@ class LinReg:
         Returns
         -------
         y_pred : np.ndarray of shape (n_samples,)
-            Linear combination of inputs and learned weights.
+            Linear combination of inputs and learned parameters.
         """
 
         return X @ self.coef_ + self.intercept_
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predict target values for input data.
+        Predict target values for new data using the fitted model.
 
         Parameters
         ----------
@@ -173,7 +311,7 @@ class LinReg:
         Raises
         ------
         NotFitted
-            If called before fitting the model.
+            If the model has not been fitted to training data yet.
         """
 
         if not self.__fitted:
