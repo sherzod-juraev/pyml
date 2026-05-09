@@ -8,3 +8,5 @@ Supervised learning models for predicting continuous target values.
 
     knn
     linear_reg
+    lasso
+    ridge

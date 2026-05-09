@@ -5,17 +5,19 @@ from .preprocess import *
 
 
 __all__ = [
-    # classify
+
     'DTClassifier',
     'KNNClassifier',
     'LogReg',
-    # regression
+
     'KNNRegression',
     'LinReg',
-    # cluster
+    'Lasso',
+    'Ridge',
+
     'Kmeans',
     'DBSCAN',
-    # preprocess
+
     'MinMaxScaler',
     'StandardScaler',
     'RobustScaler',
