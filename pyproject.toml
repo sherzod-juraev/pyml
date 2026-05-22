@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyml"
+version = "0.1.0"
+description = "Pure Python Machine Learning - classic algorithms from scratch"
+requires-python = ">=3.11"
+authors = [{name = "Sherzod Juraev"}]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["machine-learning", "education", "from-scratch"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+]
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-sugar>=1.0", "ruff>=0.1.0", "mypy>=1.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyml", "pyml.*"]
+exclude = ["tests", "tests.*", "docs", "docs.*"]
+
+[tool.setuptools.package-data]
+pyml = ["**/*.pyi", "py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers --strict-config -p no:warnings"
+filterwarnings = [
+    "ignore::UserWarning",
+]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501", 'N803', 'N806']
+
+[tool.ruff.lint.pep8-naming]
+ignore-names = [
+    "X",
+    "test_fit_stores_X",
+    "test_fit_stores_X_",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+warn_return_any = true
+disallow_any_generics = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "sklearn.*"]
+ignore_missing_imports = true

@@ -1,6 +1,6 @@
 DBSCAN
 =======
 
-.. autoclass:: mlkit.cluster.DBSCAN
+.. autoclass:: pyml.cluster.DBSCAN
     :members:
     :show-inheritance:

@@ -1,1 +1,0 @@
-from .logistic import LogReg

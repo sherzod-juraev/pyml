@@ -1,6 +1,6 @@
 K-Means
 =======
 
-.. autoclass:: mlkit.cluster.Kmeans
+.. autoclass:: pyml.cluster.Kmeans
     :members:
     :show-inheritance:

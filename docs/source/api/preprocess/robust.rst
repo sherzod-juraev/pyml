@@ -1,8 +1,7 @@
 Robust Scaler
 =============
 
-Scales features using statistics robust to outliers.
 
-.. autoclass:: mlkit.preprocess.RobustScaler
+.. autoclass:: pyml.preprocess.RobustScaler
    :members:
    :show-inheritance:

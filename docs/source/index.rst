@@ -1,4 +1,4 @@
-mlkit Documentation
+pyml Documentation
 ===================
 
 
@@ -6,7 +6,7 @@ mlkit Documentation
     :maxdepth: 2
     :caption: Contents:
 
-    api/regress/index
-    api/classify/index
+    api/linear_model/index
     api/cluster/index
+    api/neighbors/index
     api/preprocess/index

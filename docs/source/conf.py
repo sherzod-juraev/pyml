@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath('../../'))
 
 
-project = 'mlkit'
+project = 'pyml'
 copyright = '2026, Sherzod Juraev'
 author = 'Sherzod Juraev'
 release = '0.1.0'
