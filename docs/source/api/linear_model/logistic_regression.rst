@@ -1,5 +1,5 @@
 Logistic Regression
-=================
+====================
 
 
 .. autoclass:: pyml.linear_model.LogisticRegression

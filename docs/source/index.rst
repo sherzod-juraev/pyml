@@ -10,3 +10,4 @@ pyml Documentation
     api/cluster/index
     api/neighbors/index
     api/preprocess/index
+    api/tree/index

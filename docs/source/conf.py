@@ -79,8 +79,3 @@ napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
 add_module_names = False
-
-
-html_static_path = ['_static']
-html_css_files = ['css/custom.css']
-html_js_files = ['js/custom.js']

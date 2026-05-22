@@ -30,6 +30,7 @@ class DBSCAN:
     .. math::
 
         N_{\\varepsilon}(p) = \\{ q \\in D \\mid dist(p, q) \\leq \\varepsilon \\}
+
     **Border point** — not a core point itself, but lies within the
     :math:`\\varepsilon`-neighborhood of at least one core point.
 
