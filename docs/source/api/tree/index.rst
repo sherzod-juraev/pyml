@@ -4,4 +4,5 @@ Tree Models
 .. toctree::
     :maxdepth: 1
 
-    decision_tree
+    dt_classifier
+    dt_regressor

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from sklearn.datasets import make_classification
 
-from pyml.tree.decision_tree import DTClassifier
+from pyml.tree.dt_classifier import DTClassifier
 
 
 class TestDTClassifier:

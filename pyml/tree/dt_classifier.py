@@ -397,7 +397,7 @@ class DTClassifier:
         cur_node = self.root
         while cur_node is not None:
             if cur_node.value is not None:
-                return cur_node.value
+                return int(cur_node.value)
             if cur_node.feature is not None and cur_node.threshold is not None:
                 if x[cur_node.feature] >= cur_node.threshold:
                     cur_node = cur_node.right
