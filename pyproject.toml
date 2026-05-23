@@ -69,13 +69,6 @@ target-version = "py311"
 select = ["E", "F", "I", "N", "W"]
 ignore = ["E501", 'N803', 'N806']
 
-[tool.ruff.lint.pep8-naming]
-ignore-names = [
-    "X",
-    "test_fit_stores_X",
-    "test_fit_stores_X_",
-]
-
 [tool.mypy]
 python_version = "3.11"
 strict = true
