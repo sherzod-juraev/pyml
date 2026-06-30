@@ -1,229 +1,494 @@
 import numpy as np
 import pytest
-from sklearn.preprocessing import (
-    MinMaxScaler as SkMinMaxScaler,
-)
-from sklearn.preprocessing import (
-    RobustScaler as SkRobustScaler,
-)
-from sklearn.preprocessing import (
-    StandardScaler as SkStandardScaler,
-)
 
-from pyml.preprocess import MinMaxScaler, RobustScaler, StandardScaler
+from pyml.exc import NotFittedError
+from pyml import (
+    MinMaxScaler,
+    StandardScaler,
+    RobustScaler,
+)
 
 
 class TestMinMaxScaler:
-    """Compare pyml MinMaxScaler against sklearn."""
+    def test_fit_computes_min_and_max(self):
+        X = np.array([
+            [1.0, 5.0],
+            [3.0, 7.0],
+            [2.0, 6.0],
+        ])
 
-    def test_against_sklearn(self):
-        rng = np.random.default_rng(42)
-        X = rng.uniform(-10, 10, size=(100, 5)).astype(np.float64)
-        X_test = rng.uniform(-10, 10, size=(50, 5)).astype(np.float64)
+        scaler = MinMaxScaler().fit(X)
 
-        sk = SkMinMaxScaler()
-        my = MinMaxScaler()
+        assert np.allclose(scaler.min_, [1.0, 5.0])
+        assert np.allclose(scaler.max_, [3.0, 7.0])
 
-        sk.fit(X)
-        my.fit(X)
+    def test_transform_matches_formula(self):
+        X = np.array([
+            [0.0, 10.0],
+            [10.0, 20.0],
+        ])
 
-        assert np.allclose(sk.data_min_, my.min_), "min_ mismatch"
-        assert np.allclose(sk.data_max_, my.max_), "max_ mismatch"
+        scaler = MinMaxScaler().fit(X)
 
-        sk_transformed = sk.transform(X_test)
-        my_transformed = my.transform(X_test)
+        X_test = np.array([[5.0, 15.0]])
+        expected = np.array([[0.5, 0.5]])
 
-        assert np.allclose(sk_transformed, my_transformed, rtol=1e-10)
+        assert np.allclose(
+            scaler.transform(X_test),
+            expected,
+        )
 
     def test_inverse_transform(self):
-        rng = np.random.default_rng(7)
-        X = rng.uniform(-5, 5, size=(50, 3)).astype(np.float64)
-        X_test = rng.uniform(-5, 5, size=(20, 3)).astype(np.float64)
+        rng = np.random.default_rng(0)
 
-        my = MinMaxScaler().fit(X)
-        transformed = my.transform(X_test)
-        original = my.inverse_transform(transformed)
+        X = rng.normal(size=(40, 4))
 
-        assert np.allclose(original, X_test, rtol=1e-10)
+        scaler = MinMaxScaler().fit(X)
 
-    def test_fit_transform(self):
-        rng = np.random.default_rng(1)
-        X = rng.uniform(-3, 3, size=(30, 4)).astype(np.float64)
-
-        my = MinMaxScaler()
-        X_scaled = my.fit_transform(X)
-
-        # fit_transform should produce same result as fit + transform
-        my2 = MinMaxScaler()
-        my2.fit(X)
-        assert np.allclose(X_scaled, my2.transform(X), rtol=1e-10)
-
-    def test_constant_feature(self):
-        X = np.array([[1.0, 5.0], [1.0, 5.0], [1.0, 5.0]], dtype=np.float64)
-
-        sk = SkMinMaxScaler().fit(X)
-        my = MinMaxScaler().fit(X)
-
-        assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-10)
-
-    def test_not_fitted_raises(self):
-        scaler = MinMaxScaler()
-        X = np.random.randn(10, 3)
-        with pytest.raises(Exception):
+        recovered = scaler.inverse_transform(
             scaler.transform(X)
+        )
+
+        assert np.allclose(recovered, X)
+
+    def test_fit_transform_equals_fit_then_transform(self):
+        rng = np.random.default_rng(1)
+
+        X = rng.normal(size=(50, 3))
+
+        scaler1 = MinMaxScaler()
+        out1 = scaler1.fit_transform(X)
+
+        scaler2 = MinMaxScaler()
+        scaler2.fit(X)
+        out2 = scaler2.transform(X)
+
+        assert np.allclose(out1, out2)
+
+    def test_constant_feature_becomes_zero(self):
+        X = np.array([
+            [5.0, 1.0],
+            [5.0, 2.0],
+            [5.0, 3.0],
+        ])
+
+        scaler = MinMaxScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert np.allclose(Xt[:, 0], 0.0)
+
+    def test_transform_before_fit_raises(self):
+        scaler = MinMaxScaler()
+
+        with pytest.raises(NotFittedError):
+            scaler.transform(np.ones((2, 2)))
+
+    def test_single_sample(self):
+        X = np.array([[5.0, 10.0]])
+
+        scaler = MinMaxScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert Xt.shape == X.shape
+        assert np.allclose(Xt, np.zeros_like(X))
+
+    def test_single_feature(self):
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+        ])
+
+        scaler = MinMaxScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        expected = np.array([
+            [0.0],
+            [0.5],
+            [1.0],
+        ])
+
+        assert np.allclose(Xt, expected)
 
 
 class TestStandardScaler:
-    """Compare pyml StandardScaler against sklearn."""
+    def test_fit_computes_mean_and_std(self):
+        X = np.array([
+            [1.0, 2.0],
+            [3.0, 4.0],
+            [5.0, 6.0],
+        ])
 
-    def test_against_sklearn(self):
-        rng = np.random.default_rng(42)
-        X = rng.uniform(-10, 10, size=(100, 5)).astype(np.float64)
-        X_test = rng.uniform(-10, 10, size=(50, 5)).astype(np.float64)
+        scaler = StandardScaler().fit(X)
 
-        sk = SkStandardScaler()
-        my = StandardScaler()
+        assert np.allclose(scaler.mean_, np.mean(X, axis=0))
+        assert np.allclose(scaler.std_, np.std(X, axis=0))
 
-        sk.fit(X)
-        my.fit(X)
+    def test_transform_matches_formula(self):
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+        ])
 
-        assert np.allclose(sk.mean_, my.mean_), "mean_ mismatch"
-        assert np.allclose(sk.scale_, my.std_), "std_ mismatch"
+        scaler = StandardScaler().fit(X)
 
-        sk_transformed = sk.transform(X_test)
-        my_transformed = my.transform(X_test)
+        expected = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
 
-        assert np.allclose(sk_transformed, my_transformed, rtol=1e-10)
+        assert np.allclose(
+            scaler.transform(X),
+            expected,
+        )
+
+    def test_transformed_mean_is_zero(self):
+        rng = np.random.default_rng(0)
+
+        X = rng.normal(size=(200, 5))
+
+        scaler = StandardScaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.allclose(
+            Xt.mean(axis=0),
+            np.zeros(5),
+            atol=1e-10,
+        )
+
+    def test_transformed_std_is_one(self):
+        rng = np.random.default_rng(1)
+
+        X = rng.normal(size=(200, 5))
+
+        scaler = StandardScaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.allclose(
+            Xt.std(axis=0),
+            np.ones(5),
+            atol=1e-10,
+        )
 
     def test_inverse_transform(self):
-        rng = np.random.default_rng(7)
-        X = rng.uniform(-5, 5, size=(50, 3)).astype(np.float64)
-        X_test = rng.uniform(-5, 5, size=(20, 3)).astype(np.float64)
+        rng = np.random.default_rng(2)
 
-        my = StandardScaler().fit(X)
-        transformed = my.transform(X_test)
-        original = my.inverse_transform(transformed)
+        X = rng.normal(size=(50, 4))
 
-        assert np.allclose(original, X_test, rtol=1e-10)
+        scaler = StandardScaler().fit(X)
 
-    def test_fit_transform(self):
-        rng = np.random.default_rng(1)
-        X = rng.uniform(-3, 3, size=(30, 4)).astype(np.float64)
-
-        my = StandardScaler()
-        X_scaled = my.fit_transform(X)
-
-        my2 = StandardScaler().fit(X)
-        assert np.allclose(X_scaled, my2.transform(X), rtol=1e-10)
-
-    def test_constant_feature(self):
-        X = np.array([[1.0, 5.0], [1.0, 5.0], [1.0, 5.0]], dtype=np.float64)
-
-        sk = SkStandardScaler().fit(X)
-        my = StandardScaler().fit(X)
-
-        assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-10)
-
-    def test_not_fitted_raises(self):
-        scaler = StandardScaler()
-        X = np.random.randn(10, 3)
-        with pytest.raises(Exception):
+        recovered = scaler.inverse_transform(
             scaler.transform(X)
+        )
+
+        assert np.allclose(recovered, X)
+
+    def test_fit_transform_equals_fit_then_transform(self):
+        rng = np.random.default_rng(3)
+
+        X = rng.normal(size=(40, 3))
+
+        scaler1 = StandardScaler()
+        out1 = scaler1.fit_transform(X)
+
+        scaler2 = StandardScaler()
+        scaler2.fit(X)
+        out2 = scaler2.transform(X)
+
+        assert np.allclose(out1, out2)
+
+    def test_constant_feature_becomes_zero(self):
+        X = np.array([
+            [5.0, 1.0],
+            [5.0, 2.0],
+            [5.0, 3.0],
+        ])
+
+        scaler = StandardScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert np.allclose(Xt[:, 0], 0.0)
+
+    def test_transform_before_fit_raises(self):
+        scaler = StandardScaler()
+
+        with pytest.raises(NotFittedError):
+            scaler.transform(np.ones((2, 2)))
+
+    def test_single_sample(self):
+        X = np.array([[10.0, 20.0]])
+
+        scaler = StandardScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert Xt.shape == X.shape
+        assert np.allclose(Xt, np.zeros_like(X))
+
+    def test_single_feature(self):
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+        ])
+
+        scaler = StandardScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert Xt.shape == X.shape
+        assert np.allclose(np.mean(Xt), 0.0, atol=1e-10)
+        assert np.allclose(np.std(Xt), 1.0, atol=1e-10)
 
 
 class TestRobustScaler:
-    """Compare pyml RobustScaler against sklearn."""
+    def test_fit_computes_median_and_iqr(self):
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+            [4.0],
+            [100.0],
+        ])
 
-    def test_against_sklearn(self):
-        rng = np.random.default_rng(42)
-        X = rng.uniform(-10, 10, size=(100, 5)).astype(np.float64)
-        X_test = rng.uniform(-10, 10, size=(50, 5)).astype(np.float64)
+        scaler = RobustScaler().fit(X)
 
-        sk = SkRobustScaler()
-        my = RobustScaler()
+        expected_median = np.median(X, axis=0)
+        expected_iqr = (
+            np.percentile(X, 75, axis=0)
+            - np.percentile(X, 25, axis=0)
+        )
 
-        sk.fit(X)
-        my.fit(X)
+        assert np.allclose(scaler.median_, expected_median)
+        assert np.allclose(scaler.iqr_, expected_iqr)
 
-        assert np.allclose(sk.center_, my.median_), "median_ mismatch"
-        assert np.allclose(sk.scale_, my.iqr_), "iqr_ mismatch"
+    def test_transform_matches_formula(self):
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+            [4.0],
+            [5.0],
+        ])
 
-        sk_transformed = sk.transform(X_test)
-        my_transformed = my.transform(X_test)
+        scaler = RobustScaler().fit(X)
 
-        assert np.allclose(sk_transformed, my_transformed, rtol=1e-10)
+        expected = (
+            X - np.median(X, axis=0)
+        ) / (
+            np.percentile(X, 75, axis=0)
+            - np.percentile(X, 25, axis=0)
+        )
+
+        assert np.allclose(
+            scaler.transform(X),
+            expected,
+        )
+
+    def test_transformed_median_is_zero(self):
+        rng = np.random.default_rng(0)
+
+        X = rng.normal(size=(200, 4))
+
+        scaler = RobustScaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.allclose(
+            np.median(Xt, axis=0),
+            np.zeros(4),
+            atol=1e-10,
+        )
 
     def test_inverse_transform(self):
-        rng = np.random.default_rng(7)
-        X = rng.uniform(-5, 5, size=(50, 3)).astype(np.float64)
-        X_test = rng.uniform(-5, 5, size=(20, 3)).astype(np.float64)
-
-        my = RobustScaler().fit(X)
-        transformed = my.transform(X_test)
-        original = my.inverse_transform(transformed)
-
-        assert np.allclose(original, X_test, rtol=1e-10)
-
-    def test_fit_transform(self):
         rng = np.random.default_rng(1)
-        X = rng.uniform(-3, 3, size=(30, 4)).astype(np.float64)
 
-        my = RobustScaler()
-        X_scaled = my.fit_transform(X)
+        X = rng.normal(size=(60, 5))
 
-        my2 = RobustScaler().fit(X)
-        assert np.allclose(X_scaled, my2.transform(X), rtol=1e-10)
+        scaler = RobustScaler().fit(X)
 
-    def test_constant_feature(self):
-        X = np.array([[1.0, 5.0], [1.0, 5.0], [1.0, 5.0]], dtype=np.float64)
-
-        sk = SkRobustScaler().fit(X)
-        my = RobustScaler().fit(X)
-
-        assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-10)
-
-    def test_not_fitted_raises(self):
-        scaler = RobustScaler()
-        X = np.random.randn(10, 3)
-        with pytest.raises(Exception):
+        recovered = scaler.inverse_transform(
             scaler.transform(X)
+        )
 
+        assert np.allclose(recovered, X)
 
-class TestScalersEdgeCases:
-    """Edge cases for all scalers."""
+    def test_fit_transform_equals_fit_then_transform(self):
+        rng = np.random.default_rng(2)
+
+        X = rng.normal(size=(40, 3))
+
+        scaler1 = RobustScaler()
+        out1 = scaler1.fit_transform(X)
+
+        scaler2 = RobustScaler()
+        scaler2.fit(X)
+        out2 = scaler2.transform(X)
+
+        assert np.allclose(out1, out2)
+
+    def test_constant_feature_becomes_zero(self):
+        X = np.array([
+            [5.0, 1.0],
+            [5.0, 2.0],
+            [5.0, 3.0],
+        ])
+
+        scaler = RobustScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert np.allclose(Xt[:, 0], 0.0)
+
+    def test_transform_before_fit_raises(self):
+        scaler = RobustScaler()
+
+        with pytest.raises(NotFittedError):
+            scaler.transform(np.ones((2, 2)))
 
     def test_single_sample(self):
-        X = np.array([[1.0, 2.0]], dtype=np.float64)
+        X = np.array([[5.0, 10.0]])
 
-        for MyScaler, SkScaler in [
-            (MinMaxScaler, SkMinMaxScaler),
-            (StandardScaler, SkStandardScaler),
-            (RobustScaler, SkRobustScaler),
-        ]:
-            sk = SkScaler().fit(X)
-            my = MyScaler().fit(X)
-            assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-10)
+        scaler = RobustScaler().fit(X)
+
+        Xt = scaler.transform(X)
+
+        assert Xt.shape == X.shape
+        assert np.allclose(Xt, np.zeros_like(X))
 
     def test_single_feature(self):
-        X = np.random.randn(50, 1).astype(np.float64)
+        X = np.array([
+            [1.0],
+            [2.0],
+            [3.0],
+            [4.0],
+            [5.0],
+        ])
 
-        for MyScaler, SkScaler in [
-            (MinMaxScaler, SkMinMaxScaler),
-            (StandardScaler, SkStandardScaler),
-            (RobustScaler, SkRobustScaler),
-        ]:
-            sk = SkScaler().fit(X)
-            my = MyScaler().fit(X)
-            assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-10)
+        scaler = RobustScaler().fit(X)
 
-    def test_large_values(self):
-        X = np.random.uniform(1e6, 1e7, size=(50, 3)).astype(np.float64)
+        Xt = scaler.transform(X)
 
-        for MyScaler, SkScaler in [
-            (MinMaxScaler, SkMinMaxScaler),
-            (StandardScaler, SkStandardScaler),
-            (RobustScaler, SkRobustScaler),
-        ]:
-            sk = SkScaler().fit(X)
-            my = MyScaler().fit(X)
-            assert np.allclose(sk.transform(X), my.transform(X), rtol=1e-5)
+        assert Xt.shape == X.shape
+        assert np.allclose(np.median(Xt), 0.0, atol=1e-10)
+
+
+class TestScalerEdgeCases:
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_integer_input_returns_float_output(self, Scaler):
+        X = np.array([
+            [1, 2],
+            [3, 4],
+            [5, 6],
+        ], dtype=int)
+
+        scaler = Scaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.issubdtype(Xt.dtype, np.floating)
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_output_shape_matches_input(self, Scaler):
+        rng = np.random.default_rng(0)
+
+        X = rng.normal(size=(50, 7))
+
+        scaler = Scaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert Xt.shape == X.shape
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_inverse_transform_recovers_original(self, Scaler):
+        rng = np.random.default_rng(1)
+
+        X = rng.normal(size=(100, 4))
+
+        scaler = Scaler().fit(X)
+
+        recovered = scaler.inverse_transform(
+            scaler.transform(X)
+        )
+
+        assert np.allclose(recovered, X)
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_fit_transform_equals_fit_then_transform(self, Scaler):
+        rng = np.random.default_rng(2)
+
+        X = rng.normal(size=(60, 3))
+
+        scaler1 = Scaler()
+        Xt1 = scaler1.fit_transform(X)
+
+        scaler2 = Scaler()
+        scaler2.fit(X)
+        Xt2 = scaler2.transform(X)
+
+        assert np.allclose(Xt1, Xt2)
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_large_values(self, Scaler):
+        rng = np.random.default_rng(3)
+
+        X = rng.uniform(
+            1e8,
+            1e9,
+            size=(100, 5),
+        )
+
+        scaler = Scaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.isfinite(Xt).all()
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_negative_values(self, Scaler):
+        rng = np.random.default_rng(4)
+
+        X = rng.uniform(
+            -100,
+            100,
+            size=(80, 4),
+        )
+
+        scaler = Scaler()
+
+        Xt = scaler.fit_transform(X)
+
+        assert np.isfinite(Xt).all()
+
+    @pytest.mark.parametrize(
+        "Scaler",
+        [MinMaxScaler, StandardScaler, RobustScaler],
+    )
+    def test_transform_before_fit_raises(self, Scaler):
+        scaler = Scaler()
+
+        with pytest.raises(NotFittedError):
+            scaler.transform(np.ones((5, 2)))

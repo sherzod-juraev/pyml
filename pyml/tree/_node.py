@@ -1,17 +1,16 @@
-from typing import Optional, Self
+from typing import Self
 
 from numpy import float64
 
 
 class Node:
-
     def __init__(
-            self,
-            feature: Optional[int] = None,
-            threshold: Optional[float] | int = None,
-            left: Optional[Self] = None,
-            right: Optional[Self] = None,
-            value: Optional[int] | float64 = None
+        self,
+        feature: int | None = None,
+        threshold: float | None | int = None,
+        left: Self | None = None,
+        right: Self | None = None,
+        value: int | None | float64 = None,
     ) -> None:
         self.feature = feature
         self.threshold = threshold

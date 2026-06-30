@@ -29,7 +29,7 @@ html_theme_options = {
         "color-brand-content": "#A78BFA",
     },
 
-    "source_repository": "https://github.com/sherzod-juraev/ml_collection",
+    "source_repository": "https://github.com/sherzod-juraev/pyml",
     "source_branch": "main",
     "source_directory": "docs/source/",
 

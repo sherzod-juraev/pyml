@@ -4,8 +4,8 @@ from .logistic_regression import LogisticRegression
 from .ridge import Ridge
 
 __all__ = [
-    'LinearRegression',
-    'LogisticRegression',
-    'Lasso',
-    'Ridge',
+    "Lasso",
+    "LinearRegression",
+    "LogisticRegression",
+    "Ridge",
 ]

@@ -2,24 +2,26 @@
 
 **Classical ML algorithms built from scratch with NumPy.**
 
-[![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml) 
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/) 
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) 
 [![Version](https://img.shields.io/badge/version-0.1.0-orange)](https://github.com/sherzod-juraev/pyml/releases)
-
----
 
 ## About
 
-`pyml` is a self-contained machine learning library implementing classic
-algorithms entirely from scratch. Every model is built with NumPy and SciPy —
-no TensorFlow, no PyTorch, just the math.
+`pyml` is an educational machine learning library that implements classical
+algorithms entirely from scratch using only NumPy and SciPy. No external ML
+frameworks are used in any model implementation — every algorithm is built
+by hand from mathematical foundations.
 
-This is an educational project, a companion to [`pydsa`](https://github.com/sherzod-juraev/pydsa) (Data Structures &
-Algorithms from scratch). The goal is understanding ML internals through
-implementation, testing, and comparison with scikit-learn.
+The library is designed for students and practitioners who want to understand
+*how* machine learning algorithms work internally, not just *how to use* them.
+Each model is documented with full mathematical derivations, algorithmic
+descriptions, and numerical stability considerations.
 
----
+**scikit-learn is used exclusively for synthetic dataset generation in tests**
+(e.g., `make_classification`, `make_regression`). No scikit-learn estimators
+are used for comparison or validation — the library stands on its own.
 
 ## Installation
 
@@ -68,7 +70,7 @@ predictions = model.predict(scaler.transform(X_new))
 | Cluster        |                    K-Means, DBSCAN                     |
 | Preprocessing  |       MinMaxScaler, StandardScaler, RobustScaler       |
 
-12 machine learning models + 3 preprocessing scalers | 111 tests passing
+13 models & scalers — all implemented from scratch with NumPy/SciPy.
 
 ## Project structure
 ```text
@@ -79,39 +81,79 @@ pyml/
 ├── cluster        # K-Means, DBSCAN
 ├── preprocess     # Scalers
 └── exc            # Custom exceptions
-tests/             # 111 tests passing   
+tests/             # Test suite  
 ```
 
 ## Testing
 ```bash
 pytest tests/ -v
 ```
-All models tested for
+
+### All models are tested for:
 - Shape consistency
 - Finite values (no NaN/inf)
-- Basic accuracy
-- Edge cases (single sample, constant target)
-- Scikit-learn parity (ballpark accuracy)
+- Basic accuracy on simple problems
+- Edge cases (single sample, constant target, zero variance)
+
+Test datasets are generated using numpy.random and, where convenient,
+sklearn.datasets (synthetic data only — no sklearn models are invoked).
 
 ## Quality
 
-| Tool               | Status      |
-|--------------------|-------------|
-| pytest (111 tests) | ✅           |
-| ruff (linting)     | 0 errors    |
-| mypy (strict mode) | 0 errors    |
-| GitHub Actions CI  | ✅           |
+| Tool               |   Status    |                         Configuration                          |
+|:-------------------|:-----------:|:--------------------------------------------------------------:|
+| pytest             | 204 passing |                                                                |
+| ruff (linting)     |  0 errors   | `E, F, I, N, W, UP, B, C4, SIM, D, ARG, RUF, T20, FLY, Q, RSE` |
+| mypy (type check)  |  0 errors   |                  `strict = true` Python 3.12                   |
+| CI                 |   Passing   |                         Github Actions                         |
 
-## Disclaimer
-This is **alpha educational software** — not intended for production use.
-Updates are frequent and APIs may change between releases.
+## Documentation
+API documentation with full mathematical derivations is generated using
+Sphinx and can be built locally. The documentation has not yet been
+published to a public website.
+
+### Install documentation dependencies
+```bash
+pip install -e ".[docs]"
+```
+### Navigate to the docs directory
+```bash
+cd docs
+```
+### Build HTML documentation
+```bash
+make html        # on Linux/macOS
+.\make.bat html  # on Windows
+```
+### Open in browser
+```bash
+start build\html\index.html     # Windows
+open build/html/index.html      # macOS
+xdg-open build/html/index.html  # Linux
+```
+The documentation is written in NumPy docstring format with LaTeX math
+rendered via MathJax.
+
+## Academic context
+This project is developed as part of an undergraduate Artificial Intelligence
+curriculum at the [National University of Uzbekistan](https://nuu.uz).
+
+The philosophy behind this project is the same: understand by building.
+No black boxes — only transparent mathematical implementations in code.
+
+## Limitations
+This is **educational software**, not a production library. Known limitations
+include:
+
+- No GPU acceleration or distributed computing support.
+- Limited to dense NumPy arrays (no sparse matrix support).
+
+These design choices prioritize clarity of implementation over computational
+efficiency.
 
 ## Author
-**Sherzod Juraev** — a 3rd-year Artificial Intelligence student at the [National University of Uzbekistan](https://nuu.uz).
-
-This project is part of a larger journey: understanding the foundations
-of computer science and machine learning by building them from scratch.
-See also: [`pydsa`](https://github.com/sherzod-juraev/pydsa) — Data Structures & Algorithms in pure Python.
+**Sherzod Juraev** — a 3rd-year Artificial Intelligence student
+at the [National University of Uzbekistan](https://nuu.uz).
 
 ## License
 MIT — see [LICENSE](LICENSE) for details

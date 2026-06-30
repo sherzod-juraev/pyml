@@ -1,178 +1,217 @@
 import numpy as np
 import pytest
-from sklearn.datasets import make_blobs, make_classification
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier as SkKNN
 
-from pyml.neighbors.knn_classifier import KNNClassifier
+from pyml import KNNClassifier
+from pyml.exc import NotFittedError
 
 
-class TestKNNClassifierPredictions:
-    """Prediction consistency and correctness."""
+class TestBasicCorrectness:
+    def test_two_well_separated_clusters(self):
+        X_train = np.array([
+            [0.0, 0.0], [1.0, 0.0], [0.0, 1.0],   # class 0
+            [10.0, 10.0], [11.0, 10.0], [10.0, 11.0],  # class 1
+        ])
+        y_train = np.array([0, 0, 0, 1, 1, 1])
 
-    @pytest.fixture
-    def simple_data(self):
-        X, y = make_blobs(n_samples=100, centers=3, n_features=2, random_state=42)
-        return X, y
+        model = KNNClassifier(k=3, metric="euclidean", weighting="uniform")
+        model.fit(X_train, y_train)
 
-    @pytest.fixture
-    def binary_data(self):
-        X, y = make_classification(n_samples=100, n_features=4, n_classes=2, random_state=42)
-        return X, y
+        pred = model.predict(np.array([[0.5, 0.5]]))
+        assert pred[0] == 0
 
-    def test_predict_same_as_train_labels(self, simple_data):
-        """Training data predicted labels match true labels (k=1)."""
-        X, y = simple_data
+        pred = model.predict(np.array([[10.5, 10.5]]))
+        assert pred[0] == 1
+
+    def test_multiple_query_points_at_once(self):
+        X_train = np.array([[0.0, 0.0], [1.0, 1.0], [10.0, 10.0], [11.0, 11.0]])
+        y_train = np.array([0, 0, 1, 1])
+
+        model = KNNClassifier(k=1, metric="euclidean")
+        model.fit(X_train, y_train)
+
+        preds = model.predict(np.array([[0.1, 0.1], [10.1, 10.1]]))
+        assert preds.shape == (2,)
+        assert preds[0] == 0
+        assert preds[1] == 1
+
+    def test_k1_on_training_data_is_perfect(self):
+        rng = np.random.default_rng(42)
+        X = rng.normal(size=(30, 4))
+        y = rng.integers(0, 3, size=30)
+
         model = KNNClassifier(k=1)
         model.fit(X, y)
-        pred = model.predict(X)
-        assert np.array_equal(pred, y)
+        preds = model.predict(X)
 
-    def test_predict_shape(self, simple_data):
-        """Predict returns correct shape."""
-        X, y = simple_data
-        model = KNNClassifier(k=3).fit(X, y)
-        X_test = np.random.randn(20, 2).astype(np.float64)
-        pred = model.predict(X_test)
-        assert pred.shape == (20,)
-
-    def test_predict_single_sample(self, simple_data):
-        """Single sample prediction works."""
-        X, y = simple_data
-        model = KNNClassifier(k=3).fit(X, y)
-        pred = model.predict(X[:1])
-        assert pred.shape == (1,)
-
-    def test_predict_1d_input(self, simple_data):
-        """1D input auto-reshaped."""
-        X, y = simple_data
-        model = KNNClassifier(k=3).fit(X, y)
-        pred = model.predict(X[0])
-        assert pred.shape == (1,)
-
-    def test_binary_output(self, binary_data):
-        """Output contains only valid classes."""
-        X, y = binary_data
-        model = KNNClassifier(k=3).fit(X, y)
-        pred = model.predict(X)
-        assert set(np.unique(pred)).issubset(set(np.unique(y)))
-
-    def test_uniform_vs_distance_different(self, simple_data):
-        """Uniform and distance weighting can produce different results."""
-        X, y = simple_data
-        X_test = np.random.randn(10, 2).astype(np.float64)
-
-        uniform = KNNClassifier(k=5, weighting='uniform').fit(X, y)
-        distance = KNNClassifier(k=5, weighting='distance').fit(X, y)
-
-        # They should both produce valid predictions (not crash)
-        assert uniform.predict(X_test).shape == (10,)
-        assert distance.predict(X_test).shape == (10,)
-
-    def test_different_k_values(self, simple_data):
-        """Different k values all produce valid predictions."""
-        X, y = simple_data
-        for k in [1, 3, 5, 10]:
-            model = KNNClassifier(k=k).fit(X, y)
-            pred = model.predict(X[:5])
-            assert pred.shape == (5,)
-
-    def test_different_metrics(self, simple_data):
-        """Different distance metrics all work."""
-        X, y = simple_data
-        for metric in ['euclidean', 'cityblock', 'chebyshev']:
-            model = KNNClassifier(k=3, metric=metric).fit(X, y)
-            pred = model.predict(X[:5])
-            assert pred.shape == (5,)
-
-    def test_cosine_metric(self, simple_data):
-        """Cosine distance works."""
-        X, y = simple_data
-        model = KNNClassifier(k=3, metric='cosine').fit(X, y)
-        pred = model.predict(X[:5])
-        assert pred.shape == (5,)
-
-    def test_reproducibility(self, simple_data):
-        """Same input → same output."""
-        X, y = simple_data
-        model = KNNClassifier(k=3).fit(X, y)
-        pred1 = model.predict(X)
-        pred2 = model.predict(X)
-        assert np.array_equal(pred1, pred2)
+        assert np.array_equal(preds, y)
 
 
-class TestKNNClassifierEdgeCases:
-    """Edge cases and error handling."""
-
-    def test_not_fitted_raises(self):
-        model = KNNClassifier(k=3)
-        X = np.random.randn(10, 3).astype(np.float64)
-        with pytest.raises(Exception):
-            model.predict(X)
-
-    def test_k_larger_than_samples_raises(self):
-        X = np.random.randn(5, 2).astype(np.float64)
-        y = np.array([0, 1, 0, 1, 0])
-        model = KNNClassifier(k=10)
-        model.fit(X, y)
-        with pytest.raises(ValueError):
-            model.predict(X)
-
+class TestKValidation:
     def test_k_zero_raises(self):
-        X = np.random.randn(10, 2).astype(np.float64)
-        y = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+        X = np.array([[0.0, 0.0], [1.0, 1.0]])
+        y = np.array([0, 1])
         model = KNNClassifier(k=0)
         model.fit(X, y)
         with pytest.raises(ValueError):
-            model.predict(X)
+            model.predict(np.array([[0.5, 0.5]]))
 
-    def test_negative_k_raises(self):
-        X = np.random.randn(10, 2).astype(np.float64)
-        y = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
-        model = KNNClassifier(k=-1)
+    def test_k_negative_raises(self):
+        X = np.array([[0.0, 0.0], [1.0, 1.0]])
+        y = np.array([0, 1])
+        model = KNNClassifier(k=-3)
         model.fit(X, y)
         with pytest.raises(ValueError):
-            model.predict(X)
+            model.predict(np.array([[0.5, 0.5]]))
 
-    def test_single_sample_training(self):
-        X = np.array([[1.0, 2.0]], dtype=np.float64)
-        y = np.array([1])
-        model = KNNClassifier(k=1).fit(X, y)
-        pred = model.predict(X)
-        assert np.array_equal(pred, y)
+    def test_k_exceeds_n_samples_raises(self):
+        X = np.array([[0.0, 0.0], [1.0, 1.0]])
+        y = np.array([0, 1])
+        model = KNNClassifier(k=5)
+        model.fit(X, y)
+        with pytest.raises(ValueError):
+            model.predict(np.array([[0.5, 0.5]]))
 
-    def test_k_equals_n_samples(self):
-        X = np.random.randn(5, 2).astype(np.float64)
-        y = np.array([0, 1, 0, 1, 0])
-        model = KNNClassifier(k=5).fit(X, y)
-        pred = model.predict(X)
-        assert pred.shape == (5,)
-
-    def test_non_integer_labels(self):
-        X = np.random.randn(20, 2).astype(np.float64)
-        y = np.array(['a', 'b'] * 10)
-        model = KNNClassifier(k=3).fit(X, y)
-        pred = model.predict(X[:5])
-        assert pred.shape == (5,)
-        assert set(pred).issubset({'a', 'b'})
+    def test_k_equals_n_samples_is_valid(self):
+        X = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0]])
+        y = np.array([0, 1, 1])
+        model = KNNClassifier(k=3)
+        model.fit(X, y)
+        pred = model.predict(np.array([[0.0, 0.0]]))
+        assert pred.shape == (1,)
 
 
-class TestKNNClassifierAccuracy:
-    """Accuracy against sklearn (ballpark)."""
+class TestNotFitted:
+    def test_predict_before_fit_raises(self):
+        model = KNNClassifier(k=3)
+        with pytest.raises(NotFittedError):
+            model.predict(np.array([[0.0, 0.0]]))
 
-    def test_accuracy_close_to_sklearn(self):
 
-        X, y = make_classification(n_samples=300, n_features=5, n_classes=3,
-                                    n_clusters_per_class=1, random_state=42)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+class TestDistanceMetrics:
+    def test_euclidean_matches_manual_calc(self):
+        X_train = np.array([[3.0, 4.0], [100.0, 100.0]])
+        y_train = np.array([0, 1])
 
-        sk = SkKNN(n_neighbors=5, weights='uniform', metric='euclidean')
-        my = KNNClassifier(k=5, weighting='uniform', metric='euclidean')
+        model = KNNClassifier(k=1, metric="euclidean")
+        model.fit(X_train, y_train)
+        pred = model.predict(np.array([[0.0, 0.0]]))
+        assert pred[0] == 0
 
-        sk.fit(X_train, y_train)
-        my.fit(X_train, y_train)
+    def test_cityblock_changes_nearest_neighbor(self):
+        X_train = np.array([[5.0, 0.0], [3.0, 3.0]])
+        y_train = np.array([0, 1])
 
-        sk_acc = np.mean(sk.predict(X_test) == y_test)
-        my_acc = np.mean(my.predict(X_test) == y_test)
+        model_euclidean = KNNClassifier(k=1, metric="euclidean")
+        model_euclidean.fit(X_train, y_train)
+        pred_euclidean = model_euclidean.predict(np.array([[0.0, 0.0]]))
 
-        assert abs(sk_acc - my_acc) < 0.05, f"Accuracy gap: {abs(sk_acc - my_acc)}"
+        model_cityblock = KNNClassifier(k=1, metric="cityblock")
+        model_cityblock.fit(X_train, y_train)
+        pred_cityblock = model_cityblock.predict(np.array([[0.0, 0.0]]))
+
+        assert pred_euclidean[0] == 1
+        assert pred_cityblock[0] == 0
+
+    def test_chebyshev_uses_max_coordinate_diff(self):
+        X_train = np.array([[1.0, 9.0], [5.0, 5.0]])
+        y_train = np.array([0, 1])
+
+        model = KNNClassifier(k=1, metric="chebyshev")
+        model.fit(X_train, y_train)
+        pred = model.predict(np.array([[0.0, 0.0]]))
+        assert pred[0] == 1
+
+    def test_cosine_ignores_magnitude(self):
+        X_train = np.array([[10.0, 10.0], [1.0, -1.0]])
+        y_train = np.array([0, 1])
+
+        model = KNNClassifier(k=1, metric="cosine")
+        model.fit(X_train, y_train)
+        pred = model.predict(np.array([[1.0, 1.0]]))
+        assert pred[0] == 0
+
+
+class TestWeighting:
+    def test_uniform_vs_distance_give_different_results(self):
+        X_train = np.array([
+            [5.0, 0.0],   # class 0, distance = 5
+            [-5.0, 0.0],  # class 0, distance = 5
+            [0.1, 0.0],   # class 1, distance = 0.1
+        ])
+        y_train = np.array([0, 0, 1])
+
+        model_uniform = KNNClassifier(k=3, weighting="uniform")
+        model_uniform.fit(X_train, y_train)
+        pred_uniform = model_uniform.predict(np.array([[0.0, 0.0]]))
+
+        model_distance = KNNClassifier(k=3, weighting="distance")
+        model_distance.fit(X_train, y_train)
+        pred_distance = model_distance.predict(np.array([[0.0, 0.0]]))
+
+        assert pred_uniform[0] == 0
+        assert pred_distance[0] == 1
+
+    def test_distance_weighting_exact_match_dominates(self):
+        X_train = np.array([
+            [0.0, 0.0],   # class 1
+            [1.0, 0.0],   # class 0
+            [2.0, 0.0],   # class 0
+        ])
+        y_train = np.array([1, 0, 0])
+
+        model = KNNClassifier(k=3, weighting="distance")
+        model.fit(X_train, y_train)
+        pred = model.predict(np.array([[0.0, 0.0]]))
+        assert pred[0] == 1
+
+
+class TestInputShapes:
+    def test_single_1d_query_point_is_reshaped(self):
+        X_train = np.array([[0.0, 0.0], [10.0, 10.0]])
+        y_train = np.array([0, 1])
+
+        model = KNNClassifier(k=1)
+        model.fit(X_train, y_train)
+
+        pred = model.predict(np.array([0.5, 0.5]))  # 1-D input
+        assert pred.shape == (1,)
+        assert pred[0] == 0
+
+    def test_2d_query_with_single_row_works_too(self):
+        X_train = np.array([[0.0, 0.0], [10.0, 10.0]])
+        y_train = np.array([0, 1])
+
+        model = KNNClassifier(k=1)
+        model.fit(X_train, y_train)
+
+        pred = model.predict(np.array([[0.5, 0.5]]))  # 2-D, 1 qator
+        assert pred.shape == (1,)
+        assert pred[0] == 0
+
+
+class TestSanityCheckWithRealDataset:
+    def test_iris_k1_perfect_on_training_set(self):
+        from sklearn.datasets import load_iris
+
+        X, y = load_iris(return_X_y=True)
+        model = KNNClassifier(k=1)
+        model.fit(X, y)
+        preds = model.predict(X)
+
+        assert np.array_equal(preds, y)
+
+    def test_iris_reasonable_accuracy_with_train_test_split(self):
+        from sklearn.datasets import load_iris
+        from sklearn.model_selection import train_test_split
+
+        X, y = load_iris(return_X_y=True)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.3, random_state=42
+        )
+
+        model = KNNClassifier(k=5, weighting="distance")
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+
+        accuracy = np.mean(preds == y_test)
+        assert accuracy > 0.8

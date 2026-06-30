@@ -1,9 +1,27 @@
+r"""Lasso Regression with L1 regularization trained via Batch Gradient Descent.
+
+This module provides a thin wrapper around :class:`LinearRegression`
+with ``penalty`` fixed to ``'l1'``, producing sparse weight vectors
+by driving irrelevant feature coefficients to exactly zero.
+
+Classes
+-------
+Lasso
+    L1-regularized linear regression for sparse feature selection.
+
+Notes
+-----
+L1 regularization creates a non-differentiable objective at zero,
+requiring subgradient methods. This implementation uses subgradient-based
+batch gradient descent — simpler but slower than Coordinate Descent
+with soft-thresholding used in production solvers like scikit-learn.
+"""
+
 from .linear_regression import LinearRegression
 
 
 class Lasso(LinearRegression):
-    """
-    Lasso Regression (L1-regularized Linear Regression).
+    r"""Lasso Regression (L1-regularized Linear Regression).
 
     A specialization of Linear Regression that applies L1 regularization
     to the weight vector, encouraging sparse solutions by driving some
@@ -13,13 +31,13 @@ class Lasso(LinearRegression):
 
     .. math::
 
-        J(w, b) = \\frac{1}{n} \\sum_{i=1}^{n} (y_i - \\hat{y}_i)^2
-        + \\frac{\\alpha}{n} \\sum_{j=1}^{p} |w_j|
+        J(w, b) = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
+        + \frac{\alpha}{n} \sum_{j=1}^{p} |w_j|
 
-    where :math:`\\alpha` controls the regularization strength.
+    where :math:`\alpha` controls the regularization strength.
     Parameters are learned via batch gradient descent.
 
-    This class is a thin wrapper around :class:`LinReg` with
+    This class is a thin wrapper around :class:`LinearRegression` with
     ``penalty`` fixed to ``'l1'``. All training logic, convergence
     detection, and gradient updates are inherited from the parent class.
 
@@ -27,16 +45,14 @@ class Lasso(LinearRegression):
     ----------
     learning_rate : float, default=0.1
         Step size for each gradient descent iteration. Must be positive.
-
     max_iter : int, default=100
         Maximum number of gradient descent iterations.
-
     tol : float, default=1e-3
         Relative tolerance for early stopping. Training halts when:
 
         .. math::
 
-            \\frac{|J_{new} - J_{old}|}{J_{old}} \\leq tol
+            \frac{|J_{new} - J_{old}|}{J_{old}} \leq tol
 
     alpha : float, default=1.0
         Regularization strength. Must be non-negative. Larger values
@@ -47,7 +63,6 @@ class Lasso(LinearRegression):
     coef_ : np.ndarray of shape (n_features,)
         Learned weight vector after fitting. L1 regularization drives
         some coefficients to exactly zero, producing a sparse solution.
-
     intercept_ : float
         Learned bias term. Never regularized.
 
@@ -62,8 +77,8 @@ class Lasso(LinearRegression):
 
     .. math::
 
-        \\frac{\\partial R}{\\partial w_j} =
-        \\frac{\\alpha}{n} \\cdot \\text{sign}(w_j)
+        \frac{\partial R}{\partial w_j} =
+        \frac{\alpha}{n} \cdot \text{sign}(w_j)
 
     At :math:`w_j = 0`, the subgradient is treated as 0, allowing
     coefficients to remain exactly zero once they reach it.
@@ -74,17 +89,17 @@ class Lasso(LinearRegression):
 
     .. math::
 
-        \\frac{\\partial R}{\\partial w_j} =
-        \\frac{\\alpha}{n} \\cdot \\text{sign}(w_j)
+        \frac{\partial R}{\partial w_j} =
+        \frac{\alpha}{n} \cdot \text{sign}(w_j)
 
     Combined with the MSE gradient, the full weight update becomes:
 
     .. math::
 
-        w := w - \\eta \\left(
-            -\\frac{2}{n} X^T (y - \\hat{y})
-            + \\frac{\\alpha}{n} \\cdot \\text{sign}(w)
-        \\right)
+        w := w - \eta \left(
+            -\frac{2}{n} X^T (y - \hat{y})
+            + \frac{\alpha}{n} \cdot \text{sign}(w)
+        \right)
 
     The bias :math:`b` is not regularized.
 
@@ -126,24 +141,42 @@ class Lasso(LinearRegression):
     >>>
     >>> X_new = np.random.randn(10, 5)
     >>> predictions = model.predict(X_new)
-
-    See Also
-    --------
-    LinReg : Base class with full gradient descent implementation.
-    Ridge : L2-regularized variant that shrinks without sparsity.
     """
 
     def __init__(
-            self,
-            learning_rate: float = 0.1,
-            max_iter: int = 100,
-            tol: float = 1e-3,
-            alpha: float = 1.0
-    ):
+        self,
+        learning_rate: float = 0.1,
+        max_iter: int = 100,
+        tol: float = 1e-3,
+        alpha: float = 1.0,
+    ) -> None:
+        r"""Initialize Lasso model with L1 regularization.
+
+        Passes all hyperparameters to the parent :class:`LinearRegression`
+        with ``penalty`` fixed to ``'l1'``. No additional configuration
+        is needed beyond the standard linear model parameters.
+
+        Parameters
+        ----------
+        learning_rate : float, default=0.1
+            Step size :math:`\eta` for gradient descent updates.
+            Must be positive.
+        max_iter : int, default=100
+            Maximum number of gradient descent iterations.
+        tol : float, default=1e-3
+            Relative tolerance for early stopping convergence check.
+        alpha : float, default=1.0
+            L1 regularization strength :math:`\alpha \geq 0`. Larger
+            values produce sparser weight vectors with more zero entries.
+
+        Returns
+        -------
+        None
+        """
         super().__init__(
             learning_rate=learning_rate,
             max_iter=max_iter,
             tol=tol,
             alpha=alpha,
-            penalty='l1'
+            penalty="l1",
         )

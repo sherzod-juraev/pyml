@@ -1,100 +1,231 @@
 import numpy as np
 import pytest
-from sklearn.datasets import make_blobs, make_moons
 
-from pyml.cluster.dbscan import DBSCAN
+from pyml import DBSCAN
 
 
 class TestDBSCAN:
-    """DBSCAN clustering."""
+    def test_init(self):
+        model = DBSCAN(eps=0.5, MinPts=4, metric="cityblock")
 
-    @pytest.fixture
-    def blob_data(self):
-        X, y = make_blobs(n_samples=100, centers=3, n_features=2, random_state=42)
-        return X
+        assert model.eps == 0.5
+        assert model.MinPts == 4
+        assert model.metric == "cityblock"
 
-    @pytest.fixture
-    def moon_data(self):
-        X, y = make_moons(n_samples=100, noise=0.05, random_state=42)
-        return X
+    def test_invalid_metric(self):
+        model = DBSCAN(eps=0.5, metric="invalid")
 
-    def test_fit_predict_shape(self, blob_data):
-        """Labels match number of samples."""
-        model = DBSCAN(eps=1.0, MinPts=5)
-        labels = model.fit_predict(blob_data)
-        assert labels.shape == (100,)
+        with pytest.raises(ValueError, match="Unsupported metric"):
+            model.fit_predict(np.random.rand(5, 2))
 
-    def test_noise_label(self, blob_data):
-        """Noise points are -1."""
-        model = DBSCAN(eps=0.1, MinPts=50)
-        labels = model.fit_predict(blob_data)
-        assert -1 in labels
+    def test_single_cluster(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [1., 0.],
+            [1., 1.]
+        ])
 
-    def test_clusters_found(self, blob_data):
-        """With reasonable eps, should find clusters."""
-        model = DBSCAN(eps=1.0, MinPts=5)
-        labels = model.fit_predict(blob_data)
-        unique_labels = set(labels)
-        unique_labels.discard(-1)
-        assert len(unique_labels) >= 2
+        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
 
-    def test_all_noise_with_small_eps(self, blob_data):
-        """Very small eps → all noise."""
-        model = DBSCAN(eps=0.01, MinPts=5)
-        labels = model.fit_predict(blob_data)
+        assert np.all(labels == 0)
+
+    def test_two_clusters(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [10., 10.],
+            [10., 11.]
+        ])
+
+        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, 1, 1]))
+
+    def test_detects_noise(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [10., 10.]
+        ])
+
+        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, -1]))
+
+    def test_all_noise(self):
+        X = np.array([
+            [0., 0.],
+            [10., 10.],
+            [20., 20.]
+        ])
+
+        labels = DBSCAN(eps=1.0, MinPts=2).fit_predict(X)
+
         assert np.all(labels == -1)
 
-    def test_single_cluster_with_large_eps(self, blob_data):
-        """Very large eps → one cluster."""
-        model = DBSCAN(eps=100.0, MinPts=5)
-        labels = model.fit_predict(blob_data)
-        unique_labels = set(labels)
-        unique_labels.discard(-1)
-        assert len(unique_labels) == 1
-
-    def test_moons_shape(self, moon_data):
-        """DBSCAN can find non-convex clusters."""
-        model = DBSCAN(eps=0.3, MinPts=5)
-        labels = model.fit_predict(moon_data)
-        unique_labels = set(labels)
-        unique_labels.discard(-1)
-        assert len(unique_labels) >= 2
-
-    def test_deterministic(self, blob_data):
-        """Same input → same output."""
-        model1 = DBSCAN(eps=1.0, MinPts=5)
-        model2 = DBSCAN(eps=1.0, MinPts=5)
-        assert np.array_equal(model1.fit_predict(blob_data), model2.fit_predict(blob_data))
-
-    def test_different_metrics(self, blob_data):
-        """Different metrics produce valid labels."""
-        for metric in ['euclidean', 'cityblock', 'chebyshev']:
-            model = DBSCAN(eps=1.0, MinPts=5, metric=metric)
-            labels = model.fit_predict(blob_data)
-            assert labels.shape == (100,)
-
-    def test_invalid_metric_raises(self, blob_data):
-        model = DBSCAN(eps=1.0, MinPts=5, metric='cosine')
-        with pytest.raises(ValueError):
-            model.fit_predict(blob_data)
-
     def test_single_sample(self):
-        X = np.array([[1.0, 2.0]], dtype=np.float64)
-        model = DBSCAN(eps=1.0, MinPts=1)
-        labels = model.fit_predict(X)
-        assert labels.shape == (1,)
-        assert labels[0] == 0
+        X = np.array([[1., 2.]])
 
-    def test_high_dimensional(self):
-        X = np.random.randn(50, 10).astype(np.float64)
-        model = DBSCAN(eps=5.0, MinPts=3)
-        labels = model.fit_predict(X)
-        assert labels.shape == (50,)
+        labels = DBSCAN(eps=1.0, MinPts=2).fit_predict(X)
 
-    def test_labels_are_sequential(self, blob_data):
-        """Cluster labels should be sequential from 0."""
-        model = DBSCAN(eps=1.0, MinPts=5)
-        labels = model.fit_predict(blob_data)
-        non_noise = labels[labels != -1]
-        if len(non_noise) > 0:
-            assert set(non_noise) == set(range(max(non_noise) + 1))
+        assert np.array_equal(labels, np.array([-1]))
+
+    def test_duplicate_points(self):
+        X = np.array([
+            [1., 1.],
+            [1., 1.],
+            [1., 1.]
+        ])
+
+        labels = DBSCAN(eps=0.1, MinPts=2).fit_predict(X)
+
+        assert np.all(labels == 0)
+
+    def test_euclidean_metric(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [5., 5.]
+        ])
+
+        labels = DBSCAN(
+            eps=1.5,
+            MinPts=2,
+            metric="euclidean"
+        ).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, -1]))
+
+    def test_cityblock_metric(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [5., 5.]
+        ])
+
+        labels = DBSCAN(
+            eps=2.0,
+            MinPts=2,
+            metric="cityblock"
+        ).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, -1]))
+
+    def test_chebyshev_metric(self):
+        X = np.array([
+            [0., 0.],
+            [1., 1.],
+            [5., 5.]
+        ])
+
+        labels = DBSCAN(
+            eps=1.5,
+            MinPts=2,
+            metric="chebyshev"
+        ).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, -1]))
+
+    def test_output_shape(self):
+        X = np.random.rand(20, 4)
+
+        labels = DBSCAN(eps=0.5).fit_predict(X)
+
+        assert labels.shape == (20,)
+
+    def test_output_dtype(self):
+        X = np.random.rand(10, 2)
+
+        labels = DBSCAN(eps=0.5).fit_predict(X)
+
+        assert np.issubdtype(labels.dtype, np.integer)
+
+    def test_check_params(self):
+        model = DBSCAN(eps=0.5, metric="euclidean")
+
+        model.check_params()
+
+    def test_empty_dataset(self):
+        X = np.empty((0, 2))
+
+        labels = DBSCAN(eps=1.0).fit_predict(X)
+
+        assert labels.size == 0
+        assert labels.shape == (0,)
+
+    def test_minpts_one(self):
+        X = np.array([
+            [0., 0.],
+            [10., 10.]
+        ])
+
+        labels = DBSCAN(eps=0.1, MinPts=1).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 1]))
+
+    def test_three_separate_clusters(self):
+        X = np.array([
+            [0., 0.],
+            [0., 0.1],
+
+            [10., 10.],
+            [10., 10.1],
+
+            [20., 20.],
+            [20., 20.1]
+        ])
+
+        labels = DBSCAN(eps=0.5, MinPts=2).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, 1, 1, 2, 2]))
+
+    def test_fit_predict_is_deterministic(self):
+        rng = np.random.default_rng(42)
+        X = rng.random((30, 2))
+
+        model = DBSCAN(eps=0.25, MinPts=3)
+
+        labels1 = model.fit_predict(X)
+        labels2 = model.fit_predict(X)
+
+        assert np.array_equal(labels1, labels2)
+
+    def test_cluster_labels_start_from_zero(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [10., 10.],
+            [10., 11.]
+        ])
+
+        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+
+        clusters = sorted(set(labels) - {-1})
+
+        assert clusters == [0, 1]
+
+    def test_all_points_in_single_cluster(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [1., 0.],
+            [1., 1.],
+            [0.5, 0.5]
+        ])
+
+        labels = DBSCAN(eps=2.0, MinPts=2).fit_predict(X)
+
+        assert np.unique(labels).tolist() == [0]
+
+    def test_noise_and_cluster(self):
+        X = np.array([
+            [0., 0.],
+            [0., 1.],
+            [1., 0.],
+            [10., 10.]
+        ])
+
+        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+
+        assert np.array_equal(labels, np.array([0, 0, 0, -1]))

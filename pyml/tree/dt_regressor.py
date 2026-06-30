@@ -1,4 +1,25 @@
-from typing import Optional, Self
+r"""Decision Tree Regressor.
+
+This module provides a pure NumPy implementation of a Decision Tree
+for regression tasks, using variance reduction (MSE minimization)
+as the splitting criterion with cumulative sum optimization.
+
+Classes
+-------
+DTRegressor
+    Axis-aligned decision tree regressor with configurable depth,
+    minimum sample constraints, and impurity decrease threshold.
+
+Notes
+-----
+The tree is built recursively by partitioning the feature space
+into axis-aligned regions. Candidate thresholds are midpoints
+between consecutive sorted feature values. Uses cumulative sum
+precomputation for :math:`O(n \log n)` per-feature split search.
+Leaf nodes store the mean target value of their assigned samples.
+"""
+
+from typing import Self
 
 import numpy as np
 import numpy.typing as npt
@@ -8,8 +29,7 @@ from ._node import Node
 
 
 class DTRegressor:
-    """
-    Decision Tree Regressor.
+    r"""Decision Tree Regressor.
 
     A non-parametric supervised learning algorithm that partitions the
     feature space into axis-aligned regions and predicts the mean target
@@ -22,74 +42,69 @@ class DTRegressor:
 
     .. math::
 
-        \\Delta(j, s) = \\text{Var}(y) - \\left[
-            \\frac{n_L}{n}\\text{Var}(y_L) + \\frac{n_R}{n}\\text{Var}(y_R)
-        \\right]
-
+        \Delta(j, s) = \text{Var}(y) - \left[
+            \frac{n_L}{n}\text{Var}(y_L) + \frac{n_R}{n}\text{Var}(y_R)
+        \right]
 
     where variance is computed efficiently as:
 
     .. math::
 
-        \\text{Var}(y) = \\frac{\\sum y_i^2}{n}
-            - \\left(\\frac{\\sum y_i}{n}\\right)^2
+        \text{Var}(y) = \frac{\sum y_i^2}{n}
+            - \left(\frac{\sum y_i}{n}\right)^2
 
     **Leaf Prediction** (mean of assigned samples):
 
     .. math::
 
-        \\hat{y}_m = \\frac{1}{|R_m|} \\sum_{x_i \\in R_m} y_i
+        \hat{y}_m = \frac{1}{|R_m|} \sum_{x_i \in R_m} y_i
 
     **Prediction** for a new sample :math:`x`:
 
     .. math::
 
-        \\hat{f}(x) = \\sum_{m=1}^{M} \\hat{y}_m \\cdot \\mathbf{1}[x \\in R_m]
+        \hat{f}(x) = \sum_{m=1}^{M} \hat{y}_m \cdot \mathbf{1}[x \in R_m]
 
     Parameters
     ----------
     max_depth : int, default=5
         Maximum depth of the tree. Controls model complexity and
-        prevents overfitting. Must be :math:`\\geq 1`.
+        prevents overfitting. Must be :math:`\geq 1`. Maximum number
+        of nodes is bounded by:
 
-    .. math::
+        .. math::
 
-        \\text{max\\_nodes} \\leq 2^{\\text{max\\_depth}} - 1
+            \text{max\_nodes} \leq 2^{\text{max\_depth}} - 1
 
     min_split : int, default=5
         Minimum number of samples required to attempt a split.
         Nodes with fewer samples become leaves.
-
     min_leaf : int, default=5
         Minimum number of samples required in each child node.
-        Splits creating leaves with fewer samples are rejected.
+        Splits creating leaves with fewer samples are rejected:
 
         .. math::
 
-            n_L \\geq \\text{min\\_leaf} \\land n_R \\geq \\text{min\\_leaf}
+            n_L \geq \text{min\_leaf} \land n_R \geq \text{min\_leaf}
 
     min_impurity_decrease : float, default=1e-2
         Minimum impurity decrease required for a split to be accepted.
-        Acts as a regularization parameter.
+        Acts as a regularization parameter:
 
         .. math::
 
-            \\Delta(j, s) > \\text{min\\_impurity\\_decrease}
+            \Delta(j, s) > \text{min\_impurity\_decrease}
 
     Attributes
     ----------
     root : Node or None
         Root node of the fitted decision tree. ``None`` before fitting.
-
     max_depth : int
         Maximum depth constraint.
-
     min_split : int
         Minimum samples for splitting.
-
     min_leaf : int
         Minimum samples per leaf.
-
     min_impurity_decrease : float
         Minimum variance reduction threshold.
 
@@ -100,10 +115,10 @@ class DTRegressor:
 
     .. math::
 
-        t = \\frac{u_{(i)} + u_{(i+1)}}{2},
-        \\quad u_{(i)} \\in \\text{sorted}(X_{\\cdot f})
+        t = \frac{u_{(i)} + u_{(i+1)}}{2},
+        \quad u_{(i)} \in \text{sorted}(X_{\cdot f})
 
-    The algorithm uses cumulative sum precomputation for :math:`O(n \\log n)`
+    The algorithm uses cumulative sum precomputation for :math:`O(n \log n)`
     per-feature split search. Recursion stops when:
 
     - ``max_depth`` is reached.
@@ -115,9 +130,11 @@ class DTRegressor:
     Examples
     --------
     >>> import numpy as np
-    >>> from pyml.tree import DTRegressor
-    >>> X = np.array([[1.0], [2.0], [3.0], [4.0], [5.0]])
-    >>> y = np.array([2.0, 4.0, 6.0, 8.0, 10.0])
+    >>> from pyml import DTRegressor
+    >>>
+    >>> X = np.array([[1.], [2.], [3.], [4.], [5.]])
+    >>> y = np.array([2., 4., 6., 8., 10.])
+    >>>
     >>> model = DTRegressor(max_depth=3, min_split=2, min_leaf=1)
     >>> model.fit(X, y)
     >>> model.predict(np.array([[2.5], [4.5]]))
@@ -125,13 +142,34 @@ class DTRegressor:
     """
 
     def __init__(
-            self,
-            max_depth: int = 5,
-            min_split: int = 5,
-            min_leaf: int = 5,
-            min_impurity_decrease: float = 1e-2
+        self,
+        max_depth: int = 5,
+        min_split: int = 5,
+        min_leaf: int = 5,
+        min_impurity_decrease: float = 1e-2,
     ) -> None:
-        self.root: Optional[Node] = None
+        r"""Initialize the Decision Tree Regressor.
+
+        Parameters
+        ----------
+        max_depth : int, default=5
+            Maximum depth of the tree. Controls model complexity and
+            prevents overfitting. Must be :math:`\geq 1`.
+        min_split : int, default=5
+            Minimum number of samples required to attempt a split.
+            Nodes with fewer samples become leaves.
+        min_leaf : int, default=5
+            Minimum number of samples required in each child node
+            for a split to be valid.
+        min_impurity_decrease : float, default=1e-2
+            Minimum variance reduction required for a split to be
+            accepted. Higher values produce simpler trees.
+
+        Returns
+        -------
+        None
+        """
+        self.root: Node | None = None
         self.max_depth: int = max_depth
         self.min_split: int = min_split
         self.min_leaf: int = min_leaf
@@ -139,41 +177,40 @@ class DTRegressor:
         self.__fitted: bool = False
 
     def best_split(
-            self,
-            X: npt.NDArray[np.float64],
-            y: npt.NDArray[np.float64]
-    ) -> tuple[float, Optional[int], Optional[np.float64]]:
-        """
-        Find the optimal feature and threshold to split the data.
+        self, X: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
+    ) -> tuple[float, int | None, np.float64 | None]:
+        r"""Find the optimal feature and threshold to split the data.
 
         Searches all features and candidate thresholds — midpoints
         between consecutive sorted unique feature values:
 
         .. math::
 
-            t = \\frac{u_{(i)} + u_{(i+1)}}{2},
-            \\quad u_{(i)} \\in \\text{sorted}(X_{\\cdot f})
+            t = \frac{u_{(i)} + u_{(i+1)}}{2},
+            \quad u_{(i)} \in \text{sorted}(X_{\cdot f})
 
-        Uses cumulative sums for :math:`O(n \\log n)` per-feature
+        Uses cumulative sums for :math:`O(n \log n)` per-feature
         computation. For each candidate split, computes the variance
         reduction:
 
         .. math::
 
-            \\Delta = \\text{Var}(y) - \\left[
-                \\frac{n_L}{n}\\text{Var}(y_L)
-                + \\frac{n_R}{n}\\text{Var}(y_R)
-            \\right]
+            \Delta = \text{Var}(y) - \left[
+                \frac{n_L}{n}\text{Var}(y_L)
+                + \frac{n_R}{n}\text{Var}(y_R)
+            \right]
 
         where variances are computed via the running-sum formula:
 
         .. math::
 
-            \\text{Var}(y_{1:k}) = \\frac{S^{(2)}_k}{k}
-                - \\left(\\frac{S^{(1)}_k}{k}\\right)^2
+            \text{Var}(y_{1:k}) = \frac{S^{(2)}_k}{k}
+                - \left(\frac{S^{(1)}_k}{k}\right)^2
 
-            S^{(1)}_k = \\sum_{i=1}^{k} y_{(i)}, \\quad
-            S^{(2)}_k = \\sum_{i=1}^{k} y_{(i)}^2
+        .. math::
+
+            S^{(1)}_k = \sum_{i=1}^{k} y_{(i)}, \quad
+            S^{(2)}_k = \sum_{i=1}^{k} y_{(i)}^2
 
         Only considers splits where both children satisfy the
         ``min_leaf`` constraint and feature values are distinct.
@@ -182,7 +219,6 @@ class DTRegressor:
         ----------
         X : np.ndarray of shape (n_samples, n_features)
             Feature matrix at the current node.
-
         y : np.ndarray of shape (n_samples,)
             Target values at the current node.
 
@@ -191,19 +227,17 @@ class DTRegressor:
         best_delta : float
             Maximum variance reduction achieved.
             Returns ``-inf`` if no valid split is found.
-
         best_feature : int or None
             Index of the best feature for splitting.
             ``None`` if no valid split is found.
-
         best_threshold : np.float64 or None
             Optimal threshold value. Midpoint between two
             consecutive sorted feature values.
             ``None`` if no valid split is found.
         """
-        best_threshold: Optional[np.float64] = None
-        best_feature: Optional[int] = None
-        best_delta: float = - np.inf
+        best_threshold: np.float64 | None = None
+        best_feature: int | None = None
+        best_delta: float = -np.inf
         features = X.shape[1]
         n = X.shape[0]
         for feature_id in range(features):
@@ -212,7 +246,7 @@ class DTRegressor:
             X_sorted = feature_col[sorted_idx]
             y_sorted = y[sorted_idx]
             cumsum_y = np.cumsum(y_sorted)
-            cumsum_y_sq = np.cumsum(y_sorted ** 2)
+            cumsum_y_sq = np.cumsum(y_sorted**2)
             total_loss = cumsum_y_sq[n - 1] / n - (cumsum_y[n - 1] / n) ** 2
             for i in range(1, n):
                 n_left = i
@@ -235,13 +269,9 @@ class DTRegressor:
         return (best_delta, best_feature, best_threshold)
 
     def build_tree(
-            self,
-            X: npt.NDArray[np.float64],
-            y: npt.NDArray[np.float64],
-            depth: int
+        self, X: npt.NDArray[np.float64], y: npt.NDArray[np.float64], depth: int
     ) -> Node:
-        """
-        Recursively construct the regression tree.
+        r"""Recursively construct the regression tree.
 
         At each node, finds the best split and recurses on the left
         and right partitions. Stops recursion when:
@@ -256,16 +286,14 @@ class DTRegressor:
 
         .. math::
 
-            \\hat{y}_{\\text{leaf}} = \\frac{1}{n} \\sum_{i=1}^{n} y_i
+            \hat{y}_{\text{leaf}} = \frac{1}{n} \sum_{i=1}^{n} y_i
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
             Feature matrix at the current node.
-
         y : np.ndarray of shape (n_samples,)
             Target values at the current node.
-
         depth : int
             Current depth. Root starts at :math:`0`.
 
@@ -279,8 +307,11 @@ class DTRegressor:
         if depth >= self.max_depth or y.shape[0] < self.min_split:
             return Node(value=np.float64(np.mean(y)))
         best_delta, best_feature, best_threshold = self.best_split(X, y)
-        if best_feature is None or best_threshold is None or \
-                best_delta <= self.min_impurity_decrease:
+        if (
+            best_feature is None
+            or best_threshold is None
+            or best_delta <= self.min_impurity_decrease
+        ):
             return Node(value=np.float64(np.mean(y)))
         left_mask = X[:, best_feature] <= best_threshold
         right_mask = X[:, best_feature] > best_threshold
@@ -290,17 +321,12 @@ class DTRegressor:
             feature=best_feature,
             threshold=best_threshold,
             left=left_node,
-            right=right_node
+            right=right_node,
         )
         return node
 
-    def fit(
-            self,
-            X: npt.NDArray[np.float64],
-            y: npt.NDArray[np.float64]
-    ) -> Self:
-        """
-        Build the decision tree from training data.
+    def fit(self, X: npt.NDArray[np.float64], y: npt.NDArray[np.float64]) -> Self:
+        r"""Build the decision tree from training data.
 
         Constructs a binary tree by recursively partitioning the
         feature space to minimize the weighted MSE. The resulting
@@ -308,17 +334,16 @@ class DTRegressor:
 
         .. math::
 
-            \\hat{f}(x) = \\sum_{m=1}^{M} \\hat{y}_m
-                \\cdot \\mathbf{1}[x \\in R_m]
+            \hat{f}(x) = \sum_{m=1}^{M} \hat{y}_m
+                \cdot \mathbf{1}[x \in R_m]
 
-        where :math:`\\hat{y}_m` is the mean of training samples
+        where :math:`\hat{y}_m` is the mean of training samples
         in region :math:`R_m`.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
             Training feature matrix.
-
         y : np.ndarray of shape (n_samples,)
             Target values.
 
@@ -332,20 +357,19 @@ class DTRegressor:
         return self
 
     def determine_value(self, x: npt.NDArray[np.float64]) -> np.float64:
-        """
-        Predict target value for a single sample.
+        r"""Predict target value for a single sample.
 
         Traverses the tree from ``root`` to a leaf by comparing the
         sample's feature values against node thresholds:
 
-        - If :math:`x_f \\leq t` → go left.
+        - If :math:`x_f \leq t` → go left.
         - If :math:`x_f > t` → go right.
 
         The leaf returns its stored mean value:
 
         .. math::
 
-            \\hat{y} = \\bar{y}_{\\text{leaf}}
+            \hat{y} = \bar{y}_{\text{leaf}}
 
         Parameters
         ----------
@@ -360,14 +384,14 @@ class DTRegressor:
         Raises
         ------
         RuntimeError
-            If an invalid node state is encountered during traversal.
+            If an invalid node state is encountered during traversal
+            or traversal ends unexpectedly.
         """
         current = self.root
         while current is not None:
             if current.value is not None:
                 return np.float64(current.value)
-            elif current.feature is not None and \
-                current.threshold is not None:
+            elif current.feature is not None and current.threshold is not None:
                 if x[current.feature] <= current.threshold:
                     current = current.left
                 else:
@@ -379,20 +403,16 @@ class DTRegressor:
                 )
         raise RuntimeError("Unexpectedly reached end of tree traversal")
 
-    def predict(
-            self,
-            X: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
-        """
-        Predict target values for all samples in X.
+    def predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        r"""Predict target values for all samples in X.
 
         Each sample independently traverses the tree via
         :meth:`determine_value`:
 
         .. math::
 
-            \\hat{y}_i = \\hat{f}(x_i) = \\sum_{m=1}^{M}
-                \\hat{y}_m \\cdot \\mathbf{1}[x_i \\in R_m]
+            \hat{y}_i = \hat{f}(x_i) = \sum_{m=1}^{M}
+                \hat{y}_m \cdot \mathbf{1}[x_i \in R_m]
 
         Parameters
         ----------

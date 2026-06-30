@@ -1,4 +1,26 @@
-from typing import Self, cast
+r"""Feature scaling and normalization utilities.
+
+This module provides pure NumPy implementations of common feature
+scaling techniques for preprocessing data before feeding it to
+machine learning models.
+
+Classes
+-------
+MinMaxScaler
+    Scale features to a fixed [0, 1] range.
+StandardScaler
+    Standardize features to zero mean and unit variance.
+RobustScaler
+    Scale features using median and IQR, robust to outliers.
+
+Notes
+-----
+All scalers follow the scikit-learn API with ``fit``, ``transform``,
+``inverse_transform``, and ``fit_transform`` methods. Constant
+features are handled gracefully to avoid division by zero.
+"""
+
+from typing import Self
 
 import numpy as np
 import numpy.typing as npt
@@ -7,19 +29,19 @@ from ..exc import NotFittedError
 
 
 class MinMaxScaler:
-    """
-    Scale features to a fixed range [0, 1] using min-max normalization.
+    r"""Scale features to a fixed range [0, 1] using min-max normalization.
 
     Each feature is scaled independently based on the minimum and maximum
     values observed during fitting:
 
     .. math::
 
-        X_{scaled} = \\frac{X - X_{min}}{X_{max} - X_{min}}
+        X_{scaled} = \frac{X - X_{min}}{X_{max} - X_{min}}
 
-    Constant features (where :math:`X_{min} == X_{max}`) are handled gracefully by
-    incrementing :math:`X_{max}` by 1, preserving the true minimum and
-    resulting in a zero-filled column after transformation.
+    Constant features (where :math:`X_{min} == X_{max}`) are handled
+    gracefully by incrementing :math:`X_{max}` by 1, preserving the
+    true minimum and resulting in a zero-filled column after
+    transformation.
 
     Attributes
     ----------
@@ -31,35 +53,48 @@ class MinMaxScaler:
     Notes
     -----
     Sensitive to outliers. If the dataset contains extreme values,
-    consider using RobustScaler instead.
+    consider using :class:`RobustScaler` instead.
 
     Examples
     --------
+    >>> from pyml import MinMaxScaler
+    >>> import numpy as np
+    >>>
+    >>> X_train = np.array([[1., 2.], [3., 4.], [5., 6.]])
+    >>>
     >>> scaler = MinMaxScaler()
-    >>> X_train = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     >>> scaler.fit(X_train)
     >>> X_scaled = scaler.transform(X_train)
+    >>> X_scaled
+    array([[0. , 0. ],
+           [0.5, 0.5],
+           [1. , 1. ]])
     >>> X_original = scaler.inverse_transform(X_scaled)
     """
 
     def __init__(self) -> None:
+        r"""Initialize the MinMaxScaler.
+
+        Returns
+        -------
+        None
+        """
         self.__fitted = False
 
     def fit(self, X: npt.NDArray[np.float64]) -> Self:
-        """
-        Compute per-feature minimum and maximum values from training data.
+        r"""Compute per-feature minimum and maximum values from training data.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-            Training data used to compute :math:`X_{min}` and :math:`X_{max}` per feature.
+            Training data used to compute :math:`X_{min}` and
+            :math:`X_{max}` per feature.
 
         Returns
         -------
         self : MinMaxScaler
             Fitted scaler instance.
         """
-
         self.min_ = np.min(X, axis=0)
         self.max_ = np.max(X, axis=0)
         self.__fitted = True
@@ -70,8 +105,13 @@ class MinMaxScaler:
         return self
 
     def transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Scale features of X using the fitted min and max values.
+        r"""Scale features of X using the fitted min and max values.
+
+        Applies the transformation:
+
+        .. math::
+
+            X_{scaled} = \frac{X - X_{min}}{X_{max} - X_{min}}
 
         Parameters
         ----------
@@ -89,16 +129,18 @@ class MinMaxScaler:
         NotFittedError
             If called before fitting the scaler.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='transform()')
-        return cast(
-            npt.NDArray[np.float64], (X - self.min_) / (self.max_ - self.min_)
-        )
+            raise NotFittedError(self, before="transform()")
+        return (X - self.min_) / (self.max_ - self.min_)
 
     def inverse_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Reverse the scaling and return data to its original space.
+        r"""Reverse the scaling and return data to its original space.
+
+        Applies the inverse transformation:
+
+        .. math::
+
+            X = X_{scaled} \cdot (X_{max} - X_{min}) + X_{min}
 
         Parameters
         ----------
@@ -115,18 +157,14 @@ class MinMaxScaler:
         NotFittedError
             If called before fitting the scaler.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='inverse_transform()')
-        return cast(
-            npt.NDArray[np.float64], X * (self.max_ - self.min_) + self.min_
-        )
+            raise NotFittedError(self, before="inverse_transform()")
+        return X * (self.max_ - self.min_) + self.min_
 
     def fit_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Fit to data and return the scaled result in one step.
+        r"""Fit to data and return the scaled result in one step.
 
-        Equivalent to calling fit(X).transform(X).
+        Equivalent to calling ``fit(X).transform(X)``.
 
         Parameters
         ----------
@@ -138,56 +176,68 @@ class MinMaxScaler:
         X_scaled : np.ndarray of shape (n_samples, n_features)
             Scaled data with values in range [0, 1].
         """
-
         return self.fit(X).transform(X)
 
 
 class StandardScaler:
-    """
-    Standardize features by removing the :math:`\\mu` and scaling to unit variance.
+    r"""
+    Standardize features by removing the mean and scaling to unit variance.
 
     Each feature is standardized independently using statistics computed
     during fitting:
 
     .. math::
 
-        X_{scaled} = \\frac{X - \\mu}{\\sigma}
+        X_{scaled} = \frac{X - \mu}{\sigma}
 
-    Also known as Z-score normalization. The resulting distribution of each
-    feature has :math:`\\mu` 0 and :math:`\\sigma` 1.
+    Also known as Z-score normalization. The resulting distribution of
+    each feature has :math:`\mu = 0` and :math:`\sigma = 1`.
 
-    Constant features (where :math:`\\sigma == 0``) are handled gracefully by
-    setting std to 1 while preserving the true mean, resulting in a
+    Constant features (where :math:`\sigma = 0`) are handled gracefully
+    by setting std to 1 while preserving the true mean, resulting in a
     zero-filled column after transformation.
 
     Attributes
     ----------
     mean_ : np.ndarray of shape (n_features,)
-        Per-feature :math:`\\mu` values computed during fit.
+        Per-feature :math:`\mu` values computed during fit.
     std_ : np.ndarray of shape (n_features,)
         Per-feature standard deviations computed during fit.
 
     Notes
     -----
     Assumes data is approximately normally distributed. If the dataset
-    contains significant outliers, consider using RobustScaler instead.
+    contains significant outliers, consider using :class:`RobustScaler`
+    instead.
 
     Examples
     --------
+    >>> from pyml import StandardScaler
+    >>> import numpy as np
+    >>>
+    >>> X_train = np.array([[1., 2.], [3., 4.], [5., 6.]])
+    >>>
     >>> scaler = StandardScaler()
-    >>> X_train = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
     >>> scaler.fit(X_train)
     >>> X_scaled = scaler.transform(X_train)
+    >>> X_scaled
+    array([[-1.224..., -1.224...],
+           [ 0.     ,  0.     ],
+           [ 1.224...,  1.224...]])
     >>> X_original = scaler.inverse_transform(X_scaled)
     """
 
     def __init__(self) -> None:
+        r"""Initialize the StandardScaler.
 
+        Returns
+        -------
+        None
+        """
         self.__fitted = False
 
     def fit(self, X: npt.NDArray[np.float64]) -> Self:
-        """
-        Compute per-feature mean and standard deviation from training data.
+        r"""Compute per-feature mean and standard deviation from training data.
 
         Parameters
         ----------
@@ -199,7 +249,6 @@ class StandardScaler:
         self : StandardScaler
             Fitted scaler instance.
         """
-
         self.mean_ = np.mean(X, axis=0)
         self.std_ = np.std(X, axis=0)
         ind = self.std_ == 0
@@ -209,8 +258,13 @@ class StandardScaler:
         return self
 
     def transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Standardize features of X using the fitted mean and std.
+        r"""Standardize features of X using the fitted mean and std.
+
+        Applies the transformation:
+
+        .. math::
+
+            X_{scaled} = \frac{X - \mu}{\sigma}
 
         Parameters
         ----------
@@ -229,16 +283,18 @@ class StandardScaler:
         NotFittedError
             If called before fitting the scaler.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='transform()')
-        return cast(
-            npt.NDArray[np.float64], (X - self.mean_) / self.std_
-        )
+            raise NotFittedError(self, before="transform()")
+        return (X - self.mean_) / self.std_
 
     def inverse_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Reverse the standardization and return data to its original space.
+        r"""Reverse the standardization and return data to its original space.
+
+        Applies the inverse transformation:
+
+        .. math::
+
+            X = X_{scaled} \cdot \sigma + \mu
 
         Parameters
         ----------
@@ -255,18 +311,14 @@ class StandardScaler:
         NotFittedError
             If called before fitting the scaler.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='inverse_transform()')
-        return cast(
-            npt.NDArray[np.float64], (X * self.std_) + self.mean_
-        )
+            raise NotFittedError(self, before="inverse_transform()")
+        return (X * self.std_) + self.mean_
 
     def fit_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Fit to data and return the standardized result in one step.
+        r"""Fit to data and return the standardized result in one step.
 
-        Equivalent to calling fit(X).transform(X).
+        Equivalent to calling ``fit(X).transform(X)``.
 
         Parameters
         ----------
@@ -275,34 +327,32 @@ class StandardScaler:
 
         Returns
         -------
-        :math:`X_{scaled}` : np.ndarray of shape (n_samples, n_features)
+        X_scaled : np.ndarray of shape (n_samples, n_features)
             Standardized data with mean 0 and standard deviation 1
             per feature.
         """
-
         return self.fit(X).transform(X)
 
 
 class RobustScaler:
-    """
-    Scale features using statistics that are robust to outliers.
+    r"""Scale features using statistics that are robust to outliers.
 
     Each feature is scaled independently using the median and
     interquartile range (IQR) computed during fitting:
 
     .. math::
 
-        X_{scaled} = \\frac{X - median}{IQR}
+        X_{scaled} = \frac{X - median}{IQR}
 
-    where IQR = Q3 - Q1 (75th percentile minus 25th percentile).
+    where :math:`IQR = Q_3 - Q_1` (75th percentile minus 25th percentile).
 
     Because the median and IQR are not influenced by extreme values,
     this scaler is significantly more robust to outliers than
-    MinMaxScaler or StandardScaler.
+    :class:`MinMaxScaler` or :class:`StandardScaler`.
 
-    Constant features (where :math:`IQR == 0`) are handled gracefully by
-    setting IQR to 1 while preserving the true median, resulting in a
-    zero-filled column after transformation.
+    Constant features (where :math:`IQR = 0`) are handled gracefully
+    by setting IQR to 1 while preserving the true median, resulting
+    in a zero-filled column after transformation.
 
     Attributes
     ----------
@@ -319,20 +369,32 @@ class RobustScaler:
 
     Examples
     --------
+    >>> from pyml import RobustScaler
+    >>> import numpy as np
+    >>>
+    >>> X_train = np.array([[1., 2.], [3., 4.], [100., 6.]])
+    >>>
     >>> scaler = RobustScaler()
-    >>> X_train = np.array([[1.0, 2.0], [3.0, 4.0], [100.0, 6.0]])
     >>> scaler.fit(X_train)
     >>> X_scaled = scaler.transform(X_train)
+    >>> X_scaled
+    array([[-1., -1.],
+           [ 0.,  0.],
+           [48.5,  1.]])
     >>> X_original = scaler.inverse_transform(X_scaled)
     """
 
     def __init__(self) -> None:
+        r"""Initialize the RobustScaler.
 
+        Returns
+        -------
+        None
+        """
         self.__fitted = False
 
     def fit(self, X: npt.NDArray[np.float64]) -> Self:
-        """
-        Compute per-feature median and IQR from training data.
+        r"""Compute per-feature median and IQR from training data.
 
         Parameters
         ----------
@@ -344,7 +406,6 @@ class RobustScaler:
         self : RobustScaler
             Fitted scaler instance.
         """
-
         self.median_ = np.percentile(X, 50, axis=0)
         self.iqr_ = np.percentile(X, 75, axis=0) - np.percentile(X, 25, axis=0)
         ind = self.iqr_ == 0
@@ -354,33 +415,30 @@ class RobustScaler:
         return self
 
     def transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Scale features of X using the fitted median and IQR.
+        r"""Compute per-feature median and IQR from training data.
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-            Data to scale. Must have the same number of features as
-            the data used during fit.
+            Training data used to compute median and IQR per feature.
 
         Returns
         -------
-        X_scaled : np.ndarray of shape (n_samples, n_features)
-            Scaled data centered around 0 with unit IQR per feature.
-
-        Raises
-        ------
-        NotFittedError
-            If called before fitting the scaler.
+        self : RobustScaler
+            Fitted scaler instance.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='transform()')
+            raise NotFittedError(self, before="transform()")
         return (X - self.median_) / self.iqr_
 
     def inverse_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Reverse the scaling and return data to its original space.
+        r"""Reverse the scaling and return data to its original space.
+
+        Applies the inverse transformation:
+
+        .. math::
+
+            X = X_{scaled} \cdot IQR + median
 
         Parameters
         ----------
@@ -397,16 +455,14 @@ class RobustScaler:
         NotFittedError
             If called before fitting the scaler.
         """
-
         if not self.__fitted:
-            raise NotFittedError(self, before='inverse_transform()')
+            raise NotFittedError(self, before="inverse_transform()")
         return (X * self.iqr_) + self.median_
 
     def fit_transform(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Fit to data and return the scaled result in one step.
+        r"""Fit to data and return the scaled result in one step.
 
-        Equivalent to calling fit(X).transform(X).
+        Equivalent to calling ``fit(X).transform(X)``.
 
         Parameters
         ----------
@@ -418,5 +474,4 @@ class RobustScaler:
         X_scaled : np.ndarray of shape (n_samples, n_features)
             Scaled data centered around 0 with unit IQR per feature.
         """
-
         return self.fit(X).transform(X)

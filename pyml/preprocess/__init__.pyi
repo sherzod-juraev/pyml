@@ -5,7 +5,7 @@ from .scalers import (
 )
 
 __all__ = [
-    'StandardScaler',
-    'MinMaxScaler',
-    'RobustScaler',
+    "MinMaxScaler",
+    "RobustScaler",
+    "StandardScaler",
 ]

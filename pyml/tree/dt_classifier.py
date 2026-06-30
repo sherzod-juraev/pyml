@@ -1,4 +1,24 @@
-from typing import Literal, Optional, Self, cast
+r"""Decision Tree Classifier.
+
+This module provides a pure NumPy implementation of a Decision Tree
+for classification tasks, supporting both Gini impurity and Shannon
+entropy as splitting criteria.
+
+Classes
+-------
+DTClassifier
+    Axis-aligned decision tree classifier with configurable depth
+    and minimum sample constraints.
+
+Notes
+-----
+The tree is built recursively by partitioning the feature space
+into axis-aligned regions. Candidate thresholds are midpoints
+between consecutive unique feature values. Leaf nodes store the
+majority class of their assigned samples.
+"""
+
+from typing import Literal, Self, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -8,8 +28,7 @@ from ._node import Node
 
 
 class DTClassifier:
-    """
-    Decision Tree Classifier.
+    r"""Decision Tree Classifier.
 
     A non-parametric supervised learning algorithm that partitions the
     feature space into axis-aligned regions and assigns a majority class
@@ -22,7 +41,7 @@ class DTClassifier:
 
     .. math::
 
-        \\text{Gini}(S) = 1 - \\sum_{i=1}^{c} p_i^2
+        \text{Gini}(S) = 1 - \sum_{i=1}^{c} p_i^2
 
     where :math:`p_i` is the proportion of class :math:`i` in node :math:`S`.
     Ranges from :math:`0` (pure) to :math:`0.5` (binary, maximally mixed).
@@ -31,13 +50,13 @@ class DTClassifier:
 
     .. math::
 
-        IG = H(S) - \\frac{n_L}{n} H(S_L) - \\frac{n_R}{n} H(S_R)
+        IG = H(S) - \frac{n_L}{n} H(S_L) - \frac{n_R}{n} H(S_R)
 
     where Shannon entropy is:
 
     .. math::
 
-        H(S) = -\\sum_{i=1}^{c} p_i \\log_2(p_i)
+        H(S) = -\sum_{i=1}^{c} p_i \log_2(p_i)
 
     and :math:`S_L`, :math:`S_R` are the left and right child nodes.
 
@@ -50,7 +69,7 @@ class DTClassifier:
         Minimum number of samples required in each child node for a
         split to be considered valid.
     algorithm : {'gini', 'entropy'}, default='gini'
-        Splitting criterion.
+        Splitting criterion:
 
         - ``'gini'`` — minimizes weighted Gini impurity.
         - ``'entropy'`` — maximizes Information Gain.
@@ -67,7 +86,8 @@ class DTClassifier:
 
     .. math::
 
-        t = \\frac{u_j + u_{j+1}}{2}, \\quad u_j \\in \\text{unique}(x_{\\cdot f})
+        t = \frac{u_j + u_{j+1}}{2},
+        \quad u_j \in \text{unique}(X_{\cdot f})
 
     Leaf nodes store the majority class of their assigned samples.
     Recursion stops when the node is pure, ``max_depth`` is reached,
@@ -75,35 +95,57 @@ class DTClassifier:
 
     Examples
     --------
+    >>> from pyml import DTClassifier
+    >>> import numpy as np
+    >>>
+    >>> X = np.array([[1., 2.], [2., 3.], [3., 4.], [6., 7.]])
+    >>> y = np.array([0, 0, 1, 1])
+    >>>
     >>> clf = DTClassifier(depth=3, min_sample=2, algorithm='gini')
-    >>> clf.fit(X_train, y_train)
-    >>> predictions = clf.predict(X_test)
+    >>> clf.fit(X, y)
+    >>> clf.predict(np.array([[2., 2.], [5., 6.]]))
+    array([0, 1])
     """
 
     def __init__(
-            self,
-            depth: int = 5,
-            min_sample: int = 5,
-            algorithm: Literal['gini', 'entropy'] = 'gini'
+        self,
+        depth: int = 5,
+        min_sample: int = 5,
+        algorithm: Literal["gini", "entropy"] = "gini",
     ) -> None:
+        r"""Initialize the Decision Tree Classifier.
 
-        self.root: Optional[Node] = None
+        Parameters
+        ----------
+        depth : int, default=5
+            Maximum depth of the tree. Limits model complexity and
+            controls overfitting.
+        min_sample : int, default=5
+            Minimum number of samples required in each child node for
+            a split to be considered valid.
+        algorithm : {'gini', 'entropy'}, default='gini'
+            Splitting criterion to use for evaluating candidate splits.
+
+        Returns
+        -------
+        None
+        """
+        self.root: Node | None = None
         self.max_depth = depth
         self.min_sample = min_sample
         self.algorithm = algorithm
         self.__fitted = False
 
     def gini(self, y: npt.NDArray[np.integer]) -> np.float64:
-        """
-        Compute Gini impurity for a node.
+        r"""Compute Gini impurity for a node.
 
         Measures the probability of misclassifying a randomly chosen
         sample if it were labeled according to the class distribution:
 
         .. math::
 
-            \\text{Gini}(y) = 1 - \\sum_{i=1}^{c} p_i^2,
-            \\quad p_i = \\frac{|\\{y_j = i\\}|}{n}
+            \text{Gini}(y) = 1 - \sum_{i=1}^{c} p_i^2,
+            \quad p_i = \frac{|\{y_j = i\}|}{n}
 
         Parameters
         ----------
@@ -116,22 +158,22 @@ class DTClassifier:
             Gini impurity in :math:`[0, 0.5]` for binary classification.
             :math:`0` indicates a perfectly pure node.
         """
-
         n = y.shape[0]
         _, counts = np.unique(y, return_counts=True)
         probs = counts / n
-        return 1 - cast(np.float64, np.sum(probs ** 2))
+        return 1 - cast(np.float64, np.sum(probs**2))
 
-    def weighted_gini(self, y_left: npt.NDArray[np.integer], y_right: npt.NDArray[np.integer]) -> np.float64:
-        """
-        Compute weighted Gini impurity for a binary split.
+    def weighted_gini(
+        self, y_left: npt.NDArray[np.integer], y_right: npt.NDArray[np.integer]
+    ) -> np.float64:
+        r"""Compute weighted Gini impurity for a binary split.
 
         Averages child impurities weighted by their sample proportions:
 
         .. math::
 
-            \\text{WG} = \\frac{n_L}{n} \\text{Gini}(S_L)
-                       + \\frac{n_R}{n} \\text{Gini}(S_R)
+            \text{WG} = \frac{n_L}{n} \text{Gini}(S_L)
+                       + \frac{n_R}{n} \text{Gini}(S_R)
 
         where :math:`n = n_L + n_R`. Lower values indicate better splits.
 
@@ -147,26 +189,25 @@ class DTClassifier:
         weighted_impurity : np.float64
             Weighted Gini impurity of the split.
         """
-
         n = y_left.shape[0] + y_right.shape[0]
         n_left, n_right = y_left.shape[0], y_right.shape[0]
-        weighted_gini = (n_left / n) * self.gini(y_left) \
-            + (n_right / n) * self.gini(y_right)
+        weighted_gini = (n_left / n) * self.gini(y_left) + (n_right / n) * self.gini(
+            y_right
+        )
         return cast(np.float64, weighted_gini)
 
     def entropy(self, y: npt.NDArray[np.integer]) -> np.float64:
-        """
-        Compute Shannon entropy for a node.
+        r"""Compute Shannon entropy for a node.
 
         Measures the uncertainty in the class distribution.
         Higher entropy indicates more mixed classes:
 
         .. math::
 
-            H(y) = -\\sum_{i=1}^{c} p_i \\log_2(p_i + \\varepsilon),
-            \\quad p_i = \\frac{|\\{y_j = i\\}|}{n}
+            H(y) = -\sum_{i=1}^{c} p_i \log_2(p_i + \varepsilon),
+            \quad p_i = \frac{|\{y_j = i\}|}{n}
 
-        where :math:`\\varepsilon = 10^{-12}` prevents :math:`\\log_2(0)`.
+        where :math:`\varepsilon = 10^{-12}` prevents :math:`\log_2(0)`.
 
         Parameters
         ----------
@@ -176,22 +217,22 @@ class DTClassifier:
         Returns
         -------
         entropy : np.float64
-            Entropy in :math:`[0, \\log_2(c)]` where :math:`c` is the
+            Entropy in :math:`[0, \log_2(c)]` where :math:`c` is the
             number of classes. :math:`0` indicates a perfectly pure node.
         """
-
         _, counts = np.unique(y, return_counts=True)
         probs = counts / y.shape[0]
-        entropy = - np.sum(probs * np.log2(probs + 1e-12))
+        entropy = -np.sum(probs * np.log2(probs + 1e-12))
         return cast(np.float64, entropy)
 
-    def weighted_entropy(self, y_left: npt.NDArray[np.integer], y_right: npt.NDArray[np.integer]) -> np.float64:
-        """
-        Compute weighted Shannon entropy for a binary split.
+    def weighted_entropy(
+        self, y_left: npt.NDArray[np.integer], y_right: npt.NDArray[np.integer]
+    ) -> np.float64:
+        r"""Compute weighted Shannon entropy for a binary split.
 
         .. math::
 
-            WH = \\frac{n_L}{n} H(S_L) + \\frac{n_R}{n} H(S_R)
+            WH = \frac{n_L}{n} H(S_L) + \frac{n_R}{n} H(S_R)
 
         where :math:`n = n_L + n_R`. Lower values indicate purer splits.
 
@@ -207,22 +248,26 @@ class DTClassifier:
         weighted_entropy : np.float64
             Weighted entropy of the split.
         """
-
         n = y_left.shape[0] + y_right.shape[0]
-        weighted_entropy = (y_left.shape[0] / n) * self.entropy(y_left) \
-            + (y_right.shape[0] / n) * self.entropy(y_right)
+        weighted_entropy = (y_left.shape[0] / n) * self.entropy(y_left) + (
+            y_right.shape[0] / n
+        ) * self.entropy(y_right)
         return cast(np.float64, weighted_entropy)
 
-    def information_gain(self, y_parent: npt.NDArray[np.integer], y_left: npt.NDArray[np.integer], y_right: npt.NDArray[np.integer]) -> np.float64:
-        """
-        Compute Information Gain for a binary split.
+    def information_gain(
+        self,
+        y_parent: npt.NDArray[np.integer],
+        y_left: npt.NDArray[np.integer],
+        y_right: npt.NDArray[np.integer],
+    ) -> np.float64:
+        r"""Compute Information Gain for a binary split.
 
         Measures the reduction in entropy achieved by splitting
         the parent node. Higher values indicate purer children:
 
         .. math::
 
-            IG = H(S) - \\frac{n_L}{n} H(S_L) - \\frac{n_R}{n} H(S_R)
+            IG = H(S) - \frac{n_L}{n} H(S_L) - \frac{n_R}{n} H(S_R)
 
         Ranges from :math:`0` (no improvement) to :math:`H(S)` (perfect split).
 
@@ -240,20 +285,22 @@ class DTClassifier:
         gain : np.float64
             Information gain. Higher is better.
         """
-
         return self.entropy(y_parent) - self.weighted_entropy(y_left, y_right)
 
-    def best_split(self, X: npt.NDArray[np.float64], y: npt.NDArray[np.integer],) -> tuple[Optional[int], Optional[float]]:
-        """
-        Find the optimal feature and threshold to split the data.
+    def best_split(
+        self,
+        X: npt.NDArray[np.float64],
+        y: npt.NDArray[np.integer],
+    ) -> tuple[int | None, float | None]:
+        r"""Find the optimal feature and threshold to split the data.
 
         Searches all features and candidate thresholds — midpoints
         between consecutive unique feature values:
 
         .. math::
 
-            t = \\frac{u_j + u_{j+1}}{2},
-            \\quad u_j \\in \\text{unique}(X_{\\cdot f})
+            t = \frac{u_j + u_{j+1}}{2},
+            \quad u_j \in \text{unique}(X_{\cdot f})
 
         For ``'gini'`` — minimizes weighted Gini impurity.
         For ``'entropy'`` — maximizes Information Gain.
@@ -277,13 +324,12 @@ class DTClassifier:
             Optimal threshold value for the best split.
             ``None`` if no valid split is found.
         """
-
-        best_threshold: Optional[float] = None
-        best_feature: Optional[int] = None
-        if self.algorithm == 'gini':
+        best_threshold: float | None = None
+        best_feature: int | None = None
+        if self.algorithm == "gini":
             best_score = 1.0
-        elif self.algorithm == 'entropy':
-            best_score = - np.inf
+        elif self.algorithm == "entropy":
+            best_score = -np.inf
         features = X.shape[1]
         for feature_id in range(features):
             feature_col = X[:, feature_id]
@@ -293,17 +339,19 @@ class DTClassifier:
                 y_left: np.ndarray = y[X[:, feature_id] < threshold]
                 y_right: np.ndarray = y[X[:, feature_id] >= threshold]
 
-                if y_left.shape[0] < self.min_sample or \
-                        y_right.shape[0] < self.min_sample:
+                if (
+                    y_left.shape[0] < self.min_sample
+                    or y_right.shape[0] < self.min_sample
+                ):
                     continue
 
-                if self.algorithm == 'gini':
+                if self.algorithm == "gini":
                     score = self.weighted_gini(y_left, y_right)
                     if score < best_score:
                         best_score = score
                         best_threshold = threshold
                         best_feature = feature_id
-                elif self.algorithm == 'entropy':
+                elif self.algorithm == "entropy":
                     score = self.information_gain(y, y_left, y_right)
                     if score > best_score:
                         best_score = score
@@ -311,9 +359,10 @@ class DTClassifier:
                         best_feature = feature_id
         return best_feature, best_threshold
 
-    def build_tree(self, X: npt.NDArray[np.float64], y: npt.NDArray[np.integer], depth: int) -> Node:
-        """
-        Recursively construct the decision tree.
+    def build_tree(
+        self, X: npt.NDArray[np.float64], y: npt.NDArray[np.integer], depth: int
+    ) -> Node:
+        r"""Recursively construct the decision tree.
 
         At each node, finds the best split and recurses on the left
         and right partitions. Stops recursion when:
@@ -338,7 +387,6 @@ class DTClassifier:
             ``value`` (majority class); internal nodes also contain
             ``feature``, ``threshold``, ``left``, and ``right``.
         """
-
         y_uniq, counts = np.unique(y, return_counts=True)
         if y_uniq.shape[0] == 1 or depth >= self.max_depth:
             return Node(value=y_uniq[np.argmax(counts)])
@@ -353,8 +401,7 @@ class DTClassifier:
         return node
 
     def fit(self, X: npt.NDArray[np.float64], y: npt.NDArray[np.integer]) -> Self:
-        """
-        Build the decision tree from training data.
+        r"""Build the decision tree from training data.
 
         Parameters
         ----------
@@ -368,32 +415,29 @@ class DTClassifier:
         self : DTClassifier
             Fitted classifier with ``root`` node set.
         """
-
         self.root = self.build_tree(X, y, 0)
         self.__fitted = True
         return self
 
     def determine_label(self, x: npt.NDArray[np.float64]) -> int:
-        """
-        Predict class label for a single sample.
+        r"""Predict class label for a single sample.
 
         Traverses the tree from ``root`` to a leaf by comparing the
         sample's feature values against node thresholds:
 
-        - If :math:`x[f] \\geq t` → go right.
+        - If :math:`x[f] \geq t` → go right.
         - If :math:`x[f] < t` → go left.
 
         Parameters
         ----------
         x : np.ndarray of shape (n_features,)
-            A single sample to tree.
+            A single sample to classify.
 
         Returns
         -------
         label : int
             Predicted class label at the reached leaf node.
         """
-
         cur_node = self.root
         while cur_node is not None:
             if cur_node.value is not None:
@@ -406,8 +450,7 @@ class DTClassifier:
         return -1
 
     def predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.intp]:
-        """
-        Predict class labels for all samples in X.
+        r"""Predict class labels for all samples in X.
 
         Each sample traverses the tree via :meth:`determine_label`
         until reaching a leaf node whose majority class is returned.
@@ -415,7 +458,7 @@ class DTClassifier:
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
-            Feature matrix of samples to tree.
+            Feature matrix of samples to classify.
 
         Returns
         -------
@@ -427,7 +470,6 @@ class DTClassifier:
         NotFittedError
             If called before fitting the model.
         """
-
         if not self.__fitted:
             raise NotFittedError(self)
         y = np.zeros(shape=X.shape[0], dtype=int)

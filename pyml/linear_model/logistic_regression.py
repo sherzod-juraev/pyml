@@ -1,3 +1,36 @@
+r"""Logistic Regression classifier implementation from scratch.
+
+This module provides a pure NumPy implementation of binary Logistic
+Regression trained via Batch Gradient Descent with optional L1/L2
+regularization.
+
+Classes
+-------
+LogisticRegression
+    Binary logistic regression classifier with L1/L2 regularization.
+
+Examples
+--------
+>>> from pyml import LogisticRegression
+>>> import numpy as np
+>>> X = np.array([[1., 2.], [2., 3.], [3., 4.], [4., 5.]])
+>>> y = np.array([0, 0, 1, 1])
+>>> model = LogisticRegression(learning_rate=0.1, max_iter=500)
+>>> model.fit(X, y)
+>>> model.predict(X)
+array([0, 0, 1, 1])
+
+Notes
+-----
+Numerical stability is ensured by clipping intermediate values
+before computing exponentials and logarithms:
+
+- Linear output :math:`z` is clipped to :math:`[-300, 300]`
+  before applying sigmoid to prevent overflow.
+- Sigmoid output is clipped to :math:`[10^{-15}, 1 - 10^{-15}]`
+  to prevent :math:`\log(0)` in BCE computation.
+"""
+
 from typing import Literal, Self, cast
 
 import numpy as np
@@ -7,9 +40,7 @@ from ._base import BasicLinearModel
 
 
 class LogisticRegression(BasicLinearModel):
-    """
-    Logistic Regression classifier with optional L1/L2 regularization
-    trained via Batch Gradient Descent.
+    r"""Binary logistic regression classifier with optional L1/L2 regularization.
 
     Models the probability that a sample belongs to class 1 using
     the sigmoid function applied to a linear combination of features:
@@ -20,7 +51,7 @@ class LogisticRegression(BasicLinearModel):
 
     .. math::
 
-        \\hat{y} = \\sigma(z) = \\frac{1}{1 + e^{-z}}
+        \hat{y} = \sigma(z) = \frac{1}{1 + e^{-z}}
 
     Parameters are learned by minimizing Binary Cross-Entropy (BCE) loss.
     BCE is derived from Maximum Likelihood Estimation under a Bernoulli
@@ -28,9 +59,9 @@ class LogisticRegression(BasicLinearModel):
 
     .. math::
 
-        J(w, b) = -\\frac{1}{n} \\sum_{i=1}^{n}
-        \\left[ y_i \\log(\\hat{y}_i) + (1 - y_i)
-        \\log(1 - \\hat{y}_i) \\right]
+        J(w, b) = -\frac{1}{n} \sum_{i=1}^{n}
+        \left[ y_i \log(\hat{y}_i) + (1 - y_i)
+        \log(1 - \hat{y}_i) \right]
 
     When regularization is enabled, a penalty term is added to the
     cost function to prevent overfitting by constraining weight magnitudes.
@@ -40,14 +71,14 @@ class LogisticRegression(BasicLinearModel):
     .. math::
 
         J_{L2}(w, b) = J(w, b) +
-        \\frac{1}{2n} \\sum_{j=1}^{p} w_j^2
+        \frac{\alpha}{2n} \sum_{j=1}^{p} w_j^2
 
     **L1 (Lasso) regularization:**
 
     .. math::
 
         J_{L1}(w, b) = J(w, b) +
-        \\frac{\\alpha}{n} \\sum_{j=1}^{p} |w_j|
+        \frac{\alpha}{n} \sum_{j=1}^{p} |w_j|
 
     The bias term :math:`b` is excluded from regularization in both cases,
     as it controls the decision boundary shift and does not contribute
@@ -55,15 +86,15 @@ class LogisticRegression(BasicLinearModel):
 
     Numerical stability is ensured by:
 
-    - Clipping the linear output :math:`z` to :math:`[-300,\\ 300]`
+    - Clipping the linear output :math:`z` to :math:`[-300, 300]`
       before applying the sigmoid to prevent overflow in :math:`e^{-z}`
-    - Clipping sigmoid output to :math:`[10^{-15},\\ 1 - 10^{-15}]`
-      before computing logarithms to prevent :math:`\\log(0)`
+    - Clipping sigmoid output to :math:`[10^{-15}, 1 - 10^{-15}]`
+      before computing logarithms to prevent :math:`\log(0)`
 
     Parameters
     ----------
     learning_rate : float, default=0.1
-        Step size :math:`\\eta` used at each gradient descent iteration.
+        Step size :math:`\eta` used at each gradient descent iteration.
         Too large a value causes divergence; too small causes slow convergence.
     tol : float, default=0.1
         Relative tolerance for early stopping. Training halts when the
@@ -71,21 +102,21 @@ class LogisticRegression(BasicLinearModel):
 
         .. math::
 
-            \\frac{|J_{old} - J_{new}|}{J_{old}} < tol
+            \frac{|J_{old} - J_{new}|}{J_{old}} < tol
 
     max_iter : int, default=100
         Maximum number of gradient descent iterations regardless of
         convergence.
     alpha : float, default=0.1
-        Regularization strength :math:`\\alpha`. Larger values apply stronger
+        Regularization strength :math:`\alpha`. Larger values apply stronger
         penalty to weights, reducing model complexity. Has no effect when
         ``penalty=None``.
     penalty : {'l1', 'l2', None}, default='l2'
         Type of regularization to apply:
 
-        - ``'l2'``: Ridge — penalizes :math:`\\sum w_j^2`, shrinks weights
+        - ``'l2'``: Ridge — penalizes :math:`\sum w_j^2`, shrinks weights
           toward zero but never exactly to zero.
-        - ``'l1'``: Lasso — penalizes :math:`\\sum |w_j|`, produces sparse
+        - ``'l1'``: Lasso — penalizes :math:`\sum |w_j|`, produces sparse
           solutions by driving some weights to exactly zero (feature selection).
         - ``None``: No regularization.
 
@@ -111,13 +142,13 @@ class LogisticRegression(BasicLinearModel):
 
     .. math::
 
-        \\frac{\\partial J}{\\partial w} =
-        \\frac{1}{n} X^{T} (\\hat{y} - y)
+        \frac{\partial J}{\partial w} =
+        \frac{1}{n} X^{T} (\hat{y} - y)
 
     .. math::
 
-        \\frac{\\partial J}{\\partial b} =
-        \\frac{1}{n} \\sum_{i=1}^{n} (\\hat{y}_i - y_i)
+        \frac{\partial J}{\partial b} =
+        \frac{1}{n} \sum_{i=1}^{n} (\hat{y}_i - y_i)
 
     With regularization, the weight gradient gains an extra penalty term:
 
@@ -125,55 +156,73 @@ class LogisticRegression(BasicLinearModel):
 
     .. math::
 
-        \\frac{\\partial J_{L2}}{\\partial w} =
-        \\frac{1}{n} X^{T}(\\hat{y} - y) + \\frac{\\alpha}{n} w
+        \frac{\partial J_{L2}}{\partial w} =
+        \frac{1}{n} X^{T}(\hat{y} - y) + \frac{\alpha}{n} w
 
     **L1:**
 
     .. math::
 
-        \\frac{\\partial J_{L1}}{\\partial w} =
-        \\frac{1}{n} X^{T}(\\hat{y} - y) +
-        \\frac{\\alpha}{n} \\text{sign}(w)
+        \frac{\partial J_{L1}}{\partial w} =
+        \frac{1}{n} X^{T}(\hat{y} - y) +
+        \frac{\alpha}{n} \text{sign}(w)
 
-    where :math:`\\text{sign}(w_j)` is:
+    where :math:`\text{sign}(w_j)` is:
 
     .. math::
 
-        \\text{sign}(w_j) = \\begin{cases}
-            +1 & w_j > 0 \\\\
-            -1 & w_j < 0 \\\\
+        \text{sign}(w_j) = \begin{cases}
+            +1 & w_j > 0 \\
+            -1 & w_j < 0 \\
             0  & w_j = 0
-        \\end{cases}
+        \end{cases}
 
     The parameter update rule at each iteration is:
 
     .. math::
 
-        w := w - \\frac{\\eta}{n}
-        \\left[ X^T(\\hat{y} - y) + \\alpha \\cdot \\text{penalty\\_grad} \\right]
+        w := w - \frac{\eta}{n}
+        \left[ X^T(\hat{y} - y) + \alpha \cdot \text{penalty\_grad} \right]
 
     .. math::
 
-        b := b - \\frac{\\eta}{n} \\sum_{i=1}^{n}(\\hat{y}_i - y_i)
+        b := b - \frac{\eta}{n} \sum_{i=1}^{n}(\hat{y}_i - y_i)
 
     Examples
     --------
-    >>>from pyml.linear_model import LogisticRegression
+    >>> from pyml import LogisticRegression
     >>> model = LogisticRegression(learning_rate=0.1, max_iter=500, penalty='l2', alpha=0.01)
     >>> model.fit(X_train, y_train)
     >>> predictions = model.predict(X_test)
     """
 
     def __init__(
-            self,
-            learning_rate: float = 1e-1,
-            tol: float = 1e-1,
-            max_iter: int = 100,
-            alpha: float = 0.1,
-            penalty: Literal['l1', 'l2', None] = 'l2'
+        self,
+        learning_rate: float = 1e-1,
+        tol: float = 1e-1,
+        max_iter: int = 100,
+        alpha: float = 0.1,
+        penalty: Literal["l1", "l2", None] = "l2",
     ) -> None:
+        r"""Initialize LogisticRegression with hyperparameters.
 
+        Parameters
+        ----------
+        learning_rate : float, default=0.1
+            Step size :math:`\eta` for gradient descent updates.
+        tol : float, default=0.1
+            Relative tolerance for early stopping criterion.
+        max_iter : int, default=100
+            Maximum number of gradient descent iterations.
+        alpha : float, default=0.1
+            Regularization strength. Ignored when ``penalty=None``.
+        penalty : {'l1', 'l2', None}, default='l2'
+            Type of regularization penalty to apply.
+
+        Returns
+        -------
+        None
+        """
         self.learning_rate = learning_rate
         self.tol = tol
         self.max_iter = max_iter
@@ -182,8 +231,7 @@ class LogisticRegression(BasicLinearModel):
         super().__init__()
 
     def fit(self, X: npt.NDArray[np.float64], y: npt.NDArray[np.integer]) -> Self:
-        """
-        Fit the model to training data using Batch Gradient Descent.
+        r"""Fit the model to training data using Batch Gradient Descent.
 
         Initializes :math:`w` to zeros and :math:`b` to zero, then
         iteratively updates them by computing the full-batch gradient of
@@ -200,11 +248,10 @@ class LogisticRegression(BasicLinearModel):
 
         Returns
         -------
-        self : LogReg
+        self : LogisticRegression
             The fitted estimator. Enables method chaining:
             ``model.fit(X, y).predict(X_test)``.
         """
-
         self.w_ = np.zeros(X.shape[1], dtype=float)
         self.b_ = 0
         n = X.shape[0]
@@ -218,42 +265,42 @@ class LogisticRegression(BasicLinearModel):
             if np.isinf(J_old):
                 J_old = J_new
                 continue
-            if J_old == 0 or \
-                    np.abs(J_old - J_new) / J_old < self.tol:
+            if J_old == 0 or np.abs(J_old - J_new) / J_old < self.tol:
                 break
             J_old = J_new
         self._fitted = True
         return self
 
-    def loss(self, y: npt.NDArray[np.integer], y_pred: npt.NDArray[np.float64], n: int) -> float:
-        """
-        Compute the total cost function including regularization penalty.
+    def loss(
+        self, y: npt.NDArray[np.integer], y_pred: npt.NDArray[np.float64], n: int
+    ) -> float:
+        r"""Compute the total cost function including regularization penalty.
 
         Combines Binary Cross-Entropy with the selected regularization term:
 
         .. math::
 
-            J = \\text{BCE}(y,\\ \\hat{y}) + \\text{penalty}(w)
+            J = \text{BCE}(y, \hat{y}) + \text{penalty}(w)
 
         **No regularization** (``penalty=None``):
 
         .. math::
 
-            J = -\\frac{1}{n} \\sum_{i=1}^{n}
-            \\left[ y_i \\log(\\hat{y}_i) +
-            (1 - y_i) \\log(1 - \\hat{y}_i) \\right]
+            J = -\frac{1}{n} \sum_{i=1}^{n}
+            \left[ y_i \log(\hat{y}_i) +
+            (1 - y_i) \log(1 - \hat{y}_i) \right]
 
         **L2 regularization:**
 
         .. math::
 
-            J = \\text{BCE} + \\frac{1}{2n} \\sum_{j=1}^{p} w_j^2
+            J = \text{BCE} + \frac{\alpha}{2n} \sum_{j=1}^{p} w_j^2
 
         **L1 regularization:**
 
         .. math::
 
-            J = \\text{BCE} + \\frac{\\alpha}{n} \\sum_{j=1}^{p} |w_j|
+            J = \text{BCE} + \frac{\alpha}{n} \sum_{j=1}^{p} |w_j|
 
         Note: the bias :math:`b` is excluded from all penalty terms.
 
@@ -263,27 +310,29 @@ class LogisticRegression(BasicLinearModel):
             True binary labels (0 or 1).
         y_pred : np.ndarray of shape (n_samples,)
             Predicted probabilities, already clipped to
-            :math:`[10^{-15},\\ 1 - 10^{-15}]` by ``sigmoid``.
+            :math:`[10^{-15}, 1 - 10^{-15}]` by ``sigmoid``.
         n : int
-            Number of training samples. Used for normalization.
+            Number of training samples. Used for normalization in the
+            BCE and penalty computations.
 
         Returns
         -------
         loss : float
             Scalar total loss value. Lower is better.
         """
-        bce = - (1 / n) * np.sum(y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
-        if self.penalty == 'l1':
-            lasso = (1 / n) * np.sum(np.abs(self.w_))
+        bce = -(1 / n) * np.sum(y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred))
+        if self.penalty == "l1":
+            lasso = (self.alpha / n) * np.sum(np.abs(self.w_))
             return cast(float, bce + lasso)
-        elif self.penalty == 'l2':
-            ridge = (1 / (2 * n)) * np.sum(self.w_ ** 2)
+        elif self.penalty == "l2":
+            ridge = (self.alpha / (2 * n)) * np.sum(self.w_**2)
             return cast(float, bce + ridge)
         return cast(float, bce)
 
-    def param_update(self, X: npt.NDArray[np.float64], error: npt.NDArray[np.float64]) -> None:
-        """
-        Perform one Batch Gradient Descent parameter update step.
+    def param_update(
+        self, X: npt.NDArray[np.float64], error: npt.NDArray[np.float64]
+    ) -> None:
+        r"""Perform one Batch Gradient Descent parameter update step.
 
         Computes gradients of the cost function with respect to :math:`w`
         and :math:`b`, then updates both parameters in-place.
@@ -299,70 +348,67 @@ class LogisticRegression(BasicLinearModel):
 
         .. math::
 
-            w := w - \\frac{\\eta}{n} X^T (\\hat{y} - y)
+            w := w - \frac{\eta}{n} X^T (\hat{y} - y)
 
         **L2 (Ridge):**
 
         .. math::
 
-            w := w - \\frac{\\eta}{n}
-            \\left[ X^T (\\hat{y} - y) + \\alpha w \\right]
+            w := w - \frac{\eta}{n}
+            \left[ X^T (\hat{y} - y) + \alpha w \right]
 
         **L1 (Lasso):**
 
         .. math::
 
-            w := w - \\frac{\\eta}{n}
-            \\left[ X^T (\\hat{y} - y) +
-            \\alpha \\cdot \\text{sign}(w) \\right]
+            w := w - \frac{\eta}{n}
+            \left[ X^T (\hat{y} - y) +
+            \alpha \cdot \text{sign}(w) \right]
 
         **Bias update (all cases):**
 
         .. math::
 
-            b := b - \\frac{\\eta}{n}
-            \\sum_{i=1}^{n} (\\hat{y}_i - y_i)
+            b := b - \frac{\eta}{n}
+            \sum_{i=1}^{n} (\hat{y}_i - y_i)
 
         Parameters
         ----------
         X : np.ndarray of shape (n_samples, n_features)
             Training feature matrix.
         error : np.ndarray of shape (n_samples,)
-            Residuals :math:`\\hat{y} - y` from the current iteration.
-        """
+            Residuals :math:`\hat{y} - y` from the current iteration.
 
+        Returns
+        -------
+        None
+        """
         n = X.shape[0]
-        if self.penalty == 'l1':
-            sign = np.where(
-                self.w_ > 0, 1, np.where(self.w_ < 0, -1, 0)
-            )
-            self.w_ -= (self.learning_rate / n) * ((X.T @ error) + \
-                self.alpha * sign)
-        elif self.penalty == 'l2':
-            self.w_ -= (self.learning_rate / n) * ((X.T @ error) + \
-                self.alpha * self.w_)
+        if self.penalty == "l1":
+            sign = np.where(self.w_ > 0, 1, np.where(self.w_ < 0, -1, 0))
+            self.w_ -= (self.learning_rate / n) * ((X.T @ error) + self.alpha * sign)
+        elif self.penalty == "l2":
+            self.w_ -= (self.learning_rate / n) * ((X.T @ error) + self.alpha * self.w_)
         else:
             self.w_ -= (self.learning_rate / n) * (X.T @ error)
         self.b_ -= (self.learning_rate / n) * np.sum(error)
 
-
     def sigmoid(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """
-        Compute the sigmoid activation over the linear output :math:`z`.
+        r"""Compute the sigmoid activation over the linear output :math:`z`.
 
         Applies the sigmoid function to map the linear combination
         :math:`z = Xw + b` to a probability in :math:`(0, 1)`:
 
         .. math::
 
-            \\sigma(z) = \\frac{1}{1 + e^{-z}}
+            \sigma(z) = \frac{1}{1 + e^{-z}}
 
         Two clipping steps ensure numerical stability:
 
-        1. :math:`z` is clipped to :math:`[-300,\\ 300]` before
+        1. :math:`z` is clipped to :math:`[-300, 300]` before
            computing :math:`e^{-z}` to prevent float overflow.
-        2. The output is clipped to :math:`[10^{-15},\\ 1 - 10^{-15}]`
-           to prevent :math:`\\log(0)` in BCE computation.
+        2. The output is clipped to :math:`[10^{-15}, 1 - 10^{-15}]`
+           to prevent :math:`\log(0)` in BCE computation.
 
         Parameters
         ----------
@@ -372,27 +418,25 @@ class LogisticRegression(BasicLinearModel):
         Returns
         -------
         y_pred : np.ndarray of shape (n_samples,)
-            Predicted probabilities in :math:`[10^{-15},\\ 1 - 10^{-15}]`.
+            Predicted probabilities in :math:`[10^{-15}, 1 - 10^{-15}]`.
         """
-
         z = X @ self.w_ + self.b_
-        z = np.clip(z, -3e+2, 3e+2)
-        y_pred = 1 / (1 + np.exp(- z))
+        z = np.clip(z, -3e2, 3e2)
+        y_pred = 1 / (1 + np.exp(-z))
         return np.clip(y_pred, 1e-15, 1 - 1e-15)
 
     def predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.integer]:
-        """
-        Predict binary class labels for input samples.
+        r"""Predict binary class labels for input samples.
 
         Computes predicted probabilities via ``sigmoid`` and applies
         a decision threshold of 0.5:
 
         .. math::
 
-            \\hat{y}_i = \\begin{cases}
-                1 & \\sigma(z_i) \\geq 0.5 \\\\
-                0 & \\sigma(z_i) < 0.5
-            \\end{cases}
+            \hat{y}_i = \begin{cases}
+                1 & \sigma(z_i) \geq 0.5 \\
+                0 & \sigma(z_i) < 0.5
+            \end{cases}
 
         Parameters
         ----------
@@ -406,13 +450,10 @@ class LogisticRegression(BasicLinearModel):
 
         Raises
         ------
-        NotFitted
+        NotFittedError
             If ``predict`` is called before ``fit``.
         """
-
         self._check_fitted()
         sigmoid = self.sigmoid(X)
-        y_pred = np.where(
-            sigmoid >= 0.5, 1, 0
-        )
+        y_pred = np.where(sigmoid >= 0.5, 1, 0)
         return y_pred
