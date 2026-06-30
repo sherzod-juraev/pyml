@@ -1,32 +1,36 @@
 import os
 import sys
+from importlib.metadata import version as get_version
 
-sys.path.insert(0, os.path.abspath('../../'))
-
-
-project = 'pyml'
-copyright = '2026, Sherzod Juraev'
-author = 'Sherzod Juraev'
-release = '0.1.0'
+sys.path.insert(0, os.path.abspath("../../"))
 
 
-html_theme = 'furo'
+project = "pyml"
+copyright = "2026, Sherzod Juraev"
+author = "Sherzod Juraev"
+try:
+    release = get_version("pyml")
+except Exception:
+    release = "latest"
+
+
+html_theme = "furo"
 
 
 html_theme_options = {
     "sidebar_hide_name": False,
 
-    'announcement': '',
+    "announcement": "",
 
-    'navigation_with_keys': True,
+    "navigation_with_keys": True,
 
-    "light_css_variables": {
-        "color-brand-primary": "#4F46E5",
-        "color-brand-content": "#4F46E5",
-    },
     "dark_css_variables": {
-        "color-brand-primary": "#A78BFA",
-        "color-brand-content": "#A78BFA",
+        "color-brand-primary": "#ac7fec",
+        "color-brand-content": "#ac7fec",
+    },
+    "light_css_variables": {
+        "color-brand-primary": "#574c9f",
+        "color-brand-content": "#574c9f",
     },
 
     "source_repository": "https://github.com/sherzod-juraev/pyml",
@@ -49,15 +53,15 @@ html_theme_options = {
 
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.intersphinx',
-    'sphinx_design',
-    'myst_parser',
-    'sphinx_copybutton',
-    'sphinx.ext.mathjax',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.intersphinx",
+    "sphinx_design",
+    "myst_parser",
+    "sphinx_copybutton",
+    "sphinx.ext.mathjax",
 ]
 
 
@@ -66,13 +70,13 @@ copybutton_prompt_is_regexp = True
 
 
 autodoc_default_options = {
-    'members': True,
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
 }
 
-exclude_patterns = ['api/generated/*', '**/generated/*']
+exclude_patterns = ["api/generated/*", "**/generated/*"]
 
 
 napoleon_google_docstring = False

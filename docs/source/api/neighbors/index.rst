@@ -1,4 +1,4 @@
-Nieghbors Models
+Neighbors Models
 =================
 
 

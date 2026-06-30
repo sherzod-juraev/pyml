@@ -108,31 +108,39 @@ sklearn.datasets (synthetic data only — no sklearn models are invoked).
 | CI                 |   Passing   |                         Github Actions                         |
 
 ## Documentation
-API documentation with full mathematical derivations is generated using
-Sphinx and can be built locally. The documentation has not yet been
-published to a public website.
 
-### Install documentation dependencies
-```bash
-pip install -e ".[docs]"
-```
-### Navigate to the docs directory
-```bash
-cd docs
-```
-### Build HTML documentation
-```bash
-make html        # on Linux/macOS
-.\make.bat html  # on Windows
-```
-### Open in browser
-```bash
-start build\html\index.html     # Windows
-open build/html/index.html      # macOS
-xdg-open build/html/index.html  # Linux
-```
-The documentation is written in NumPy docstring format with LaTeX math
-rendered via MathJax.
+API documentation with full mathematical derivations is built using Sphinx and is hosted online.
+
+👉 **[Read the Documentation Online (pyml-educational.readthedocs.io)](https://pyml-educational.readthedocs.io/en/latest/)**
+
+### Build Locally
+If you prefer to build and view the documentation locally on your machine:
+
+1. **Install documentation dependencies:**
+   ```bash
+   pip install -e ".[docs]"
+   ```
+
+2. **Navigate to the docs directory:**
+   ```bash
+   cd docs
+   ```
+
+3. **Build HTML documentation:**
+   ```bash
+   make html        # on Linux/macOS
+   .\make.bat html  # on Windows
+   ```
+
+4. **Open in browser:**
+   ```bash
+   start build/html/index.html     # Windows
+   open build/html/index.html      # macOS
+   xdg-open build/html/index.html  # Linux
+   ```
+
+The documentation is written in NumPy docstring format with LaTeX math rendered via MathJax.
+
 
 ## Academic context
 This project is developed as part of an undergraduate Artificial Intelligence
