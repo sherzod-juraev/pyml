@@ -245,7 +245,7 @@ class KmeansPP:
             samples. Points farther from existing centroids have
             higher probability mass. Elements sum to 1.
         """
-        distances = cdist(centroids_, X, metric=self.metric)
+        distances: npt.NDArray[np.float64] = cdist(centroids_, X, metric=self.metric)
         min_distances = np.min(distances, axis=0) ** 2
         probability = min_distances / (np.sum(min_distances) + 1e-12)
         return probability
