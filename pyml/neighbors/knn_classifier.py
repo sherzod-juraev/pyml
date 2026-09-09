@@ -1,286 +1,180 @@
-r"""K-Nearest Neighbors Classifier.
+"""K-Nearest Neighbors classification."""
 
-This module provides a pure NumPy/SciPy implementation of the KNN
-classification algorithm with support for multiple distance metrics
-and weighting strategies.
-
-Classes
--------
-KNNClassifier
-    Lazy-learning classifier using majority vote among k nearest
-    neighbors.
-
-Notes
------
-KNN is a non-parametric, instance-based learning algorithm. No
-explicit training occurs — all computation is deferred to predict
-time. Uses ``argpartition`` for efficient neighbor selection in
-:math:`O(n)` time rather than full sorting.
-"""
-
-from typing import Any, Literal, Self
+from typing import Any, Literal, cast
 
 import numpy as np
-import numpy.typing as npt
 from scipy.spatial.distance import cdist
+from scipy.stats import mode
 
-from ..exc import NotFittedError
+from ..core.base import Classifier
+from ..core.dtypes import ClassificationTarget, FeatureMatrix
+from ..core.exceptions import InvalidParameterError
 
 
-class KNNClassifier:
-    r"""K-Nearest Neighbors Classifier.
+class KNNClassifier(Classifier):
+    r"""K-Nearest Neighbors classification.
 
-    Predicts class labels by majority vote among the :math:`k` nearest
-    neighbors in the training set. Given a query point :math:`x`,
-    the algorithm:
-
-    1. Computes distances from :math:`x` to all training points.
-    2. Selects the :math:`k` closest neighbors.
-    3. Assigns the class with the highest total vote weight.
-
-    **Uniform weighting** — each neighbor votes equally:
+    Predicts a class label by finding the n_neighbors closest training
+    samples (by the given distance metric) to each query point, and
+    taking a (optionally distance-weighted) majority vote among their
+    labels:
 
     .. math::
+        \hat{y} = \arg\max_{c} \sum_{i \in N_k(x)} w_i \cdot \mathbb{1}(y_i = c)
 
-        \hat{y} = \arg\max_{c} \sum_{i=1}^{k}
-        \mathbf{1}[y_{(i)} = c]
-
-    **Distance weighting** — closer neighbors vote more strongly:
-
-    .. math::
-
-        \hat{y} = \arg\max_{c} \sum_{i=1}^{k}
-        w_i \cdot \mathbf{1}[y_{(i)} = c],
-        \quad w_i = \frac{1}{d(x, x_{(i)}) + \varepsilon}
-
-    where :math:`\varepsilon = 10^{-12}` prevents division by zero
-    for exact matches.
+    where :math:`N_k(x)` is the set of the k training samples closest to
+    the query point x, and w_i = 1 for uniform weighting or
+    w_i = 1 / (d_i + \epsilon) for distance weighting. Unlike the
+    gradient-descent-based models, KNN has no training phase beyond
+    storing the data — all computation happens at prediction time.
 
     Parameters
     ----------
-    k : int, default=3
-        Number of nearest neighbors to consider for classification.
-    metric : {'euclidean', 'cityblock', 'chebyshev', 'cosine'}, default='euclidean'
-        Distance metric used to find nearest neighbors:
-
-        - ``'euclidean'`` — L2 norm:
-
-          .. math::
-
-              d(x, x') = \sqrt{\sum_{j=1}^{p}(x_j - x'_j)^2}
-
-        - ``'cityblock'`` — L1 norm (Manhattan):
-
-          .. math::
-
-              d(x, x') = \sum_{j=1}^{p} |x_j - x'_j|
-
-        - ``'chebyshev'`` — L∞ norm:
-
-          .. math::
-
-              d(x, x') = \max_j |x_j - x'_j|
-
-        - ``'cosine'`` — angular similarity:
-
-          .. math::
-
-              d(x, x') = 1 - \frac{x \cdot x'}{\|x\| \|x'\|}
-
-    weighting : {'uniform', 'distance'}, default='uniform'
-        Weighting strategy for neighbor votes:
-
-        - ``'uniform'`` — all neighbors contribute equally.
-        - ``'distance'`` — closer neighbors have higher influence,
-          weighted by inverse distance.
+    n_neighbors : int, optional
+        Number of nearest neighbors to use. Must not exceed the number
+        of training samples. Defaults to 5.
+    metric : {"euclidean", "chebyshev", "cityblock"}, optional
+        Distance metric used to find neighbors, passed directly to
+        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+    weights : {"uniform", "distance"}, optional
+        How neighbors are weighted when voting. "uniform" gives every
+        neighbor one equal vote; "distance" weights each neighbor's vote
+        by the inverse of its distance to the query point, so closer
+        neighbors have more influence. Defaults to "uniform".
 
     Attributes
     ----------
-    X_ : np.ndarray of shape (n_samples, n_features)
-        Training feature matrix stored after fitting.
-    y_ : np.ndarray of shape (n_samples,)
-        Training class labels stored after fitting.
+    X_ : FeatureMatrix
+        Training feature matrix, stored as-is for use at prediction time.
+    y_ : ClassificationTarget
+        Training class labels, stored as-is for use at prediction time.
+    classes_ : ClassificationTarget
+        Sorted array of the unique class labels seen during fit.
 
-    Notes
-    -----
-    KNN is a non-parametric, lazy learning algorithm — no explicit
-    model is trained. All computation happens at predict time.
 
-    ``argpartition`` is used instead of full sorting for efficiency:
-    selecting :math:`k` nearest neighbors costs :math:`O(n)` rather
-    than :math:`O(n \log n)`.
+    .. note::
+        With weights="distance", a query point that exactly coincides
+        with a training sample is handled by adding a small constant to
+        every distance before inverting it, so a zero distance produces
+        a very large but finite weight rather than a division-by-zero
+        error.
 
-    Performance degrades in high-dimensional spaces due to the
-    **curse of dimensionality**: distances become increasingly uniform
-    as the number of features grows.
+    .. note::
+        Because prediction requires computing distances to every stored
+        training sample, KNN scales poorly to large datasets compared to
+        parametric models like logistic regression, whose prediction
+        cost does not grow with the size of the training set.
 
-    Examples
-    --------
-    >>> from pyml import KNNClassifier
-    >>> import numpy as np
-    >>>
-    >>> X_train = np.array([[1., 2.], [2., 3.], [3., 4.], [6., 7.]])
-    >>> y_train = np.array([0, 0, 1, 1])
-    >>>
-    >>> model = KNNClassifier(k=3, metric='euclidean', weighting='distance')
-    >>> model.fit(X_train, y_train)
-    >>> model.predict(np.array([[2., 2.]]))
-    array([0])
+    .. plot::
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyml.neighbors import KNNClassifier
+
+        rng = np.random.default_rng(42)
+        n = 100
+        X0 = rng.normal(loc=(-2, -2), scale=1.0, size=(n // 2, 2))
+        X1 = rng.normal(loc=(2, 2), scale=1.0, size=(n // 2, 2))
+        X = np.vstack([X0, X1])
+        y = np.array([0] * (n // 2) + [1] * (n // 2))
+
+        model = KNNClassifier(n_neighbors=5).fit(X, y)
+
+        xx, yy = np.meshgrid(
+            np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 200),
+            np.linspace(X[:, 1].min() - 1, X[:, 1].max() + 1, 200),
+        )
+        grid = np.column_stack([xx.ravel(), yy.ravel()])
+        preds = model.predict(grid).reshape(xx.shape)
+
+        fig, ax = plt.subplots()
+        ax.contourf(xx, yy, preds, levels=1, cmap="RdBu", alpha=0.5)
+        ax.scatter(X0[:, 0], X0[:, 1], label="Class 0", edgecolor="k")
+        ax.scatter(X1[:, 0], X1[:, 1], label="Class 1", edgecolor="k")
+        ax.set_xlabel("X1")
+        ax.set_ylabel("X2")
+        ax.set_title("KNNClassifier decision boundary (n_neighbors=5)")
+        ax.legend()
     """
 
     def __init__(
         self,
-        k: int = 3,
-        metric: Literal["euclidean", "cityblock", "chebyshev", "cosine"] = "euclidean",
-        weighting: Literal["uniform", "distance"] = "uniform",
+        n_neighbors: int = 5,
+        metric: Literal["euclidean", "chebyshev", "cityblock"] = "euclidean",
+        weights: Literal["uniform", "distance"] = "uniform",
     ) -> None:
-        r"""Initialize the KNN Classifier with hyperparameters.
+        """Initialize this classifier with the given neighbor-search hyperparameters.
 
         Parameters
         ----------
-        k : int, default=3
-            Number of nearest neighbors to consider for classification.
-            Must be positive and not exceed the number of training samples.
-        metric : {'euclidean', 'cityblock', 'chebyshev', 'cosine'}, default='euclidean'
-            Distance metric for computing pairwise distances between
-            query points and training data.
-        weighting : {'uniform', 'distance'}, default='uniform'
-            Strategy for weighting neighbor contributions to the
-            classification decision.
-
-        Returns
-        -------
-        None
+        n_neighbors : int, optional
+            Number of nearest neighbors to use. Defaults to 5.
+        metric : {"euclidean", "chebyshev", "cityblock"}, optional
+            Distance metric used to find neighbors. Defaults to "euclidean".
+        weights : {"uniform", "distance"}, optional
+            How neighbors are weighted when voting. Defaults to "uniform".
         """
-        self.k = k
-        self.metric = metric
-        self.weighting = weighting
-        self.__fitted = False
+        super().__init__()
+        self.n_neighbors: int = n_neighbors
+        self.metric: Literal["euclidean", "chebyshev", "cityblock"] = metric
+        self.weights: Literal["uniform", "distance"] = weights
 
-    def fit(self, X: npt.NDArray[np.float64], y: npt.NDArray[Any]) -> Self:
-        r"""Store training data for use during prediction.
-
-        KNN is a lazy learner — no model is built during fit.
-        Training data is stored and used directly at predict time
-        for distance computation and neighbor lookup.
+    def _fit(self, X: FeatureMatrix, y: ClassificationTarget, /) -> None:
+        """Validate n_neighbors and store the training data.
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features)
-            Training feature matrix.
-        y : np.ndarray of shape (n_samples,)
-            Training class labels.
-
-        Returns
-        -------
-        self : KNNClassifier
-            Fitted instance with stored training data. Enables method
-            chaining: ``model.fit(X, y).predict(X_test)``.
-        """
-        self.X_: npt.NDArray[np.float64] = np.asarray(X)
-        self.y_: npt.NDArray[Any] = np.asarray(y)
-        self.__fitted = True
-        return self
-
-    def __predict_label(
-        self, neigh_ind: npt.NDArray[np.intp], neigh_dist: npt.NDArray[np.float64]
-    ) -> npt.NDArray[Any]:
-        r"""Aggregate neighbor votes into predicted class labels.
-
-        For ``'uniform'`` weighting, uses majority vote via
-        ``numpy.unique`` with counts.
-
-        For ``'distance'`` weighting, computes weighted votes per
-        unique class:
-
-        .. math::
-
-            \text{vote}(c) = \sum_{i: y_{(i)}=c} w_i,
-            \quad w_i = \frac{1}{d_i + 10^{-12}}
-
-        and selects the class with the highest total weight.
-
-        Parameters
-        ----------
-        neigh_ind : np.ndarray of shape (n_samples, k)
-            Indices of the k nearest neighbors for each query point.
-        neigh_dist : np.ndarray of shape (n_samples, k)
-            Distances to the k nearest neighbors for each query point.
-
-        Returns
-        -------
-        y_pred : np.ndarray of shape (n_samples,)
-            Predicted class labels.
-        """
-        labels = self.y_[neigh_ind]
-        y_pred = np.zeros(shape=labels.shape[0], dtype=self.y_.dtype)
-        if self.weighting == "uniform":
-            for i in range(labels.shape[0]):
-                unique_labels, counts = np.unique(labels[i], return_counts=True)
-                y_pred[i] = unique_labels[np.argmax(counts)]
-            return y_pred
-        weights: npt.NDArray[np.float64] = 1 / (neigh_dist + 1e-12)
-        for i in range(neigh_dist.shape[0]):
-            uniq_labels = np.unique(labels[i])
-            votes = np.zeros(shape=uniq_labels.shape[0])
-            for j in range(uniq_labels.shape[0]):
-                votes[j] = np.sum(weights[i, labels[i] == uniq_labels[j]])
-            y_pred[i] = uniq_labels[np.argmax(votes)]
-        return y_pred
-
-    def check_k(self) -> None:
-        r"""Validate that k is within the valid range.
-
-        Ensures that :math:`0 < k \leq n\_samples` where
-        :math:`n\_samples` is the number of training samples.
+        X : FeatureMatrix
+            Training data of shape (n_samples, n_features).
+        y : ClassificationTarget
+            Class labels of shape (n_samples,).
 
         Raises
         ------
-        ValueError
-            If ``k`` is less than or equal to 0, or if ``k`` exceeds
-            the number of training samples.
+        InvalidParameterError
+            If n_neighbors is not positive, or exceeds the number of
+            training samples.
         """
-        n_samples: int = self.X_.shape[0]
-        if self.k > n_samples or self.k <= 0:
-            raise ValueError(
-                f"Expected 0 < n_neighbors <= n_samples, but n_samples = {n_samples}, "
-                f"n_neighbors = {self.k}."
+        if self.n_neighbors <= 0:
+            raise InvalidParameterError(
+                f"n_neighbors must be a positive integer, got {self.n_neighbors}."
             )
+        if self.n_neighbors > X.shape[0]:
+            raise InvalidParameterError(
+                f"n_neighbors={self.n_neighbors} cannot exceed the number of "
+                f"training samples ({X.shape[0]})."
+            )
+        self.X_ = X.copy()
+        self.y_ = y.copy()
+        self.classes_ = np.unique(y)
 
-    def predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[Any]:
-        r"""Predict class labels for new data points.
-
-        Computes pairwise distances between query points and training
-        data via :func:`scipy.spatial.distance.cdist`, selects the
-        :math:`k` nearest neighbors using ``argpartition``, then
-        aggregates their votes via :meth:`__predict_label`.
+    def _predict(self, X: FeatureMatrix, /) -> ClassificationTarget:
+        """Predict labels by a majority vote among the n_neighbors nearest training labels.
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features) or (n_features,)
-            Query points. 1-D input is automatically reshaped to
-            ``(1, n_features)``.
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
 
         Returns
         -------
-        y_pred : np.ndarray of shape (n_samples,)
-            Predicted class labels.
-
-        Raises
-        ------
-        NotFittedError
-            If ``predict`` is called before ``fit``. The model must
-            be fitted before making predictions.
-        ValueError
-            If ``k`` is invalid (exceeds training set size or is
-            non-positive), raised via :meth:`check_k`.
+        ClassificationTarget
+            Predicted labels of shape (n_samples,), computed as the
+            (optionally distance-weighted) majority vote among each query
+            point's nearest neighbors' labels.
         """
-        if not self.__fitted:
-            raise NotFittedError(self)
-        self.check_k()
-        X = np.asarray(X)
-        X = np.array([X]) if X.ndim == 1 else X
-        dist = cdist(X, self.X_, self.metric)
-        neigh_ind = np.argpartition(dist, self.k - 1, axis=1)[:, : self.k]
-        neigh_dist = np.take_along_axis(dist, neigh_ind, axis=1)
-        return self.__predict_label(neigh_ind, neigh_dist)
+        dists = cdist(X, self.X_, metric=self.metric)
+        neighbor_ind = np.argpartition(dists, kth=self.n_neighbors - 1, axis=1)[
+            :, : self.n_neighbors
+        ]
+        if self.weights == "uniform":
+            result = mode(self.y_[neighbor_ind], axis=1, keepdims=False)
+            return cast(np.typing.NDArray[np.integer[Any]], result.mode)
+        neighbor_dist = np.take_along_axis(dists, neighbor_ind, axis=1)
+        neighbor_labels = self.y_[neighbor_ind]
+        weights = 1 / (neighbor_dist + 1e-10)
+        one_hot = neighbor_labels[:, :, np.newaxis] == self.classes_
+        weighted_votes = one_hot * weights[:, :, np.newaxis]
+        class_scores = np.sum(weighted_votes, axis=1)
+        predicted_idx = np.argmax(class_scores, axis=1)
+        return self.classes_[predicted_idx]

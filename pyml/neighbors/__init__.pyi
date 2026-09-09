@@ -1,7 +1,4 @@
-from .knn_classifier import KNNClassifier
-from .knn_regressor import KNNRegressor
-
-__all__ = [
-    "KNNClassifier",
-    "KNNRegressor",
-]
+from .knn_classifier import KNNClassifier as KNNClassifier
+from .knn_regressor import KNNRegressor as KNNRegressor
+from .radius_classifier import RadiusNeighborsClassifier as RadiusNeighborsClassifier
+from .radius_regressor import RadiusNeighborsRegressor as RadiusNeighborsRegressor

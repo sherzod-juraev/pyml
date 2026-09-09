@@ -1,0 +1,19 @@
+=============================
+Oops! This page took a detour
+=============================
+
+.. image:: _static/images/404-img.jpg
+   :alt: Page not found illustration
+   :align: center
+   :width: 35%
+   :class: w-30 mx-auto d-block pe-none
+
+**We couldn't find the page you were looking for.**
+
+Don't worry, these things happen. The page might have moved, been renamed,
+or perhaps there is a tiny typo in the URL. Either way, we are here to
+help you get back on track.
+
+.. tip::
+   **Quick Tip:** You can always click the **pyml** logo in the top-left
+   corner of your screen to jump straight back to our homepage!

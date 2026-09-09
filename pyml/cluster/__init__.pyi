@@ -1,9 +1,2 @@
-from ._kmeans_pp import KmeansPP
-from .dbscan import DBSCAN
-from .kmeans import Kmeans
-
-__all__ = [
-    "DBSCAN",
-    "Kmeans",
-    "KmeansPP",
-]
+from .dbscan import DBSCAN as DBSCAN
+from .kmeans import KMeans as KMeans

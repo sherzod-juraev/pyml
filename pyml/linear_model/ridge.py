@@ -1,171 +1,152 @@
-r"""Ridge Regression with L2 regularization trained via Batch Gradient Descent.
+"""Ridge regression (L2-regularized linear regression)."""
 
-This module provides a thin wrapper around :class:`LinearRegression`
-with ``penalty`` fixed to ``'l2'``, applying quadratic weight penalty
-to prevent overfitting and handle multicollinearity.
+import numpy as np
 
-Classes
--------
-Ridge
-    L2-regularized linear regression for stable coefficient estimation.
-
-Notes
------
-L2 regularization adds a quadratic penalty :math:`\frac{\alpha}{2n} \sum w_j^2`
-to the MSE loss, making the optimization problem strictly convex even
-when features are highly correlated. Unlike L1 (Lasso), L2 never produces
-exactly zero coefficients — all features retain some contribution.
-"""
-
-from .linear_regression import LinearRegression
+from ._linear_base import _FloatArray, _LinearModelBase
 
 
-class Ridge(LinearRegression):
-    r"""Ridge Regression (L2-regularized Linear Regression).
+class Ridge(_LinearModelBase):
+    r"""Linear regression with L2 (Tikhonov) regularization, fit via gradient descent.
 
-    A specialization of Linear Regression that applies L2 regularization
-    to the weight vector, penalizing large coefficients and improving
-    generalization on correlated or high-dimensional feature sets.
-
-    The model minimizes the following objective function:
+    Predicts a continuous target as a linear combination of features,
+    identically to :class:`~pyml.linear_model.linear_regression.LinearRegression`:
 
     .. math::
+        \hat{y} = Xw + b
 
-        J(w, b) = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
-        + \frac{\alpha}{2n} \sum_{j=1}^{p} w_j^2
+    Fitting minimizes the mean squared error plus an L2 penalty on the
+    coefficients:
 
-    where :math:`\alpha` controls the regularization strength.
-    Parameters are learned via batch gradient descent.
+    .. math::
+        J(w, b) = \frac{1}{m} \sum_{i=1}^{m} \left( \hat{y}_i - y_i \right)^2
+            + \alpha \sum_{j=1}^{n} w_j^2
 
-    This class is a thin wrapper around :class:`LinearRegression` with
-    ``penalty`` fixed to ``'l2'``. All training logic, convergence
-    detection, and gradient updates are inherited from the parent class.
+    The intercept b is not penalized, since it only shifts the data and
+    does not contribute to model complexity. The gradient of this loss
+    with respect to w and b:
+
+    .. math::
+        \frac{\partial J}{\partial w} = \frac{2}{m} X^T (\hat{y} - y) + 2 \alpha w, \quad
+        \frac{\partial J}{\partial b} = \frac{2}{m} \sum_{i=1}^{m} (\hat{y}_i - y_i)
+
+    is used to update the parameters at each iteration via gradient
+    descent:
+
+    .. math::
+        w \leftarrow w - \alpha_{lr} \frac{\partial J}{\partial w}, \quad
+        b \leftarrow b - \alpha_{lr} \frac{\partial J}{\partial b}
+
+    where alpha_lr is the learning rate (distinct from the
+    regularization strength alpha above).
 
     Parameters
     ----------
-    learning_rate : float, default=0.1
-        Step size for each gradient descent iteration. Must be positive.
-    max_iter : int, default=100
-        Maximum number of gradient descent iterations.
-    tol : float, default=1e-3
-        Relative tolerance for early stopping. Training halts when:
-
-        .. math::
-
-            \frac{|J_{new} - J_{old}|}{J_{old}} \leq tol
-
-    alpha : float, default=1.0
-        Regularization strength. Must be non-negative. Larger values
-        shrink weights more aggressively toward zero.
+    learning_rate : float, optional
+        Step size for each gradient descent update. Defaults to 0.01.
+    max_iter : int, optional
+        Maximum number of gradient descent iterations. Defaults to 1000.
+    tol : float, optional
+        Minimum absolute change in loss between consecutive iterations
+        required to continue optimizing. Defaults to 1e-4.
+    fit_intercept : bool, optional
+        Whether to fit an intercept term b. Defaults to True.
+    alpha : float, optional
+        Regularization strength. Larger values shrink the coefficients
+        more aggressively toward zero (but never exactly to zero).
+        ``alpha=0`` recovers ordinary least squares. Defaults to 1.0.
 
     Attributes
     ----------
-    coef_ : np.ndarray of shape (n_features,)
-        Learned weight vector after fitting. L2 regularization shrinks
-        all coefficients toward zero but does not eliminate them.
+    coef_ : FeatureMatrix
+        Learned weight vector, of shape (n_features,).
     intercept_ : float
-        Learned bias term. Never regularized.
+        Learned intercept term. Remains 0.0 if fit_intercept is False.
+    n_iter_ : int
+        Number of iterations actually run before stopping.
 
-    Notes
-    -----
-    **Why L2 regularization?**
 
-    Ordinary least squares becomes unstable when features are highly
-    correlated (multicollinearity) or when :math:`p \approx n`.
-    Ridge adds a curvature to the loss surface, making the problem
-    strictly convex and the solution unique even in ill-conditioned cases:
+    .. note::
+        Ridge shrinks coefficients smoothly toward zero but never sets
+        them exactly to zero, unlike Lasso. It is most useful when
+        features are correlated (multicollinearity), where it stabilizes
+        the solution that OLS would otherwise leave ill-conditioned.
 
-    .. math::
+    .. note::
+        As with all gradient-descent-based linear models here, features
+        should be standardized before fitting — otherwise the penalty is
+        applied unevenly across features of different scales. The
+        default ``alpha=1.0`` follows the same convention as
+        scikit-learn's ``Ridge``, which assumes standardized inputs.
 
-        w^* = (X^T X + \alpha I)^{-1} X^T y
+    .. plot::
 
-    Although this class uses gradient descent (not the closed form),
-    the L2 penalty ensures the same stable minimum is reached.
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyml.linear_model import LinearRegression, Ridge
 
-    **Gradient of the regularized loss**
+        rng = np.random.default_rng(42)
+        X = np.sort(rng.uniform(0, 10, size=(30, 1)), axis=0)
+        y = 2.5 * X.ravel() + 1.0 + rng.normal(0, 1.5, size=30)
 
-    The L2 term contributes the following additive gradient to weights:
+        ols = LinearRegression(max_iter=5000).fit(X, y)
+        ridge = Ridge(alpha=5.0, max_iter=5000).fit(X, y)
+        X_line = np.linspace(0, 10, 100).reshape(-1, 1)
 
-    .. math::
-
-        \frac{\partial R}{\partial w} = \frac{\alpha}{n} w
-
-    Combined with the MSE gradient, the full weight update becomes:
-
-    .. math::
-
-        w := w - \eta \left(
-            -\frac{2}{n} X^T (y - \hat{y}) + \frac{\alpha}{n} w
-        \right)
-
-    The bias :math:`b` is not regularized.
-
-    **Ridge vs Lasso**
-
-    - Ridge (L2) shrinks all weights smoothly — no coefficient reaches
-      exactly zero.
-    - Lasso (L1) can drive some coefficients to exactly zero, performing
-      implicit feature selection.
-    - Prefer Ridge when all features are expected to contribute, or when
-      multicollinearity is a concern.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from pyml import Ridge
-    >>>
-    >>> np.random.seed(0)
-    >>> X = np.random.randn(100, 5)
-    >>> X[:, 1] = X[:, 0] + 0.01 * np.random.randn(100)
-    >>> true_w = np.array([1.5, -2.0, 0.5, 0.0, 1.0])
-    >>> y = X @ true_w + 3.0 + 0.1 * np.random.randn(100)
-    >>>
-    >>> model = Ridge(learning_rate=0.01, max_iter=1000, alpha=1.0)
-    >>> model.fit(X, y)
-    >>> print(model.coef_)
-    >>> print(model.intercept_)
-    >>>
-    >>> model_weak = Ridge(alpha=0.01)
-    >>> model_weak.fit(X, y)
-    >>>
-    >>> X_new = np.random.randn(10, 5)
-    >>> predictions = model.predict(X_new)
+        fig, ax = plt.subplots()
+        ax.scatter(X, y, alpha=0.6, label="Training data")
+        ax.plot(X_line, ols.predict(X_line), color="red", label="OLS")
+        ax.plot(X_line, ridge.predict(X_line), color="blue", label="Ridge (alpha=5.0)")
+        ax.set_xlabel("X")
+        ax.set_ylabel("y")
+        ax.set_title("Ridge vs. OLS fit")
+        ax.legend()
     """
 
     def __init__(
         self,
-        learning_rate: float = 0.1,
-        max_iter: int = 100,
-        tol: float = 1e-3,
+        learning_rate: float = 0.01,
+        max_iter: int = 1000,
+        tol: float = 1e-4,
+        fit_intercept: bool = True,
         alpha: float = 1.0,
     ) -> None:
-        r"""Initialize Ridge model with L2 regularization.
-
-        Passes all hyperparameters to the parent :class:`LinearRegression`
-        with ``penalty`` fixed to ``'l2'``. No additional configuration
-        is needed beyond the standard linear model parameters.
+        """Initialize this regressor with gradient descent and regularization hyperparameters.
 
         Parameters
         ----------
-        learning_rate : float, default=0.1
-            Step size :math:`\eta` for gradient descent updates.
-            Must be positive.
-        max_iter : int, default=100
-            Maximum number of gradient descent iterations.
-        tol : float, default=1e-3
-            Relative tolerance for early stopping convergence check.
-        alpha : float, default=1.0
-            L2 regularization strength :math:`\alpha \geq 0`. Larger
-            values shrink all weights more aggressively toward zero.
+        learning_rate : float, optional
+            Step size for each gradient descent update. Defaults to 0.01.
+        max_iter : int, optional
+            Maximum number of gradient descent iterations. Defaults to 1000.
+        tol : float, optional
+            Minimum absolute change in loss between consecutive iterations
+            required to continue optimizing. Defaults to 1e-4.
+        fit_intercept : bool, optional
+            Whether to fit an intercept term b. Defaults to True.
+        alpha : float, optional
+            Regularization strength; must be non-negative. Defaults to 1.0.
+        """
+        super().__init__(
+            learning_rate=learning_rate, max_iter=max_iter, tol=tol, fit_intercept=fit_intercept
+        )
+        self.alpha: float = alpha
+
+    def _penalty_loss(self) -> float:
+        """Compute the L2 penalty term, alpha times the sum of squared coefficients.
 
         Returns
         -------
-        None
+        float
+            The value of alpha * sum(``coef_`` ** 2).
         """
-        super().__init__(
-            learning_rate=learning_rate,
-            max_iter=max_iter,
-            tol=tol,
-            alpha=alpha,
-            penalty="l2",
-        )
+        return float(self.alpha * np.sum(self.coef_**2))
+
+    def _penalty_gradient(self) -> _FloatArray:
+        """Compute the gradient of the L2 penalty with respect to ``coef_``.
+
+        Returns
+        -------
+        FloatArray
+            The value of 2 * alpha * ``coef_``, of shape (n_features,).
+        """
+        return 2 * (self.alpha * self.coef_)

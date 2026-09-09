@@ -1,14 +1,21 @@
+"""Shared pytest fixtures for the pyml test suite.
+
+Provides a seeded NumPy random generator so that tests using random
+data are reproducible across runs.
+"""
+
 import numpy as np
 import pytest
 
 
-@pytest.fixture(autouse=True)
-def set_random_seed():
-    """Test reproducibility for random seed."""
-    np.random.seed(42)
+@pytest.fixture
+def rng() -> np.random.Generator:
+    """Return a NumPy random generator seeded for reproducible tests.
 
-def pytest_configure(config):
-    config.addinivalue_line(
-        'markers',
-        'slow: marks tests as slow (deselect with -m "not slow")'
-    )
+    Returns
+    -------
+    numpy.random.Generator
+        A fresh generator seeded with 42, created anew for each test
+        that requests it.
+    """
+    return np.random.default_rng(seed=42)

@@ -1,169 +1,111 @@
-# pyml — Pure Python Machine Learning
+# pyml
 
-**Classical ML algorithms built from scratch with NumPy.**
+[![Pyml](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml)
+[![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml)
+[![Docs](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml)
+[![Documentation Status](https://readthedocs.org/projects/pyml-edu/badge/?version=latest)](https://pyml-edu.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/)
+[![Ruff](https://img.shields.io/badge/Ruff-enabled-brightgreen)](https://docs.astral.sh/ruff/)
+[![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy.readthedocs.io/)
+[![Interrogate](https://img.shields.io/badge/Interrogate-100%25-brightgreen)](https://interrogate.readthedocs.io/)
 
-[![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml) 
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/) 
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) 
-[![Version](https://img.shields.io/badge/version-0.1.1-orange)](https://github.com/sherzod-juraev/pyml/releases)
+A from-scratch machine learning library built on NumPy and SciPy, with
+a shared estimator architecture, manual gradient derivations, and full
+mathematical documentation. No TensorFlow, no PyTorch — just the math.
 
-## About
+📖 [pyml-edu.readthedocs.io](https://pyml-edu.readthedocs.io)
 
-`pyml` is an educational machine learning library that implements classical
-algorithms entirely from scratch using only NumPy and SciPy. No external ML
-frameworks are used in any model implementation — every algorithm is built
-by hand from mathematical foundations.
+Curious why this project exists, not just what it does? See
+[Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html).
 
-The library is designed for students and practitioners who want to understand
-*how* machine learning algorithms work internally, not just *how to use* them.
-Each model is documented with full mathematical derivations, algorithmic
-descriptions, and numerical stability considerations.
+## Quick example
 
-**scikit-learn is used exclusively for synthetic dataset generation in tests**
-(e.g., `make_classification`, `make_regression`). No scikit-learn estimators
-are used for comparison or validation — the library stands on its own.
+```python
+from pyml.linear_model import Ridge
+
+model = Ridge(alpha=1.0)
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+```
 
 ## Installation
 
 ```bash
-git clone https://github.com/sherzod-juraev/pyml.git
-cd pyml
-pip install -e .
-```
-For development tools
-```bash
-pip install -e ".[dev]"
-```
-For documentation tools
-```bash
-pip install -e ".[docs]"
+pip install git+https://github.com/sherzod-juraev/pyml.git
 ```
 
-## Quick start
-```python
-import numpy as np
-from pyml.linear_model import LinearRegression
-from pyml.preprocess import StandardScaler
+## What's inside
 
-# Create data
-X = np.random.randn(100, 3)
-true_w = np.array([1.5, -2.0, 0.5])
-y = X @ true_w + 4.0 + 0.1 * np.random.randn(100)
-
-# Scale and fit
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
-model = LinearRegression(learning_rate=0.01, max_iter=1000)
-model.fit(X_scaled, y)
-
-# Predict
-X_new = np.random.randn(10, 3)
-predictions = model.predict(scaler.transform(X_new))
-```
-
-## Implemented Models
-| Category       |                         Models                         |
-|:---------------|:------------------------------------------------------:|
-| Linear Models  |  Linear Regression, Ridge, Lasso, Logistic Regression  |
-| Neighbors      |             KNN Classifier, KNN Regressor              |
-| Tree           |                Decision Tree Classifier                |
-| Cluster        |                    K-Means, DBSCAN                     |
-| Preprocessing  |       MinMaxScaler, StandardScaler, RobustScaler       |
-
-13 models & scalers — all implemented from scratch with NumPy/SciPy.
+| Category              |                                      Models                                      |
+|:----------------------|:--------------------------------------------------------------------------------:|
+| Linear regression     |                   Linear Regression, Ridge, Lasso, Elastic Net                   |
+| Linear classification | Logistic Regression, Ridge Classifier, Lasso Classifier, Elastic Net Classifier  |
+| Nearest neighbors     |        KNN Classifier, KNN Regressor, Radius Classifier, Radius Regressor        |
+| Clustering            |                                  KMeans, DBSCAN                                  |
+| Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                   |
+| Model selection       |                                 Train/test split                                 |
 
 ## Project structure
+
 ```text
 pyml/
-├── linear_model   # Linear & Logistic Regression with L1/L2
-├── neighbors      # KNN Classifier & Regressor
-├── tree           # Decision Tree Classifier
-├── cluster        # K-Means, DBSCAN
-├── preprocess     # Scalers
-└── exc            # Custom exceptions
-tests/             # Test suite  
+├── .github/
+│   └── workflows/
+│       ├── docs.yml
+│       ├── docs-linkcheck.yml
+│       ├── pyml.yml
+│       └── tests.yml
+│
+├── docs/
+│
+├── scripts/
+│   ├── check_all.py
+│   ├── check_docs.py
+│   ├── check_pyml.py
+│   └── check_tests.py
+│
+├── pyml/
+│   ├── cluster/
+│   ├── core/
+│   ├── linear_model/
+│   ├── metrics/
+│   ├── model_selection/
+│   ├── neighbors/
+│   └── preprocessing/
+│
+├── tests/
+│   ├── cluster/
+│   ├── core/
+│   ├── linear_model/
+│   ├── metrics/
+│   ├── model_selection/
+│   ├── neighbors/
+│   ├── preprocessing/
+│   └── conftest.py
+│
+├── .gitignore
+├── .readthedocs.yaml
+├── pyproject.toml
+├── README.md
+└── LICENSE
 ```
 
-## Testing
-```bash
-pytest tests/ -v
-```
+## Quality tooling
 
-### All models are tested for:
-- Shape consistency
-- Finite values (no NaN/inf)
-- Basic accuracy on simple problems
-- Edge cases (single sample, constant target, zero variance)
+| Tool                        |               Checks                |
+|:----------------------------|:-----------------------------------:|
+| mypy (strict)               |        Static type checking         |
+| interrogate                 |      Docstring coverage (100%)      |
+| ruff                        |       Linting and formatting        |
+| pytest                      |             Test suite              |
+| sphinx-lint, doc8, rstcheck |   Documentation style and syntax    |
+| sphinx linkcheck            | Validity of every link in the docs  |
 
-Test datasets are generated using numpy.random and, where convenient,
-sklearn.datasets (synthetic data only — no sklearn models are invoked).
-
-## Quality
-
-| Tool               |   Status    |                         Configuration                          |
-|:-------------------|:-----------:|:--------------------------------------------------------------:|
-| pytest             | 204 passing |                                                                |
-| ruff (linting)     |  0 errors   | `E, F, I, N, W, UP, B, C4, SIM, D, ARG, RUF, T20, FLY, Q, RSE` |
-| mypy (type check)  |  0 errors   |                  `strict = true` Python 3.12                   |
-| CI                 |   Passing   |                         Github Actions                         |
-
-## Documentation
-
-API documentation with full mathematical derivations is built using Sphinx and is hosted online.
-
-👉 **[Read the Documentation Online (pyml-educational.readthedocs.io)](https://pyml-educational.readthedocs.io/en/latest/)**
-
-### Build Locally
-If you prefer to build and view the documentation locally on your machine:
-
-1. **Install documentation dependencies:**
-   ```bash
-   pip install -e ".[docs]"
-   ```
-
-2. **Navigate to the docs directory:**
-   ```bash
-   cd docs
-   ```
-
-3. **Build HTML documentation:**
-   ```bash
-   make html        # on Linux/macOS
-   .\make.bat html  # on Windows
-   ```
-
-4. **Open in browser:**
-   ```bash
-   start build/html/index.html     # Windows
-   open build/html/index.html      # macOS
-   xdg-open build/html/index.html  # Linux
-   ```
-
-The documentation is written in NumPy docstring format with LaTeX math rendered via MathJax.
-
-
-## Academic context
-This project is developed as part of an undergraduate Artificial Intelligence
-curriculum at the [National University of Uzbekistan](https://nuu.uz).
-
-The philosophy behind this project is the same: understand by building.
-No black boxes — only transparent mathematical implementations in code.
-
-## Limitations
-This is **educational software**, not a production library. Known limitations
-include:
-
-- No GPU acceleration or distributed computing support.
-- Limited to dense NumPy arrays (no sparse matrix support).
-
-These design choices prioritize clarity of implementation over computational
-efficiency.
-
-## Author
-**Sherzod Juraev** — a 3rd-year Artificial Intelligence student
-at the [National University of Uzbekistan](https://nuu.uz).
+Each row runs through its own script in `scripts/`, so after
+installing the `dev`/`docs` extras, you can run any of them yourself
+to verify the project's state firsthand.
 
 ## License
-MIT — see [LICENSE](LICENSE) for details
 
-Copyright © 2026 Sherzod Juraev.
+MIT License. See [LICENSE](LICENSE) for details.

@@ -1,182 +1,162 @@
-r"""Lasso Regression with L1 regularization trained via Batch Gradient Descent.
+"""Lasso regression (L1-regularized linear regression)."""
 
-This module provides a thin wrapper around :class:`LinearRegression`
-with ``penalty`` fixed to ``'l1'``, producing sparse weight vectors
-by driving irrelevant feature coefficients to exactly zero.
+import numpy as np
 
-Classes
--------
-Lasso
-    L1-regularized linear regression for sparse feature selection.
-
-Notes
------
-L1 regularization creates a non-differentiable objective at zero,
-requiring subgradient methods. This implementation uses subgradient-based
-batch gradient descent — simpler but slower than Coordinate Descent
-with soft-thresholding used in production solvers like scikit-learn.
-"""
-
-from .linear_regression import LinearRegression
+from ._linear_base import _FloatArray, _LinearModelBase
 
 
-class Lasso(LinearRegression):
-    r"""Lasso Regression (L1-regularized Linear Regression).
+class Lasso(_LinearModelBase):
+    r"""Linear regression with L1 (lasso) regularization, fit via gradient descent.
 
-    A specialization of Linear Regression that applies L1 regularization
-    to the weight vector, encouraging sparse solutions by driving some
-    coefficients to exactly zero — performing implicit feature selection.
-
-    The model minimizes the following objective function:
+    Predicts a continuous target as a linear combination of features,
+    identically to :class:`~pyml.linear_model.linear_regression.LinearRegression`:
 
     .. math::
+        \hat{y} = Xw + b
 
-        J(w, b) = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
-        + \frac{\alpha}{n} \sum_{j=1}^{p} |w_j|
+    Fitting minimizes the mean squared error plus an L1 penalty on the
+    coefficients:
 
-    where :math:`\alpha` controls the regularization strength.
-    Parameters are learned via batch gradient descent.
+    .. math::
+        J(w, b) = \frac{1}{m} \sum_{i=1}^{m} \left( \hat{y}_i - y_i \right)^2
+            + \alpha \sum_{j=1}^{n} |w_j|
 
-    This class is a thin wrapper around :class:`LinearRegression` with
-    ``penalty`` fixed to ``'l1'``. All training logic, convergence
-    detection, and gradient updates are inherited from the parent class.
+    The intercept b is not penalized, since it only shifts the data and
+    does not contribute to model complexity. Unlike the L2 penalty, :math:`|w_j|`
+    is not differentiable at :math:`w_j = 0`, so a subgradient is used instead:
+
+    .. math::
+        \frac{\partial J}{\partial w} = \frac{2}{m} X^T (\hat{y} - y)
+            + \alpha \cdot \text{sign}(w), \quad
+        \frac{\partial J}{\partial b} = \frac{2}{m} \sum_{i=1}^{m} (\hat{y}_i - y_i)
+
+    where sign(w) is applied elementwise and sign(0) = 0. This gradient is
+    used to update the parameters at each iteration via gradient descent:
+
+    .. math::
+        w \leftarrow w - \alpha_{lr} \frac{\partial J}{\partial w}, \quad
+        b \leftarrow b - \alpha_{lr} \frac{\partial J}{\partial b}
+
+    where alpha_lr is the learning rate (distinct from the
+    regularization strength alpha above).
 
     Parameters
     ----------
-    learning_rate : float, default=0.1
-        Step size for each gradient descent iteration. Must be positive.
-    max_iter : int, default=100
-        Maximum number of gradient descent iterations.
-    tol : float, default=1e-3
-        Relative tolerance for early stopping. Training halts when:
-
-        .. math::
-
-            \frac{|J_{new} - J_{old}|}{J_{old}} \leq tol
-
-    alpha : float, default=1.0
-        Regularization strength. Must be non-negative. Larger values
-        push more coefficients toward exactly zero.
+    learning_rate : float, optional
+        Step size for each gradient descent update. Defaults to 0.01.
+    max_iter : int, optional
+        Maximum number of gradient descent iterations. Defaults to 1000.
+    tol : float, optional
+        Minimum absolute change in loss between consecutive iterations
+        required to continue optimizing. Defaults to 1e-4.
+    fit_intercept : bool, optional
+        Whether to fit an intercept term b. Defaults to True.
+    alpha : float, optional
+        Regularization strength. Larger values push more coefficients
+        exactly to zero. ``alpha=0`` recovers ordinary least squares.
+        Defaults to 1.0.
 
     Attributes
     ----------
-    coef_ : np.ndarray of shape (n_features,)
-        Learned weight vector after fitting. L1 regularization drives
-        some coefficients to exactly zero, producing a sparse solution.
+    coef_ : FeatureMatrix
+        Learned weight vector, of shape (n_features,).
     intercept_ : float
-        Learned bias term. Never regularized.
+        Learned intercept term. Remains 0.0 if fit_intercept is False.
+    n_iter_ : int
+        Number of iterations actually run before stopping.
 
-    Notes
-    -----
-    **Why L1 regularization?**
 
-    When many features are present but only a few are truly predictive,
-    L1 regularization is preferred. Unlike L2, the L1 penalty creates
-    a non-smooth loss surface with corners at zero, which causes gradient
-    descent to land exactly on zero for irrelevant features:
+    .. note::
+        Unlike Ridge, Lasso can shrink coefficients exactly to zero,
+        since the L1 penalty applies a constant push regardless of a
+        coefficient's magnitude. This makes it useful for automatic
+        feature selection: features with a coefficient of exactly 0.0
+        contribute nothing to the prediction.
 
-    .. math::
+    .. note::
+        Because the subgradient update takes a fixed-size step
+        (independent of the coefficient's magnitude), a learning rate
+        or alpha that is too large can cause small coefficients to
+        oscillate around zero instead of settling exactly on it. If
+        coefficients don't stabilize, try reducing learning_rate.
 
-        \frac{\partial R}{\partial w_j} =
-        \frac{\alpha}{n} \cdot \text{sign}(w_j)
+    .. note::
+        As with all gradient-descent-based linear models here, features
+        should be standardized before fitting — otherwise the penalty is
+        applied unevenly across features of different scales. The
+        default ``alpha=1.0`` follows the same convention as
+        scikit-learn's ``Lasso``, which assumes standardized inputs.
 
-    At :math:`w_j = 0`, the subgradient is treated as 0, allowing
-    coefficients to remain exactly zero once they reach it.
+    .. plot::
 
-    **Gradient of the regularized loss**
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyml.linear_model import LinearRegression, Lasso
 
-    The L1 term contributes the following additive gradient to weights:
+        rng = np.random.default_rng(42)
+        X = np.sort(rng.uniform(0, 10, size=(30, 1)), axis=0)
+        y = 2.5 * X.ravel() + 1.0 + rng.normal(0, 1.5, size=30)
 
-    .. math::
+        ols = LinearRegression(max_iter=5000).fit(X, y)
+        lasso = Lasso(alpha=5.0, max_iter=5000).fit(X, y)
+        X_line = np.linspace(0, 10, 100).reshape(-1, 1)
 
-        \frac{\partial R}{\partial w_j} =
-        \frac{\alpha}{n} \cdot \text{sign}(w_j)
-
-    Combined with the MSE gradient, the full weight update becomes:
-
-    .. math::
-
-        w := w - \eta \left(
-            -\frac{2}{n} X^T (y - \hat{y})
-            + \frac{\alpha}{n} \cdot \text{sign}(w)
-        \right)
-
-    The bias :math:`b` is not regularized.
-
-    **Lasso vs Ridge**
-
-    - Lasso (L1) drives irrelevant coefficients to exactly zero,
-      making it suitable for high-dimensional sparse problems.
-    - Ridge (L2) shrinks all coefficients smoothly without eliminating
-      any of them.
-    - Prefer Lasso when you suspect only a few features are relevant,
-      or when an interpretable sparse model is desired.
-
-    **Limitation with gradient descent**
-
-    Lasso's closed-form solution does not exist due to the
-    non-differentiability of :math:`|w_j|` at zero. Coordinate
-    Descent with soft-thresholding is the standard solver in practice
-    (e.g., scikit-learn). This implementation uses subgradient-based
-    batch gradient descent, which is simpler but converges slower
-    and may not reach exact zeros.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from pyml import Lasso
-    >>>
-    >>> np.random.seed(0)
-    >>> X = np.random.randn(100, 5)
-    >>> true_w = np.array([2.0, -1.5, 0.0, 0.0, 0.0])
-    >>> y = X @ true_w + 1.0 + 0.1 * np.random.randn(100)
-    >>>
-    >>> model = Lasso(learning_rate=0.01, max_iter=1000, alpha=0.5)
-    >>> model.fit(X, y)
-    >>> print(model.coef_)
-    >>> print(model.intercept_)
-    >>>
-    >>> model_strong = Lasso(alpha=2.0)
-    >>> model_strong.fit(X, y)
-    >>>
-    >>> X_new = np.random.randn(10, 5)
-    >>> predictions = model.predict(X_new)
+        fig, ax = plt.subplots()
+        ax.scatter(X, y, alpha=0.6, label="Training data")
+        ax.plot(X_line, ols.predict(X_line), color="red", label="OLS")
+        ax.plot(X_line, lasso.predict(X_line), color="green", label="Lasso (alpha=5.0)")
+        ax.set_xlabel("X")
+        ax.set_ylabel("y")
+        ax.set_title("Lasso vs. OLS fit")
+        ax.legend()
     """
 
     def __init__(
         self,
-        learning_rate: float = 0.1,
-        max_iter: int = 100,
-        tol: float = 1e-3,
+        learning_rate: float = 0.01,
+        max_iter: int = 1000,
+        tol: float = 1e-4,
+        fit_intercept: bool = True,
         alpha: float = 1.0,
     ) -> None:
-        r"""Initialize Lasso model with L1 regularization.
-
-        Passes all hyperparameters to the parent :class:`LinearRegression`
-        with ``penalty`` fixed to ``'l1'``. No additional configuration
-        is needed beyond the standard linear model parameters.
+        """Initialize this regressor with gradient descent and regularization hyperparameters.
 
         Parameters
         ----------
-        learning_rate : float, default=0.1
-            Step size :math:`\eta` for gradient descent updates.
-            Must be positive.
-        max_iter : int, default=100
-            Maximum number of gradient descent iterations.
-        tol : float, default=1e-3
-            Relative tolerance for early stopping convergence check.
-        alpha : float, default=1.0
-            L1 regularization strength :math:`\alpha \geq 0`. Larger
-            values produce sparser weight vectors with more zero entries.
+        learning_rate : float, optional
+            Step size for each gradient descent update. Defaults to 0.01.
+        max_iter : int, optional
+            Maximum number of gradient descent iterations. Defaults to 1000.
+        tol : float, optional
+            Minimum absolute change in loss between consecutive iterations
+            required to continue optimizing. Defaults to 1e-4.
+        fit_intercept : bool, optional
+            Whether to fit an intercept term b. Defaults to True.
+        alpha : float, optional
+            Regularization strength; must be non-negative. Defaults to 1.0.
+        """
+        super().__init__(
+            learning_rate=learning_rate, max_iter=max_iter, tol=tol, fit_intercept=fit_intercept
+        )
+        self.alpha: float = alpha
+
+    def _penalty_loss(self) -> float:
+        """Compute the L1 penalty term, alpha times the sum of absolute coefficients.
 
         Returns
         -------
-        None
+        float
+            The value of alpha * sum(abs(``coef_``)).
         """
-        super().__init__(
-            learning_rate=learning_rate,
-            max_iter=max_iter,
-            tol=tol,
-            alpha=alpha,
-            penalty="l1",
-        )
+        return float(self.alpha * np.sum(np.abs(self.coef_)))
+
+    def _penalty_gradient(self) -> _FloatArray:
+        """Compute the subgradient of the L1 penalty with respect to ``coef_``.
+
+        Returns
+        -------
+        FloatArray
+            The value of alpha * sign(``coef_``), of shape (n_features,).
+            sign(0) is taken as 0.
+        """
+        return self.alpha * np.sign(self.coef_)

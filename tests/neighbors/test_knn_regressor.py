@@ -1,213 +1,73 @@
+"""Tests for KNNRegressor."""
+
 import numpy as np
 import pytest
 
-from pyml import KNNRegressor
-from pyml.exc import NotFittedError
+from pyml.core.exceptions import InvalidParameterError
+from pyml.neighbors import KNNRegressor
 
 
-class TestBasicCorrectness:
-    def test_uniform_mean_of_k_neighbors(self):
-        X_train = np.array([[1.0], [2.0], [3.0], [100.0]])
-        y_train = np.array([10.0, 20.0, 30.0, 1000.0])
+class TestFit:
+    def test_rejects_zero_or_negative_n_neighbors(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = rng.uniform(0, 10, size=10)
 
-        model = KNNRegressor(k=3, weighting="uniform")
-        model.fit(X_train, y_train)
+        with pytest.raises(InvalidParameterError):
+            KNNRegressor(n_neighbors=0).fit(X, y)
 
-        pred = model.predict(np.array([[2.0]]))
-        assert pred[0] == pytest.approx(20.0)
+    def test_rejects_n_neighbors_exceeding_sample_count(self, rng):
+        X = rng.uniform(0, 10, size=(5, 2))
+        y = rng.uniform(0, 10, size=5)
 
-    def test_k1_returns_exact_neighbor_value(self):
-        X_train = np.array([[0.0], [5.0], [10.0]])
-        y_train = np.array([100.0, 200.0, 300.0])
-
-        model = KNNRegressor(k=1)
-        model.fit(X_train, y_train)
-
-        pred = model.predict(np.array([[5.1]]))
-        assert pred[0] == pytest.approx(200.0)
-
-    def test_k1_on_training_data_is_exact(self):
-        rng = np.random.default_rng(0)
-        X = rng.normal(size=(20, 3))
-        y = rng.normal(size=20)
-
-        model = KNNRegressor(k=1)
-        model.fit(X, y)
-        preds = model.predict(X)
-
-        assert np.allclose(preds, y)
-
-    def test_multiple_query_points(self):
-        X_train = np.array([[0.0], [10.0]])
-        y_train = np.array([0.0, 100.0])
-
-        model = KNNRegressor(k=1)
-        model.fit(X_train, y_train)
-
-        preds = model.predict(np.array([[0.5], [9.5]]))
-        assert preds.shape == (2,)
-        assert preds[0] == pytest.approx(0.0)
-        assert preds[1] == pytest.approx(100.0)
+        with pytest.raises(InvalidParameterError):
+            KNNRegressor(n_neighbors=10).fit(X, y)
 
 
-class TestKValidation:
-    def test_k_zero_raises(self):
-        X = np.array([[0.0], [1.0]])
-        y = np.array([0.0, 1.0])
-        model = KNNRegressor(k=0)
-        model.fit(X, y)
-        with pytest.raises(ValueError):
-            model.predict(np.array([[0.5]]))
+class TestPredict:
+    def test_exact_match_returns_exact_target(self, rng):
+        X = rng.uniform(0, 10, size=(20, 2))
+        y = rng.uniform(0, 10, size=20)
 
-    def test_k_negative_raises(self):
-        X = np.array([[0.0], [1.0]])
-        y = np.array([0.0, 1.0])
-        model = KNNRegressor(k=-1)
-        model.fit(X, y)
-        with pytest.raises(ValueError):
-            model.predict(np.array([[0.5]]))
+        model = KNNRegressor(n_neighbors=1).fit(X, y)
+        prediction = model.predict(X[:1])
 
-    def test_k_exceeds_n_samples_raises(self):
-        X = np.array([[0.0], [1.0]])
-        y = np.array([0.0, 1.0])
-        model = KNNRegressor(k=10)
-        model.fit(X, y)
-        with pytest.raises(ValueError):
-            model.predict(np.array([[0.5]]))
+        assert prediction[0] == pytest.approx(y[0])
 
-    def test_k_equals_n_samples_is_valid(self):
-        X = np.array([[0.0], [1.0], [2.0]])
-        y = np.array([0.0, 1.0, 2.0])
-        model = KNNRegressor(k=3)
-        model.fit(X, y)
-        pred = model.predict(np.array([[0.0]]))
-        assert pred[0] == pytest.approx(1.0)
+    def test_uniform_weighting_matches_manual_mean(self, rng):
+        X = rng.uniform(0, 10, size=(20, 2))
+        y = rng.uniform(0, 10, size=20)
+        query = rng.uniform(0, 10, size=(1, 2))
 
+        model = KNNRegressor(n_neighbors=3, weights="uniform").fit(X, y)
+        prediction = model.predict(query)
 
-class TestNotFitted:
-    def test_predict_before_fit_raises(self):
-        model = KNNRegressor(k=3)
-        with pytest.raises(NotFittedError):
-            model.predict(np.array([[0.0]]))
+        distances = np.linalg.norm(X - query, axis=1)
+        nearest_idx = np.argsort(distances)[:3]
+        expected = np.mean(y[nearest_idx])
 
+        assert prediction[0] == pytest.approx(expected)
 
-class TestDistanceMetrics:
-    def test_cityblock_changes_nearest_neighbor(self):
-        X_train = np.array([[5.0, 0.0], [3.0, 3.0]])
-        y_train = np.array([100.0, 200.0])
+    def test_distance_weighting_favors_closer_neighbors(self, rng):
+        # one neighbor very close with a distinct value, others far with
+        # a different value cluster
+        X = np.array([[0.0, 0.0], [10.0, 10.0], [10.1, 10.1], [10.2, 10.2]])
+        y = np.array([100.0, 0.0, 0.0, 0.0])
+        query = np.array([[0.1, 0.1]])
 
-        model_euclidean = KNNRegressor(k=1, metric="euclidean")
-        model_euclidean.fit(X_train, y_train)
-        pred_euclidean = model_euclidean.predict(np.array([[0.0, 0.0]]))
+        model = KNNRegressor(n_neighbors=4, weights="distance").fit(X, y)
+        uniform_model = KNNRegressor(n_neighbors=4, weights="uniform").fit(X, y)
 
-        model_cityblock = KNNRegressor(k=1, metric="cityblock")
-        model_cityblock.fit(X_train, y_train)
-        pred_cityblock = model_cityblock.predict(np.array([[0.0, 0.0]]))
+        weighted_pred = model.predict(query)[0]
+        uniform_pred = uniform_model.predict(query)[0]
 
-        assert pred_euclidean[0] == pytest.approx(200.0)
-        assert pred_cityblock[0] == pytest.approx(100.0)
+        # distance weighting should pull the prediction much closer to the
+        # nearby point's value (100.0) than uniform averaging would
+        assert weighted_pred > uniform_pred
 
-    def test_chebyshev_uses_max_coordinate_diff(self):
-        X_train = np.array([[1.0, 9.0], [5.0, 5.0]])
-        y_train = np.array([10.0, 20.0])
+    def test_score_reasonable_on_noise_free_data(self, rng):
+        X = np.sort(rng.uniform(0, 10, size=(100, 1)), axis=0)
+        y = np.sin(X.ravel())
 
-        model = KNNRegressor(k=1, metric="chebyshev")
-        model.fit(X_train, y_train)
-        pred = model.predict(np.array([[0.0, 0.0]]))
-        assert pred[0] == pytest.approx(20.0)
+        model = KNNRegressor(n_neighbors=3).fit(X, y)
 
-
-class TestWeighting:
-    def test_uniform_vs_distance_give_different_results(self):
-        X_train = np.array([
-            [5.0, 0.0],   # target=100, distance=5
-            [-5.0, 0.0],  # target=100, distance=5
-            [0.1, 0.0],   # target=1,   distance=0.1
-        ])
-        y_train = np.array([100.0, 100.0, 1.0])
-
-        model_uniform = KNNRegressor(k=3, weighting="uniform")
-        model_uniform.fit(X_train, y_train)
-        pred_uniform = model_uniform.predict(np.array([[0.0, 0.0]]))
-
-        model_distance = KNNRegressor(k=3, weighting="distance")
-        model_distance.fit(X_train, y_train)
-        pred_distance = model_distance.predict(np.array([[0.0, 0.0]]))
-
-        assert pred_uniform[0] == pytest.approx(67.0, abs=1.0)
-        assert pred_distance[0] < pred_uniform[0]
-        assert pred_distance[0] < 20.0
-
-    def test_distance_weighting_exact_match_dominates(self):
-        X_train = np.array([
-            [0.0, 0.0],   # target=5.0, distance=0 (exact match)
-            [1.0, 0.0],   # target=1000.0
-            [2.0, 0.0],   # target=2000.0
-        ])
-        y_train = np.array([5.0, 1000.0, 2000.0])
-
-        model = KNNRegressor(k=3, weighting="distance")
-        model.fit(X_train, y_train)
-        pred = model.predict(np.array([[0.0, 0.0]]))
-        assert pred[0] == pytest.approx(5.0, abs=1e-6)
-
-    def test_distance_weighted_mean_formula_directly(self):
-        X_train = np.array([[0.0], [1.0], [3.0]])
-        y_train = np.array([10.0, 20.0, 30.0])
-
-        model = KNNRegressor(k=3, weighting="distance")
-        model.fit(X_train, y_train)
-        pred = model.predict(np.array([[0.0]]))
-        assert pred[0] == pytest.approx(10.0, abs=1e-6)
-
-
-class TestInputShapes:
-    def test_single_1d_query_point_is_reshaped(self):
-        X_train = np.array([[0.0], [10.0]])
-        y_train = np.array([0.0, 100.0])
-
-        model = KNNRegressor(k=1)
-        model.fit(X_train, y_train)
-
-        pred = model.predict(np.array([0.5]))  # 1-D
-        assert pred.shape == (1,)
-        assert pred[0] == pytest.approx(0.0)
-
-    def test_output_shape_matches_n_queries(self):
-        X_train = np.array([[0.0], [1.0], [2.0]])
-        y_train = np.array([0.0, 1.0, 2.0])
-
-        model = KNNRegressor(k=2)
-        model.fit(X_train, y_train)
-
-        preds = model.predict(np.array([[0.0], [1.0], [2.0], [3.0]]))
-        assert preds.shape == (4,)
-
-
-class TestSanityCheckWithRealDataset:
-    def test_diabetes_k1_perfect_on_training_set(self):
-        from sklearn.datasets import load_diabetes
-
-        X, y = load_diabetes(return_X_y=True)
-        model = KNNRegressor(k=1)
-        model.fit(X, y)
-        preds = model.predict(X)
-
-        assert np.allclose(preds, y)
-
-    def test_diabetes_reasonable_r2_with_train_test_split(self):
-        from sklearn.datasets import load_diabetes
-        from sklearn.model_selection import train_test_split
-
-        X, y = load_diabetes(return_X_y=True)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=42
-        )
-
-        model = KNNRegressor(k=10, weighting="distance")
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-
-        baseline_mse = np.mean((y_test - np.mean(y_train)) ** 2)
-        model_mse = np.mean((preds - y_test) ** 2)
-        assert model_mse < baseline_mse
+        assert model.score(X, y) > 0.95

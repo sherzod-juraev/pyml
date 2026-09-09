@@ -1,231 +1,82 @@
+"""Tests for DBSCAN."""
+
 import numpy as np
 import pytest
 
-from pyml import DBSCAN
+from pyml.cluster import DBSCAN
+from pyml.core.exceptions import InvalidParameterError
 
 
-class TestDBSCAN:
-    def test_init(self):
-        model = DBSCAN(eps=0.5, MinPts=4, metric="cityblock")
+class TestFitPredict:
+    def test_rejects_zero_or_negative_eps(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
 
-        assert model.eps == 0.5
-        assert model.MinPts == 4
-        assert model.metric == "cityblock"
+        with pytest.raises(InvalidParameterError):
+            DBSCAN(eps=0.0).fit_predict(X)
 
-    def test_invalid_metric(self):
-        model = DBSCAN(eps=0.5, metric="invalid")
+    def test_rejects_zero_or_negative_min_samples(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
 
-        with pytest.raises(ValueError, match="Unsupported metric"):
-            model.fit_predict(np.random.rand(5, 2))
+        with pytest.raises(InvalidParameterError):
+            DBSCAN(min_samples=0).fit_predict(X)
 
-    def test_single_cluster(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [1., 0.],
-            [1., 1.]
-        ])
+    def test_rejects_min_samples_exceeding_sample_count(self, rng):
+        X = rng.uniform(0, 10, size=(5, 2))
 
-        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+        with pytest.raises(InvalidParameterError):
+            DBSCAN(min_samples=10).fit_predict(X)
 
-        assert np.all(labels == 0)
+    def test_finds_well_separated_clusters(self, rng):
+        X0 = rng.normal(loc=(-10, -10), scale=0.5, size=(30, 2))
+        X1 = rng.normal(loc=(10, 10), scale=0.5, size=(30, 2))
+        X = np.vstack([X0, X1])
 
-    def test_two_clusters(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [10., 10.],
-            [10., 11.]
-        ])
+        labels = DBSCAN(eps=2.0, min_samples=5).fit_predict(X)
 
-        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+        labels_0 = labels[:30]
+        labels_1 = labels[30:]
+        assert len(np.unique(labels_0)) == 1
+        assert len(np.unique(labels_1)) == 1
+        assert labels_0[0] != labels_1[0]
+        # neither blob should be marked as noise
+        assert labels_0[0] != -1
+        assert labels_1[0] != -1
 
-        assert np.array_equal(labels, np.array([0, 0, 1, 1]))
+    def test_marks_isolated_points_as_noise(self, rng):
+        X0 = rng.normal(loc=(0, 0), scale=0.3, size=(30, 2))
+        isolated = np.array([[50.0, 50.0]])
+        X = np.vstack([X0, isolated])
 
-    def test_detects_noise(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [10., 10.]
-        ])
+        labels = DBSCAN(eps=1.0, min_samples=5).fit_predict(X)
 
-        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
+        assert labels[-1] == -1
 
-        assert np.array_equal(labels, np.array([0, 0, -1]))
+    def test_too_small_eps_marks_everything_as_noise(self, rng):
+        X = rng.uniform(0, 100, size=(30, 2))
 
-    def test_all_noise(self):
-        X = np.array([
-            [0., 0.],
-            [10., 10.],
-            [20., 20.]
-        ])
-
-        labels = DBSCAN(eps=1.0, MinPts=2).fit_predict(X)
+        labels = DBSCAN(eps=1e-6, min_samples=5).fit_predict(X)
 
         assert np.all(labels == -1)
 
-    def test_single_sample(self):
-        X = np.array([[1., 2.]])
+    def test_no_leftover_unvisited_label(self, rng):
+        X0 = rng.normal(loc=(-5, -5), scale=1.0, size=(20, 2))
+        X1 = rng.normal(loc=(5, 5), scale=1.0, size=(20, 2))
+        X = np.vstack([X0, X1])
 
-        labels = DBSCAN(eps=1.0, MinPts=2).fit_predict(X)
+        labels = DBSCAN(eps=1.5, min_samples=5).fit_predict(X)
 
-        assert np.array_equal(labels, np.array([-1]))
+        # every point should end up either in a cluster (>= 0) or noise (-1),
+        # never left in the internal "unvisited" (-2) state
+        assert np.all(labels != -2)
 
-    def test_duplicate_points(self):
-        X = np.array([
-            [1., 1.],
-            [1., 1.],
-            [1., 1.]
-        ])
 
-        labels = DBSCAN(eps=0.1, MinPts=2).fit_predict(X)
+class TestGetLabels:
+    def test_matches_fit_predict_result(self, rng):
+        X0 = rng.normal(loc=(-5, -5), scale=1.0, size=(20, 2))
+        X1 = rng.normal(loc=(5, 5), scale=1.0, size=(20, 2))
+        X = np.vstack([X0, X1])
 
-        assert np.all(labels == 0)
+        model = DBSCAN(eps=1.5, min_samples=5)
+        labels = model.fit_predict(X)
 
-    def test_euclidean_metric(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [5., 5.]
-        ])
-
-        labels = DBSCAN(
-            eps=1.5,
-            MinPts=2,
-            metric="euclidean"
-        ).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 0, -1]))
-
-    def test_cityblock_metric(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [5., 5.]
-        ])
-
-        labels = DBSCAN(
-            eps=2.0,
-            MinPts=2,
-            metric="cityblock"
-        ).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 0, -1]))
-
-    def test_chebyshev_metric(self):
-        X = np.array([
-            [0., 0.],
-            [1., 1.],
-            [5., 5.]
-        ])
-
-        labels = DBSCAN(
-            eps=1.5,
-            MinPts=2,
-            metric="chebyshev"
-        ).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 0, -1]))
-
-    def test_output_shape(self):
-        X = np.random.rand(20, 4)
-
-        labels = DBSCAN(eps=0.5).fit_predict(X)
-
-        assert labels.shape == (20,)
-
-    def test_output_dtype(self):
-        X = np.random.rand(10, 2)
-
-        labels = DBSCAN(eps=0.5).fit_predict(X)
-
-        assert np.issubdtype(labels.dtype, np.integer)
-
-    def test_check_params(self):
-        model = DBSCAN(eps=0.5, metric="euclidean")
-
-        model.check_params()
-
-    def test_empty_dataset(self):
-        X = np.empty((0, 2))
-
-        labels = DBSCAN(eps=1.0).fit_predict(X)
-
-        assert labels.size == 0
-        assert labels.shape == (0,)
-
-    def test_minpts_one(self):
-        X = np.array([
-            [0., 0.],
-            [10., 10.]
-        ])
-
-        labels = DBSCAN(eps=0.1, MinPts=1).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 1]))
-
-    def test_three_separate_clusters(self):
-        X = np.array([
-            [0., 0.],
-            [0., 0.1],
-
-            [10., 10.],
-            [10., 10.1],
-
-            [20., 20.],
-            [20., 20.1]
-        ])
-
-        labels = DBSCAN(eps=0.5, MinPts=2).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 0, 1, 1, 2, 2]))
-
-    def test_fit_predict_is_deterministic(self):
-        rng = np.random.default_rng(42)
-        X = rng.random((30, 2))
-
-        model = DBSCAN(eps=0.25, MinPts=3)
-
-        labels1 = model.fit_predict(X)
-        labels2 = model.fit_predict(X)
-
-        assert np.array_equal(labels1, labels2)
-
-    def test_cluster_labels_start_from_zero(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [10., 10.],
-            [10., 11.]
-        ])
-
-        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
-
-        clusters = sorted(set(labels) - {-1})
-
-        assert clusters == [0, 1]
-
-    def test_all_points_in_single_cluster(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [1., 0.],
-            [1., 1.],
-            [0.5, 0.5]
-        ])
-
-        labels = DBSCAN(eps=2.0, MinPts=2).fit_predict(X)
-
-        assert np.unique(labels).tolist() == [0]
-
-    def test_noise_and_cluster(self):
-        X = np.array([
-            [0., 0.],
-            [0., 1.],
-            [1., 0.],
-            [10., 10.]
-        ])
-
-        labels = DBSCAN(eps=1.5, MinPts=2).fit_predict(X)
-
-        assert np.array_equal(labels, np.array([0, 0, 0, -1]))
+        assert np.array_equal(model.labels_, labels)

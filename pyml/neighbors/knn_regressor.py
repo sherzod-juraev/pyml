@@ -1,273 +1,161 @@
-r"""K-Nearest Neighbors Regressor.
+"""K-Nearest Neighbors regression."""
 
-This module provides a pure NumPy/SciPy implementation of the KNN
-regression algorithm with support for multiple distance metrics
-and weighting strategies.
-
-Classes
--------
-KNNRegressor
-    Lazy-learning regressor using (weighted) average of k nearest
-    neighbors' target values.
-
-Notes
------
-KNN is a non-parametric, instance-based learning algorithm. No
-explicit training occurs — all computation is deferred to predict
-time. Uses ``argpartition`` for efficient neighbor selection in
-:math:`O(n)` time rather than full sorting.
-"""
-
-from typing import Any, Literal, Self, cast
+from typing import Literal
 
 import numpy as np
-import numpy.typing as npt
 from scipy.spatial.distance import cdist
 
-from ..exc import NotFittedError
+from ..core.base import Regressor
+from ..core.dtypes import FeatureMatrix, RegressionTarget
+from ..core.exceptions import InvalidParameterError
 
 
-class KNNRegressor:
-    r"""K-Nearest Neighbors Regressor.
+class KNNRegressor(Regressor):
+    r"""K-Nearest Neighbors regression.
 
-    Predicts continuous target values by averaging the target values
-    of the :math:`k` nearest neighbors in the training set.
-    Given a query point :math:`x`, the algorithm:
-
-    1. Computes distances from :math:`x` to all training points.
-    2. Selects the :math:`k` closest neighbors.
-    3. Aggregates their target values (uniform or distance-weighted).
-
-    **Uniform weighting:**
+    Predicts a continuous target by finding the n_neighbors closest
+    training samples (by the given distance metric) to each query point,
+    and averaging their target values:
 
     .. math::
+        \hat{y} = \frac{1}{k} \sum_{i \in N_k(x)} y_i
 
-        \hat{y} = \frac{1}{k} \sum_{i=1}^{k} y_{(i)}
-
-    **Distance weighting:**
-
-    .. math::
-
-        \hat{y} = \frac{\sum_{i=1}^{k} w_i \cdot y_{(i)}}
-                         {\sum_{i=1}^{k} w_i},
-        \quad w_i = \frac{1}{d(x, x_{(i)}) + \varepsilon}
-
-    where :math:`\varepsilon = 10^{-12}` prevents division by zero
-    for exact matches.
+    where :math:`N_k(x)` is the set of the k training samples closest to
+    the query point x. Unlike the gradient-descent-based models, KNN has
+    no training phase beyond storing the data — all computation happens
+    at prediction time.
 
     Parameters
     ----------
-    k : int, default=3
-        Number of nearest neighbors to consider for prediction.
-    metric : {'euclidean', 'cityblock', 'chebyshev'}, default='euclidean'
-        Distance metric used to find nearest neighbors:
-
-        - ``'euclidean'`` — L2 norm:
-
-          .. math::
-
-              d(x, x') = \sqrt{\sum_{j=1}^{p} (x_j - x'_j)^2}
-
-        - ``'cityblock'`` — L1 norm (Manhattan distance):
-
-          .. math::
-
-              d(x, x') = \sum_{j=1}^{p} |x_j - x'_j|
-
-        - ``'chebyshev'`` — L∞ norm:
-
-          .. math::
-
-              d(x, x') = \max_{j} |x_j - x'_j|
-
-    weighting : {'uniform', 'distance'}, default='uniform'
-        Weighting strategy for neighbor aggregation:
-
-        - ``'uniform'`` — all neighbors contribute equally.
-        - ``'distance'`` — closer neighbors contribute more,
-          weighted by inverse distance.
+    n_neighbors : int, optional
+        Number of nearest neighbors to use. Must not exceed the number
+        of training samples. Defaults to 5.
+    metric : {"euclidean", "chebyshev", "cityblock"}, optional
+        Distance metric used to find neighbors, passed directly to
+        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+    weights : {"uniform", "distance"}, optional
+        How neighbors are weighted when averaging their targets.
+        "uniform" gives every neighbor equal weight; "distance" weights
+        each neighbor by the inverse of its distance to the query point,
+        so closer neighbors contribute more. Defaults to "uniform".
 
     Attributes
     ----------
-    X_ : np.ndarray of shape (n_samples, n_features)
-        Training feature matrix stored after fitting.
-    y_ : np.ndarray of shape (n_samples,)
-        Training target values stored after fitting.
+    X_ : FeatureMatrix
+        Training feature matrix, stored as-is for use at prediction time.
+    y_ : RegressionTarget
+        Training target values, stored as-is for use at prediction time.
 
-    Notes
-    -----
-    KNN regression is a non-parametric, lazy learning algorithm —
-    no explicit training occurs. All computation happens at predict time,
-    making it memory-intensive but flexible.
 
-    Performance degrades in high-dimensional spaces due to the
-    **curse of dimensionality**: distances become increasingly uniform
-    as dimensionality grows.
+    .. note::
+        With weights="distance", a query point that exactly coincides
+        with a training sample is handled by adding a small constant to
+        every distance before inverting it, so a zero distance produces
+        a very large but finite weight rather than a division-by-zero
+        error.
 
-    ``argpartition`` is used instead of full sorting for efficiency:
-    it finds the :math:`k` smallest distances in :math:`O(n)` rather
-    than :math:`O(n \log n)`.
+    .. note::
+        Because prediction requires computing distances to every stored
+        training sample, KNN scales poorly to large datasets compared to
+        parametric models like linear regression, whose prediction cost
+        does not grow with the size of the training set.
 
-    Examples
-    --------
-    >>> from pyml import KNNRegressor
-    >>> import numpy as np
-    >>>
-    >>> X_train = np.array([[1., 2.], [2., 3.], [3., 4.], [6., 7.]])
-    >>> y_train = np.array([1.5, 2.0, 3.5, 6.0])
-    >>>
-    >>> model = KNNRegressor(k=3, metric='euclidean', weighting='distance')
-    >>> model.fit(X_train, y_train)
-    >>> model.predict(np.array([[2., 2.]]))
-    array([2.166...])
+    .. plot::
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyml.neighbors import KNNRegressor
+
+        rng = np.random.default_rng(42)
+        X = np.sort(rng.uniform(0, 10, size=(30, 1)), axis=0)
+        y = np.sin(X.ravel()) + rng.normal(0, 0.1, size=30)
+
+        model = KNNRegressor(n_neighbors=5).fit(X, y)
+        X_line = np.linspace(0, 10, 200).reshape(-1, 1)
+        y_line = model.predict(X_line)
+
+        fig, ax = plt.subplots()
+        ax.scatter(X, y, alpha=0.6, label="Training data")
+        ax.plot(X_line, y_line, color="red", label="KNN prediction")
+        ax.set_xlabel("X")
+        ax.set_ylabel("y")
+        ax.set_title("KNNRegressor fit (n_neighbors=5)")
+        ax.legend()
     """
 
     def __init__(
         self,
-        k: int = 3,
+        n_neighbors: int = 5,
         metric: Literal["euclidean", "chebyshev", "cityblock"] = "euclidean",
-        weighting: Literal["uniform", "distance"] = "uniform",
+        weights: Literal["uniform", "distance"] = "uniform",
     ) -> None:
-        r"""Initialize the KNN Regressor with hyperparameters.
+        """Initialize this regressor with the given neighbor-search hyperparameters.
 
         Parameters
         ----------
-        k : int, default=3
-            Number of nearest neighbors to consider for prediction.
-            Must be positive and not exceed the number of training samples.
-        metric : {'euclidean', 'cityblock', 'chebyshev'}, default='euclidean'
-            Distance metric for computing pairwise distances between
-            query points and training data.
-        weighting : {'uniform', 'distance'}, default='uniform'
-            Strategy for weighting neighbor contributions to the
-            regression prediction.
-
-        Returns
-        -------
-        None
+        n_neighbors : int, optional
+            Number of nearest neighbors to use. Defaults to 5.
+        metric : {"euclidean", "chebyshev", "cityblock"}, optional
+            Distance metric used to find neighbors. Defaults to "euclidean".
+        weights : {"uniform", "distance"}, optional
+            How neighbors are weighted when averaging their targets.
+            Defaults to "uniform".
         """
-        self.k = k
-        self.metric = metric
-        self.weighting = weighting
-        self.__fitted = False
+        super().__init__()
+        self.n_neighbors: int = n_neighbors
+        self.metric: Literal["euclidean", "chebyshev", "cityblock"] = metric
+        self.weights: Literal["uniform", "distance"] = weights
 
-    def fit(self, X: npt.NDArray[np.float64], y: npt.NDArray[Any]) -> Self:
-        r"""Store training data for use during prediction.
-
-        KNN is a lazy learner — no model is built during fit.
-        Training data is stored and used directly at predict time
-        for distance computation and neighbor lookup.
+    def _fit(self, X: FeatureMatrix, y: RegressionTarget, /) -> None:
+        """Validate n_neighbors and store the training data.
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features)
-            Training feature matrix.
-        y : np.ndarray of shape (n_samples,)
-            Continuous target values.
-
-        Returns
-        -------
-        self : KNNRegressor
-            Fitted instance with stored training data. Enables method
-            chaining: ``model.fit(X, y).predict(X_test)``.
-        """
-        self.X_: npt.NDArray[np.float64] = np.asarray(X)
-        self.y_: npt.NDArray[np.float64] = np.asarray(y)
-        self.__fitted = True
-        return self
-
-    def __predict_regression(
-        self, neighbor_ind: npt.NDArray[np.intp], neighbor_dist: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
-        r"""Aggregate neighbor target values into predictions.
-
-        For ``'uniform'`` weighting computes the simple mean:
-
-        .. math::
-
-            \hat{y} = \frac{1}{k} \sum_{i=1}^{k} y_{(i)}
-
-        For ``'distance'`` weighting computes the weighted mean:
-
-        .. math::
-
-            \hat{y} = \frac{\sum_{i=1}^{k} w_i \cdot y_{(i)}}
-                             {\sum_{i=1}^{k} w_i},
-            \quad w_i = \frac{1}{d_i + 10^{-12}}
-
-        Parameters
-        ----------
-        neighbor_ind : np.ndarray of shape (n_samples, k)
-            Indices of the k nearest neighbors for each query point.
-        neighbor_dist : np.ndarray of shape (n_samples, k)
-            Distances to the k nearest neighbors for each query point.
-
-        Returns
-        -------
-        y_pred : np.ndarray of shape (n_samples,)
-            Predicted continuous target values.
-        """
-        if self.weighting == "uniform":
-            return cast(npt.NDArray[np.float64], np.mean(self.y_[neighbor_ind], axis=1))
-        weights = 1 / (neighbor_dist + 1e-12)
-        y_pred = np.sum(self.y_[neighbor_ind] * weights, axis=1) / np.sum(
-            weights, axis=1
-        )
-        return y_pred
-
-    def check_k(self) -> None:
-        r"""Validate that k is within the valid range.
-
-        Ensures that :math:`0 < k \leq n\_samples` where
-        :math:`n\_samples` is the number of training samples.
+        X : FeatureMatrix
+            Training data of shape (n_samples, n_features).
+        y : RegressionTarget
+            Continuous target values of shape (n_samples,).
 
         Raises
         ------
-        ValueError
-            If ``k`` is less than or equal to 0, or if ``k`` exceeds
-            the number of training samples.
+        InvalidParameterError
+            If n_neighbors is not positive, or exceeds the number of
+            training samples.
         """
-        n_samples: int = self.X_.shape[0]
-        if self.k > n_samples or self.k <= 0:
-            raise ValueError(
-                f"Expected 0 < n_neighbors <= n_samples, but n_samples = {n_samples}, "
-                f"n_neighbors = {self.k}."
+        if self.n_neighbors <= 0:
+            raise InvalidParameterError(
+                f"n_neighbors must be a positive integer, got {self.n_neighbors}."
             )
+        if self.n_neighbors > X.shape[0]:
+            raise InvalidParameterError(
+                f"n_neighbors={self.n_neighbors} cannot exceed the number of "
+                f"training samples ({X.shape[0]})."
+            )
+        self.X_ = X.copy()
+        self.y_ = y.copy()
 
-    def predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        r"""Predict target values for new data points.
-
-        Computes pairwise distances between query points and training
-        data via :func:`scipy.spatial.distance.cdist`, selects the
-        :math:`k` nearest neighbors using ``argpartition``, then
-        aggregates their target values via :meth:`__predict_regression`.
+    def _predict(self, X: FeatureMatrix, /) -> RegressionTarget:
+        """Predict targets by averaging the n_neighbors nearest training targets.
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features) or (n_features,)
-            Query points. 1-D input is automatically reshaped to
-            ``(1, n_features)``.
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
 
         Returns
         -------
-        y_pred : np.ndarray of shape (n_samples,)
-            Predicted continuous target values.
-
-        Raises
-        ------
-        NotFittedError
-            If ``predict`` is called before ``fit``. The model must
-            be fitted before making predictions.
-        ValueError
-            If ``k`` is invalid (exceeds training set size or is
-            non-positive), raised via :meth:`check_k`.
+        RegressionTarget
+            Predicted continuous values of shape (n_samples,), computed as
+            the (optionally distance-weighted) average of each query point's
+            nearest neighbors' targets.
         """
-        if not self.__fitted:
-            raise NotFittedError(self)
-        self.check_k()
-        X = np.asarray(X)
-        X = np.array([X]) if X.ndim == 1 else X
         dists = cdist(X, self.X_, metric=self.metric)
-        neighbor_ind = np.argpartition(dists, kth=self.k - 1, axis=1)[:, : self.k]
+        neighbor_ind = np.argpartition(dists, kth=self.n_neighbors - 1, axis=1)[
+            :, : self.n_neighbors
+        ]
+        if self.weights == "uniform":
+            return np.mean(self.y_[neighbor_ind], axis=1)
         neighbor_dist = np.take_along_axis(dists, neighbor_ind, axis=1)
-        return self.__predict_regression(neighbor_ind, neighbor_dist)
+        weights = 1 / (neighbor_dist + 1e-12)
+        y_pred = np.average(self.y_[neighbor_ind], axis=1, weights=weights)
+        return y_pred

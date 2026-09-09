@@ -1,0 +1,36 @@
+name: Docs
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+
+      - name: Install dependencies (with Dev tools)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+
+      - name: Sphinx-lint - style check
+        run: sphinx-lint docs/source
+
+      - name: Doc8 - format check
+        run: doc8 docs/source
+
+      - name: Rstcheck - syntax check
+        run: rstcheck --recursive docs/source
+
+      - name: Build docs (warnings as errors)
+        run: sphinx-build -b html docs/source docs/build/html -W --keep-going

@@ -1,265 +1,182 @@
-r"""Density-Based Spatial Clustering of Applications with Noise (DBSCAN).
+"""DBSCAN density-based clustering."""
 
-This module provides a pure NumPy/SciPy implementation of the DBSCAN
-clustering algorithm, which groups points based on local density and
-automatically identifies outliers as noise.
-
-Classes
--------
-DBSCAN
-    Density-based clustering that discovers clusters of arbitrary
-    shape without requiring the number of clusters in advance.
-
-Notes
------
-Unlike centroid-based methods (e.g., KMeans), DBSCAN determines the
-number of clusters automatically and can find non-spherical clusters.
-The algorithm uses Breadth-First Search (BFS) to expand clusters from
-core points. Time complexity is :math:`O(n^2)` due to full pairwise
-distance computation.
-"""
-
-from collections import deque
 from typing import Literal
 
 import numpy as np
-import numpy.typing as npt
 from scipy.spatial.distance import cdist
 
+from ..core.base import Clusterer
+from ..core.dtypes import ClusterLabels, FeatureMatrix
+from ..core.exceptions import InvalidParameterError
 
-class DBSCAN:
-    r"""Density-Based Spatial Clustering of Applications with Noise.
 
-    Groups points into clusters based on local density, automatically
-    determining the number of clusters and identifying outliers as noise.
+class DBSCAN(Clusterer):
+    r"""Density-based clustering that groups closely packed points.
 
-    Unlike centroid-based methods such as KMeans, DBSCAN does not require
-    specifying the number of clusters in advance and can discover clusters
-    of arbitrary shape.
+    Unlike KMeans, DBSCAN does not require specifying the number of
+    clusters in advance, and can identify arbitrarily shaped clusters as
+    well as noise points that don't belong to any cluster.
 
-    A point :math:`p` is classified as one of three types:
-
-    **Core point** — has at least ``MinPts`` neighbors within radius ``eps``:
-
-    .. math::
-
-        |N_{\varepsilon}(p)| \geq MinPts
-
-    where the :math:`\varepsilon`-neighborhood of :math:`p` is defined as:
+    For a point :math:`p`, its :math:`\varepsilon`-neighborhood is the
+    set of points within distance ``eps``:
 
     .. math::
+        N_\varepsilon(p) = \{q \in D : \text{dist}(p, q) \leq \varepsilon\}
 
-        N_{\varepsilon}(p) = \{ q \in D \mid dist(p, q) \leq \varepsilon \}
-
-    **Border point** — not a core point itself, but lies within the
-    :math:`\varepsilon`-neighborhood of at least one core point.
-
-    **Noise point** — neither a core point nor a border point. Assigned
-    label :math:`-1`.
-
-    Two points :math:`p` and :math:`q` are **directly density-reachable**
-    if:
+    A point :math:`p` is a *core point* if its neighborhood contains at
+    least ``min_samples`` points, including itself:
 
     .. math::
+        p \text{ is a core point} \iff |N_\varepsilon(p)| \geq \text{min\_samples}
 
-        q \in N_{\varepsilon}(p) \quad \text{and} \quad
-        |N_{\varepsilon}(p)| \geq MinPts
-
-    A point :math:`q` is **density-reachable** from :math:`p` if there
-    exists a chain:
+    A cluster is formed by taking a core point, finding all points
+    *density-reachable* from it through a chain of overlapping
+    core-point neighborhoods:
 
     .. math::
+        q \text{ is reachable from } p \iff \exists\, p_1, \ldots, p_n,\
+            p_1 = p,\ p_n = q,\ p_{i+1} \in N_\varepsilon(p_i)\
+            \text{ and } p_i \text{ is a core point}
 
-        p = p_1, p_2, \ldots, p_n = q
-
-    such that each :math:`p_{i+1}` is directly density-reachable from
-    :math:`p_i`.
-
-    Two points are **density-connected** if there exists a point :math:`o`
-    such that both :math:`p` and :math:`q` are density-reachable from
-    :math:`o`.
-
-    A cluster is defined as a maximal set of density-connected points.
-
-    The algorithm proceeds as follows:
-
-    1. Compute the full pairwise distance matrix
-       :math:`D \in \mathbb{R}^{n \times n}`:
-
-       .. math::
-
-           D_{ij} = dist(x_i, x_j)
-
-    2. For each unvisited point :math:`p`:
-
-       - Find :math:`N_{\varepsilon}(p) = \{ j \mid D_{pj} \leq \varepsilon \}`
-       - If :math:`|N_{\varepsilon}(p)| < MinPts` → mark as noise (:math:`-1`)
-       - Else → create new cluster, expand via BFS queue
-
-    3. BFS expansion: for each neighbor :math:`q` in queue:
-
-       - If :math:`|N_{\varepsilon}(q)| \geq MinPts` → add its unvisited
-         neighbors to queue and assign current cluster label
-
-    Border points that fall within multiple clusters are assigned to the
-    cluster whose core point discovers them first (BFS order).
-
-    The algorithm is **deterministic** — given the same ``X``, ``eps``,
-    and ``MinPts``, the output is always identical.
-
-    Time complexity is :math:`O(n^2)` due to full pairwise distance
-    computation via ``cdist``.
+    and including any non-core points within :math:`\varepsilon` of those
+    core points (border points). Points reachable from no core point are
+    labeled as noise (``-1``).
 
     Parameters
     ----------
-    eps : float
-        The radius :math:`\varepsilon` of the neighborhood around each point.
-        Points within this distance are considered neighbors. Smaller values
-        produce more, tighter clusters; larger values merge clusters.
-    MinPts : int, default=5
-        Minimum number of points required within ``eps`` radius for a point
-        to be considered a core point. Higher values require denser regions
-        to form clusters.
-    metric : {'euclidean', 'cityblock', 'chebyshev'}, default='euclidean'
-        Distance metric used to compute pairwise distances:
+    eps : float, optional
+        The maximum distance between two points for one to be considered
+        in the neighborhood of the other. Must be positive. Defaults to
+        0.5.
+    min_samples : int, optional
+        The number of points (including the point itself) required
+        within a distance of eps for a point to be considered a core
+        point. Must not exceed the number of training samples. Defaults
+        to 5.
+    metric : {"euclidean", "cityblock", "chebyshev"}, optional
+        Distance metric used to find neighbors, passed directly to
+        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
 
-        - ``'euclidean'``: :math:`\sqrt{\sum_i (p_i - q_i)^2}` — standard
-          geometric distance.
-        - ``'cityblock'``: :math:`\sum_i |p_i - q_i|` — Manhattan distance,
-          robust to high-dimensional data.
-        - ``'chebyshev'``: :math:`\max_i |p_i - q_i|` — maximum coordinate
-          difference.
+    Attributes
+    ----------
+    labels_ : ClusterLabels
+        Cluster assignment for each training sample, of shape
+        (n_samples,). A value of -1 indicates noise.
 
-    Notes
-    -----
-    Unlike KMeans, DBSCAN has no learnable parameters and therefore has
-    no ``predict`` method. New points cannot be assigned to clusters after
-    fitting without re-running the full algorithm. Use ``fit_predict``
-    to obtain cluster labels in a single pass.
 
-    Noise points are assigned label :math:`-1`. Cluster labels start
-    from :math:`0` and increment by :math:`1` for each new cluster found.
+    .. note::
+        DBSCAN has no predict method: because cluster membership depends
+        on the density structure of the entire training set, there is no
+        well-defined way to assign a brand-new point to a cluster
+        without recomputing that structure. Use fit_predict to obtain
+        labels for the training data itself.
 
-    The choice of ``eps`` and ``MinPts`` significantly affects results.
-    A common heuristic for ``MinPts`` is :math:`2 \times n\_features`.
-    For ``eps``, a k-distance plot (sorted distances to the k-th nearest
-    neighbor) can help identify a suitable value.
+    .. note::
+        Choosing eps and min_samples depends heavily on the scale and
+        density of your data. Too small an eps produces mostly noise;
+        too large an eps merges distinct clusters together.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from pyml import DBSCAN
-    >>>
-    >>> X = np.array([[1., 2.], [2., 2.], [2., 3.],
-    ...               [8., 7.], [8., 8.], [25., 80.]])
-    >>>
-    >>> model = DBSCAN(eps=3.0, MinPts=2, metric='euclidean')
-    >>> labels = model.fit_predict(X)
-    >>> labels
-    array([ 0,  0,  0,  1,  1, -1])
-    >>>
-    >>> n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
-    >>> n_noise = np.sum(labels == -1)
+    .. plot::
+
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from pyml.cluster import DBSCAN
+
+        rng = np.random.default_rng(42)
+        X0 = rng.normal(loc=(-5, -5), scale=1.0, size=(50, 2))
+        X1 = rng.normal(loc=(5, 5), scale=1.0, size=(50, 2))
+        noise = rng.uniform(-15, 15, size=(10, 2))
+        X = np.vstack([X0, X1, noise])
+
+        model = DBSCAN(eps=1.5, min_samples=5)
+        labels = model.fit_predict(X)
+
+        fig, ax = plt.subplots()
+        ax.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", alpha=0.6)
+        ax.set_xlabel("X1")
+        ax.set_ylabel("X2")
+        ax.set_title("DBSCAN clustering (noise shown in a distinct color)")
     """
 
     def __init__(
         self,
-        eps: float,
-        MinPts: int = 5,
+        eps: float = 0.5,
+        min_samples: int = 5,
         metric: Literal["euclidean", "cityblock", "chebyshev"] = "euclidean",
     ) -> None:
-        r"""Initialize the DBSCAN clustering model.
+        """Initialize this clusterer with the given hyperparameters.
 
         Parameters
         ----------
-        eps : float
-            The radius :math:`\varepsilon` of the neighborhood around
-            each point. Points within this distance are considered
-            neighbors.
-        MinPts : int, default=5
-            Minimum number of points required within ``eps`` radius for
-            a point to be considered a core point.
-        metric : {'euclidean', 'cityblock', 'chebyshev'}, default='euclidean'
-            Distance metric for computing pairwise distances between
-            all points.
-
-        Returns
-        -------
-        None
+        eps : float, optional
+            The maximum distance between two points for one to be
+            considered in the neighborhood of the other. Defaults to 0.5.
+        min_samples : int, optional
+            The number of points required within a distance of eps for a
+            point to be considered a core point. Defaults to 5.
+        metric : {"euclidean", "cityblock", "chebyshev"}, optional
+            Distance metric used to find neighbors. Defaults to "euclidean".
         """
-        self.eps = eps
-        self.MinPts = MinPts
-        self.metric = metric
+        super().__init__()
+        self.eps: float = eps
+        self.min_samples: int = min_samples
+        self.metric: Literal["euclidean", "cityblock", "chebyshev"] = metric
 
-    def check_params(self) -> None:
-        r"""Validate that the chosen metric is supported.
+    def _fit(self, X: FeatureMatrix, /) -> None:
+        """Assign cluster labels using the DBSCAN density-reachability algorithm.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Training data of shape (n_samples, n_features).
 
         Raises
         ------
-        ValueError
-            If ``self.metric`` is not one of ``'euclidean'``,
-            ``'cityblock'``, or ``'chebyshev'``.
+        InvalidParameterError
+            If eps is not positive, min_samples is not positive, or
+            min_samples exceeds the number of training samples.
         """
-        allowed_metrics = ["euclidean", "cityblock", "chebyshev"]
-        if self.metric not in allowed_metrics:
-            raise ValueError(
-                f"Unsupported metric '{self.metric}'. "
-                f"Expected one of {allowed_metrics}."
+        if self.eps <= 0:
+            raise InvalidParameterError(f"eps must be a positive float, got {self.eps}")
+        if self.min_samples <= 0:
+            raise InvalidParameterError(
+                f"min_samples must be a positive integer, got {self.min_samples}"
             )
+        if self.min_samples > X.shape[0]:
+            raise InvalidParameterError(
+                f"min_samples={self.min_samples} cannot exceed the number of "
+                f"training samples ({X.shape[0]})."
+            )
+        self.labels_ = np.full(X.shape[0], -2, dtype=np.int32)
+        dists = cdist(X, X, self.metric)
+        cluster_idx = 0
+        for i in range(X.shape[0]):
+            if self.labels_[i] >= 0:
+                continue
+            neigh_idx = np.where(dists[i] <= self.eps)[0]
+            if neigh_idx.shape[0] >= self.min_samples:
+                j = 0
+                while j < neigh_idx.shape[0]:
+                    core_idx = neigh_idx[j]
+                    new_neigh_idx = np.where(dists[core_idx] <= self.eps)[0]
+                    if new_neigh_idx.shape[0] >= self.min_samples:
+                        mask = np.isin(new_neigh_idx, neigh_idx, invert=True)
+                        if np.any(mask):
+                            neigh_idx = np.concatenate([neigh_idx, new_neigh_idx[mask]])
+                    j += 1
+                mask = self.labels_[neigh_idx] < 0
+                self.labels_[neigh_idx[mask]] = cluster_idx
+                cluster_idx += 1
+            elif self.labels_[i] == -2:
+                self.labels_[i] = -1
 
-    def fit_predict(self, X: npt.NDArray[np.float64]) -> npt.NDArray[np.intp]:
-        r"""Compute cluster labels for all points in ``X``.
-
-        Runs the full DBSCAN algorithm in a single pass — computes
-        pairwise distances, identifies core points, and expands clusters
-        via Breadth-First Search (BFS).
-
-        Parameters
-        ----------
-        X : np.ndarray of shape (n_samples, n_features)
-            Input data matrix. Each row is one sample.
+    def _get_labels(self) -> ClusterLabels:
+        """Return the cluster labels computed during fit.
 
         Returns
         -------
-        labels : np.ndarray of shape (n_samples,)
-            Cluster label for each point. Noise points are labeled
-            :math:`-1`. Cluster labels start from :math:`0`.
-
-        Notes
-        -----
-        Time complexity is :math:`O(n^2)` due to full pairwise distance
-        matrix computation. For large datasets, consider approximate
-        nearest neighbor methods.
-
-        Border points that lie within ``eps`` of multiple clusters are
-        assigned to whichever cluster's core point discovers them first
-        in BFS traversal order.
+        ClusterLabels
+            Cluster index assigned to each sample seen during fit. A value
+            of -1 indicates noise.
         """
-        self.check_params()
-        distances = cdist(X, X, metric=self.metric)
-        visited = np.full(X.shape[0], False, dtype=bool)
-        labels = np.full(X.shape[0], -1, dtype=int)
-        label_id = 0
-        n = X.shape[0]
-        for i in range(n):
-            if visited[i]:
-                continue
-            neigh_ind = np.where(distances[i] <= self.eps)[0]
-            nonvisited_ind = np.where(~visited[neigh_ind])[0]
-            if neigh_ind.shape[0] >= self.MinPts:
-                neigh_ind = neigh_ind[nonvisited_ind]
-                labels[neigh_ind] = label_id
-                queue: deque[np.intp] = deque()
-                queue.extend(neigh_ind)
-                while len(queue) > 0:
-                    j = queue.popleft()
-                    neigh_ind = np.where(distances[j] <= self.eps)[0]
-                    nonvisited_ind = np.where(~visited[neigh_ind])[0]
-                    if neigh_ind.shape[0] >= self.MinPts:
-                        neigh_ind = neigh_ind[nonvisited_ind]
-                        labels[neigh_ind] = label_id
-                        queue.extend(neigh_ind)
-                    visited[j] = True
-                label_id += 1
-            visited[i] = True
-        return labels
+        return self.labels_
