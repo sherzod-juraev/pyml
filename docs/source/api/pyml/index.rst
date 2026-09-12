@@ -10,6 +10,7 @@ mathematical derivations, and a worked example.
 
     core/index
     linear_model/index
+    naive_bayes/index
     neighbors/index
     cluster/index
     preprocessing/index
@@ -39,6 +40,15 @@ mathematical derivations, and a worked example.
 
             Gradient-descent-based regression and classification: OLS,
             Ridge, Lasso, Elastic Net, and their logistic counterparts.
+
+        .. grid-item-card:: Naive Bayes
+            :link: naive_bayes/index
+            :link-type: doc
+            :text-align: center
+            :shadow: md
+
+            Probabilistic classification via Bayes' theorem: GaussianNB
+            for continuous features, MultinomialNB for count data.
 
         .. grid-item-card:: Nearest Neighbors
             :link: neighbors/index

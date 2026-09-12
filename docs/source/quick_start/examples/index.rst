@@ -5,6 +5,7 @@ Examples
     :hidden:
 
     linear_model/index
+    naive_bayes/index
     neighbors/index
     cluster/index
     preprocessing/index
@@ -23,6 +24,15 @@ Examples
 
             Worked examples for OLS, Ridge, Lasso, Elastic Net, and their
             logistic counterparts.
+
+        .. grid-item-card:: Naive Bayes
+            :link: naive_bayes/index
+            :link-type: doc
+            :text-align: center
+            :shadow: sm
+
+            Worked examples for GaussianNB and MultinomialNB,
+            classification via Bayes' theorem.
 
         .. grid-item-card:: Nearest Neighbors
             :link: neighbors/index

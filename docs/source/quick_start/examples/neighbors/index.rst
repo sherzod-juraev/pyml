@@ -1,5 +1,5 @@
 Nearest Neighbors
-==================
+=================
 
 .. toctree::
     :hidden:

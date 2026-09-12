@@ -1,28 +1,23 @@
-"""pyml: a from-scratch machine learning library built on NumPy and SciPy.
+"""Public API for pyml's Naive Bayes classifiers.
 
-Lazily exposes pyml's subpackages (core, linear_model, metrics,
-neighbors, preprocessing, model_selection, cluster), so that
-importing pyml does not eagerly load their contents. Each subpackage
-is imported directly, e.g. ``from pyml.linear_model import Ridge`` —
-pyml itself never re-exports individual classes or functions.
+Lazily exposes GaussianNB and MultinomialNB so that importing
+pyml.naive_bayes does not eagerly load their contents.
 """
-
-__version__ = "0.3.0"
 
 import importlib
 from typing import Any
 
 # Lazy-load all public API
 __all__ = [
-    "cluster",
-    "core",
-    "linear_model",
-    "metrics",
-    "model_selection",
-    "naive_bayes",
-    "neighbors",
-    "preprocessing",
+    "GaussianNB",
+    "MultinomialNB",
 ]
+
+# Mapping: symbol → (module, name)
+_LAZY_IMPORTS = {
+    "GaussianNB": ("gaussian_nb", "GaussianNB"),
+    "MultinomialNB": ("multinomial_nb", "MultinomialNB"),
+}
 
 
 def __dir__() -> list[str]:
@@ -48,9 +43,11 @@ def __getattr__(name: str) -> Any:
     AttributeError
         If the attribute does not exist.
     """
-    # Check for submodule access
-    if name in __all__:
-        return importlib.import_module(f".{name}", __name__)
+    # Check for lazy symbol import
+    if name in _LAZY_IMPORTS:
+        module_name, symbol_name = _LAZY_IMPORTS[name]
+        module = importlib.import_module(f".{module_name}", __name__)
+        return getattr(module, symbol_name)
 
     # Attribute not found
     raise AttributeError(
