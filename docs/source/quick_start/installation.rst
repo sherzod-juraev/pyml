@@ -7,5 +7,5 @@ pyml is an educational project and is not published to PyPI.
 
     pip install git+https://github.com/sherzod-juraev/pyml.git
 
-Contributing or running the test suite? See :doc:`cli` for the
-development setup.
+Want to run the checks or test suite yourself? See :doc:`cli` for
+the development setup.

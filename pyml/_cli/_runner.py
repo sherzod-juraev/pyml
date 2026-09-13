@@ -40,6 +40,9 @@ def run_steps(steps: list[tuple[str, list[str]]]) -> int:
     Each step's own stdout/stderr is suppressed — only the PASS/FAIL
     summary is shown. Re-run the specific underlying command directly
     (e.g. ``ruff check pyml``) to see a failing step's full output.
+    A step whose command is not found on PATH (e.g. a dev-only tool
+    that was never installed) is reported as FAIL with a clear reason,
+    rather than raising an unhandled exception.
 
     Parameters
     ----------
@@ -52,10 +55,15 @@ def run_steps(steps: list[tuple[str, list[str]]]) -> int:
         0 if all steps passed, 1 if any failed.
     """
     results: list[tuple[str, bool]] = []
+    missing: dict[str, str] = {}
     for name, command in steps:
         click.echo(f"Running: {name}...")
-        result = subprocess.run(command, capture_output=True)
-        results.append((name, result.returncode == 0))
+        try:
+            result = subprocess.run(command, capture_output=True)
+            results.append((name, result.returncode == 0))
+        except FileNotFoundError:
+            results.append((name, False))
+            missing[name] = command[0]
 
     summary = click.style("Summary", fg="blue", bold=True)
     click.echo(f"\n=== {summary} ===")
@@ -63,9 +71,17 @@ def run_steps(steps: list[tuple[str, list[str]]]) -> int:
     for name, passed in results:
         if passed:
             status = click.style("PASS", fg="green", bold=True)
+            click.echo(f"{status}: {name}")
         else:
             status = click.style("FAIL", fg="red", bold=True)
             all_passed = False
-        click.echo(f"{status}: {name}")
+            if name in missing:
+                click.echo(
+                    f"{status}: {name} "
+                    f"(command '{missing[name]}' not found — "
+                    f"install the dev/docs extras: pip install -e '.[dev,docs]')"
+                )
+            else:
+                click.echo(f"{status}: {name}")
 
     return 0 if all_passed else 1
