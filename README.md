@@ -60,13 +60,8 @@ pyml/
 │
 ├── docs/
 │
-├── scripts/
-│   ├── check_all.py
-│   ├── check_docs.py
-│   ├── check_pyml.py
-│   └── check_tests.py
-│
 ├── pyml/
+│   ├── _cli/
 │   ├── cluster/
 │   ├── core/
 │   ├── linear_model/
@@ -105,9 +100,8 @@ pyml/
 | sphinx-lint, doc8, rstcheck |   Documentation style and syntax    |
 | sphinx linkcheck            | Validity of every link in the docs  |
 
-Each row runs through its own script in `scripts/`, so after
-installing the `dev`/`docs` extras, you can run any of them yourself
-to verify the project's state firsthand.
+Each row runs via the `pyml` CLI. See [Development](https://pyml-edu.readthedocs.io/en/latest/quick_start/cli.html)
+for setup and usage.
 
 ## License
 

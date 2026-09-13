@@ -1,3 +1,5 @@
+__version__: str
+
 from . import cluster as cluster
 from . import core as core
 from . import linear_model as linear_model

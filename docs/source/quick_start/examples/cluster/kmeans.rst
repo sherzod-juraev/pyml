@@ -1,7 +1,7 @@
-KMeans
-======
+K Means
+=======
 
-KMeans partitions samples into ``n_clusters`` groups by repeatedly
+K Means partitions samples into ``n_clusters`` groups by repeatedly
 assigning each point to its nearest centroid, then moving each
 centroid to the mean of the points assigned to it.
 

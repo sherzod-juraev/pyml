@@ -1,5 +1,5 @@
-pyml documentation
-==================
+pyml
+====
 .. only:: html
 
     A machine learning library built from scratch on NumPy and

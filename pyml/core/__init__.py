@@ -10,8 +10,8 @@ from typing import Any
 # Lazy-load all public API
 __all__ = [
     "base",
-    "exceptions",
     "dtypes",
+    "exceptions",
 ]
 
 

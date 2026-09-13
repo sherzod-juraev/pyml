@@ -13,7 +13,7 @@ Clustering
         :gutter: 3
         :padding: 0
 
-        .. grid-item-card:: KMeans
+        .. grid-item-card:: K Means
             :link: kmeans
             :link-type: doc
             :text-align: center

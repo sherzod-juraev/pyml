@@ -12,14 +12,14 @@ from typing import Any
 
 # Lazy-load all public API
 __all__ = [
-    "mean_squared_error",
-    "mean_absolute_error",
-    "root_mean_squared_error",
-    "r2_score",
     "accuracy_score",
     "f1_score",
+    "mean_absolute_error",
+    "mean_squared_error",
     "precision_score",
+    "r2_score",
     "recall_score",
+    "root_mean_squared_error",
 ]
 
 # Mapping: symbol → (module, name)

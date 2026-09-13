@@ -23,11 +23,12 @@ estimator implements ``fit(X, y)`` to learn parameters from data, and
     :hidden:
 
     installation
+    cli
     examples/index
 
 .. only:: html
 
-    .. grid:: 1 2 2 2
+    .. grid:: 1 2 2 3
         :gutter: 3
         :padding: 0
 
@@ -38,6 +39,15 @@ estimator implements ``fit(X, y)`` to learn parameters from data, and
             :shadow: sm
 
             How to install pyml and its dependencies.
+
+        .. grid-item-card:: Development CLI
+            :link: cli
+            :link-type: doc
+            :text-align: center
+            :shadow: sm
+
+            Running pyml's own quality checks (code, docs, tests)
+            from the command line.
 
         .. grid-item-card:: Examples
             :link: examples/index

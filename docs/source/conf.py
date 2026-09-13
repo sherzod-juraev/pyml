@@ -1,22 +1,30 @@
 """Configuration file for the Sphinx documentation builder."""
 
+import math
+from datetime import datetime
+
 import pyml
 
 # ================================================================================= #
 # ----------------------------- Project Configurations ---------------------------- #
 # ================================================================================= #
 project = "pyml"
-copyright = "2026, Sherzod Juraev"
+year = 2026
+current_year = datetime.now().year
+year_str = str(year) if current_year == year else f"{year}-{current_year}"
+copyright = f"{year_str}, Sherzod Juraev"
 author = "Sherzod Juraev"
 release = pyml.__version__
 version = release
+source_suffix = {
+    ".rst": "restructuredtext",
+}
 
 # ================================================================================= #
 # ----------------------------------- Extensions ---------------------------------- #
 # ================================================================================= #
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -25,6 +33,7 @@ extensions = [
     "sphinx_design",
     "notfound.extension",
     "matplotlib.sphinxext.plot_directive",
+    "sphinxext.opengraph",
 ]
 
 # ================================================================================= #
@@ -34,7 +43,7 @@ autodoc_default_options = {
     "member-order": "bysource",
     "undoc-members": False,
     "private-members": False,
-    "exclude-members": "_abc_impl",
+    "exclude-members": "_abc_impl,__init__",
 }
 autodoc_typehints_format = "short"
 
@@ -43,7 +52,7 @@ autodoc_typehints_format = "short"
 # ================================================================================= #
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
-napoleon_include_init_with_doc = True
+napoleon_include_init_with_doc = False
 napoleon_use_rtype = False
 
 # ================================================================================= #
@@ -84,6 +93,40 @@ copybutton_only_copy_prompt_lines = True
 notfound_urls_prefix = "/en/latest/"
 
 # ================================================================================= #
+# --------------------------------- Matplotlib ------------------------------------ #
+# ================================================================================= #
+plot_include_source = True
+plot_html_show_source_link = False
+plot_formats = [
+    ("png", 100),
+    "pdf",
+]
+
+phi = (math.sqrt(5) + 1) / 2
+plot_rcparams = {
+    "font.size": 8,
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 8,
+    "ytick.labelsize": 8,
+    "legend.fontsize": 8,
+    "figure.figsize": (3 * phi, 3),
+    "figure.subplot.bottom": 0.2,
+    "figure.subplot.left": 0.2,
+    "figure.subplot.right": 0.9,
+    "figure.subplot.top": 0.85,
+    "figure.subplot.wspace": 0.4,
+    "text.usetex": False,
+}
+
+# ================================================================================= #
+# ------------------------------- OpenGraph --------------------------------------- #
+# ================================================================================= #
+ogp_site_url = "https://pyml-edu.readthedocs.io"
+ogp_description_length = 200
+ogp_type = "website"
+
+# ================================================================================= #
 # -------------------------- Options For Html Output ------------------------------ #
 # ================================================================================= #
 templates_path = [
@@ -99,6 +142,9 @@ html_title = "pyml"
 html_context = {
     "default_mode": "light",
 }
+html_domain_indices = False
+html_last_updated_fmt = "%b %d, %Y"
+html_copy_source = False
 
 # ================================================================================= #
 # --------------------------- Theme Customizations -------------------------------- #
@@ -136,7 +182,13 @@ latex_engine = "xelatex"
 latex_elements = {
     "papersize": "a4paper",
     "pointsize": "11pt",
-    "preamble": "",
+    "preamble": r"""
+    \usepackage{amsmath}
+    \usepackage{amssymb}
+    \setlength{\headheight}{14pt}
+    """,
+    "tableofcontents": r"\setcounter{tocdepth}{2}",
+    "sphinxsetup": "noteBorderColor={rgb}{0.2,0.4,0.8}, noteBgColor={rgb}{0.93,0.95,1}",
     "fncychap": r"\usepackage[Bjornstrup]{fncychap}",
 }
 latex_documents = [

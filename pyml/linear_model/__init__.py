@@ -11,14 +11,14 @@ import importlib
 from typing import Any
 
 __all__ = [
-    "LinearRegression",
-    "Ridge",
-    "Lasso",
     "ElasticNet",
-    "LogisticRegression",
-    "RidgeClassifier",
-    "LassoClassifier",
     "ElasticNetClassifier",
+    "Lasso",
+    "LassoClassifier",
+    "LinearRegression",
+    "LogisticRegression",
+    "Ridge",
+    "RidgeClassifier",
 ]
 
 

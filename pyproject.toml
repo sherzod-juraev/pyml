@@ -2,10 +2,13 @@
 requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
+# ================================================================================= #
+# ------------------------------------ Project ------------------------------------ #
+# ================================================================================= #
 [project]
 name = "pyml"
 dynamic = ["version"]
-description = "Pure Python Machine Learning - classic algorithms from scratch"
+description = "A machine learning library built from scratch"
 requires-python = ">=3.12"
 authors = [
     {name = "Sherzod Juraev", email = "juraevsherzod9943@gmail.com"},
@@ -13,9 +16,9 @@ authors = [
 readme = "README.md"
 license = "MIT"
 keywords = [
-    "machine-learning",
     "education",
     "from-scratch",
+    "machine-learning",
 ]
 classifiers = [
     "Development Status :: 4 - Alpha",
@@ -32,29 +35,34 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "click>=8.5.0",
     "numpy>=1.24.0",
     "scipy>=1.10.0",
 ]
 
+# ================================================================================= #
+# --------------------------- Optional Dependencies ------------------------------- #
+# ================================================================================= #
 [project.optional-dependencies]
 dev = [
+    "interrogate>=1.7.0",
+    "mypy>=1.11",
+    "ruff>=0.6.0",
     "pytest>=9.0",
     "pytest-sugar>=1.0",
-    "ruff>=0.6.0",
-    "mypy>=1.11",
-    "interrogate>=1.7.0",
 ]
 docs = [
-    "sphinx>=7.0.0",
-    "pydata-sphinx-theme>=0.15.0",
-    "sphinx-design>=0.5.0",
-    "sphinx-lint>=1.0.0",
-    "sphinx-copybutton>=0.5.0",
-    "sphinx-notfound-page>=1.1.0",
-    "sphinx-autodoc-typehints>=2.2.0",
-    "rstcheck>=6.0.0",
     "doc8>=1.0.0",
     "matplotlib>=3.9.0",
+    "pydata-sphinx-theme>=0.15.0",
+    "rstcheck>=6.0.0",
+    "sphinx>=7.0.0",
+    "sphinx-autodoc-typehints>=2.2.0",
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-design>=0.5.0",
+    "sphinx-lint>=1.0.0",
+    "sphinx-notfound-page>=1.1.0",
+    "sphinxext-opengraph>=0.13.0",
 ]
 live = [
     "pyml[docs]",
@@ -65,38 +73,40 @@ all = [
     "pyml[live]",
 ]
 
+# ================================================================================= #
+# ------------------------------------- URLs -------------------------------------- #
+# ================================================================================= #
 [project.urls]
 Homepage = "https://github.com/sherzod-juraev/pyml"
 Documentation = "https://pyml-edu.readthedocs.io"
 Repository = "https://github.com/sherzod-juraev/pyml"
 
+# ================================================================================= #
+# ---------------------------------- CLI Scripts ---------------------------------- #
+# ================================================================================= #
 [project.scripts]
-check-pyml = "scripts.check_pyml:main"
-check-docs = "scripts.check_docs:main"
-check-tests = "scripts.check_tests:main"
-check-all = "scripts.check_all:main"
+pyml = "pyml._cli.main:cli"
 
+# ================================================================================= #
+# ------------------------------------ Setuptools --------------------------------- #
+# ================================================================================= #
 [tool.setuptools.dynamic]
 version = {attr = "pyml.__version__"}
 
 [tool.setuptools.packages.find]
 where = [".",]
-include = [
-    "pyml",
-    "pyml.*",
-]
+include = ["pyml", "pyml.*",]
 exclude = [
-    "tests",
-    "tests.*",
-    "docs",
-    "docs.*",
-    "scripts",
-    "scripts.*",
+    "tests", "tests.*",
+    "docs", "docs.*",
 ]
 
 [tool.setuptools.package-data]
 pyml = ["**/*.pyi",]
 
+# ================================================================================= #
+# ------------------------------------- Pytest ------------------------------------ #
+# ================================================================================= #
 [tool.pytest.ini_options]
 minversion = "9.0"
 testpaths = ["tests",]
@@ -106,34 +116,30 @@ python_functions = ["test_*",]
 addopts = "-v --tb=short --strict-markers --strict-config -p no:warnings"
 filterwarnings = ["ignore::UserWarning",]
 
+# ================================================================================= #
+# -------------------------------------- Ruff ------------------------------------- #
+# ================================================================================= #
 [tool.ruff]
 target-version = "py312"
 line-length = 100
 include = [
     "pyml/**/*.py",
     "tests/**/*.py",
-    "scripts/**/*.py",
 ]
 exclude = [
-    "pyml/__pycache__",
-    "pyml/**/__pycache__",
-    "tests/__pycache__",
-    "tests/**/__pycache__",
-    "scripts/__pycache__",
+    "pyml/__pycache__", "pyml/**/__pycache__",
+    "tests/__pycache__", "tests/**/__pycache__",
 ]
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 88
 
 [tool.ruff.lint]
 select = [
-    "E",
-    "D",
-    "W",
-    "F",
-    "I",
-    "N",
-    "UP",
-    "B",
-    "SIM",
-    "C4",
+    "B", "C4", "D", "E", "F", "I", "N", "UP",
+    "RUF012", "RUF022",
+    "SIM", "W",
 ]
 ignore = [
     "N803",
@@ -150,15 +156,15 @@ convention = "numpy"
     "SIM",
 ]
 
+# ================================================================================= #
+# -------------------------------------- Mypy ------------------------------------- #
+# ================================================================================= #
 [tool.mypy]
 python_version = "3.12"
 strict = true
 
 [[tool.mypy.overrides]]
-module = [
-    "scipy.*",
-    "sklearn.*",
-]
+module = ["scipy.*",]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -166,6 +172,9 @@ module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
+# ================================================================================= #
+# ----------------------------------- Interrogate --------------------------------- #
+# ================================================================================= #
 [tool.interrogate]
 fail-under = 100
 verbose = 1
@@ -175,7 +184,6 @@ color = true
 exclude = [
     "docs",
     "tests",
-    "scripts",
 ]
 ignore-init-method = false
 ignore-init-module = false
@@ -187,28 +195,26 @@ ignore-module = false
 ignore-nested-functions = false
 ignore-nested-classes = false
 
+# ================================================================================= #
+# --------------------------------- Docs Quality Tools ---------------------------- #
+# ================================================================================= #
 [tool.rstcheck]
 ignore_directives = [
-    "button-link",
-    "button-ref",
+    "automodule", "autoclass", "autofunction",
+    "button-link", "button-ref",
     "card",
-    "toctree",
-    "automodule",
-    "autoclass",
-    "autofunction",
-    "tab-item",
-    "tab-set",
-    "grid",
-    "only",
-    "grid-item-card",
-    "plot",
     "dropdown",
+    "grid", "grid-item-card",
+    "only",
+    "plot",
+    "tab-item", "tab-set",
+    "toctree",
 ]
 ignore_rules = [
-    "meth",
-    "func",
     "class",
     "doc",
+    "func",
+    "meth",
     "ref",
 ]
 report_level = "warning"

@@ -13,13 +13,13 @@ from typing import Any
 
 # Lazy-load all public API
 __all__ = [
-    "PymlError",
     "FittingError",
-    "NotFittedError",
-    "NoNeighborsError",
-    "ValidationError",
     "InvalidParameterError",
+    "NoNeighborsError",
+    "NotFittedError",
+    "PymlError",
     "ShapeMismatchError",
+    "ValidationError",
 ]
 
 # Mapping: symbol → (module, name)
