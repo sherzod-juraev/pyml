@@ -1,5 +1,4 @@
-:`og:description`: A machine learning library built from scratch on NumPy and SciPy
- — no TensorFlow, no PyTorch, just the math.
+:`og:description`: |home_description|
 
 pyml
 ====

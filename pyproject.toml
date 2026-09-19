@@ -211,6 +211,9 @@ ignore_directives = [
     "tab-item", "tab-set",
     "toctree",
 ]
+ignore_substitutions = [
+    "home_description",
+]
 ignore_rules = [
     "class",
     "doc",

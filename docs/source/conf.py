@@ -1,6 +1,7 @@
 """Configuration file for the Sphinx documentation builder."""
 
 import math
+import os
 from datetime import datetime
 
 import pyml
@@ -122,8 +123,18 @@ plot_rcparams = {
 # ================================================================================= #
 # ------------------------------- OpenGraph --------------------------------------- #
 # ================================================================================= #
+_HOME_DESCRIPTION = (
+    "A machine learning library built from scratch on NumPy and SciPy — "
+    "no TensorFlow, no PyTorch, just the math."
+)
+rst_prolog = f"""
+.. |home_description| replace:: {_HOME_DESCRIPTION}
+"""
+
 ogp_site_url = "https://pyml-edu.readthedocs.io"
-ogp_image = "_static/branding/og-image.png"
+_READTHEDOCS_CANONICAL_URL = os.environ.get("READTHEDOCS_CANONICAL_URL")
+ogp_site_url = _READTHEDOCS_CANONICAL_URL or "https://pyml-edu.readthedocs.io/en/latest/"
+ogp_image = "_static/branding/og-image.png"  # yana nisbiy, hardcode YO'Q
 ogp_description_length = 200
 ogp_type = "website"
 
@@ -167,7 +178,9 @@ html_theme_options = {
 # ================================================================================= #
 # ------------------------------------- CSS Files --------------------------------- #
 # ================================================================================= #
-html_static_path = ["_static",]
+html_static_path = [
+    "_static",
+]
 html_css_files = [
     "css/header.css",
     "css/cards.css",
