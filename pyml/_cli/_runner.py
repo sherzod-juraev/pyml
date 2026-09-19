@@ -106,7 +106,9 @@ def run_live(command: list[str]) -> int:
     int
         The subprocess's exit code. 0 if interrupted with Ctrl+C.
     """
-    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+    creationflags = (
+        getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if sys.platform == "win32" else 0
+    )
 
     try:
         process = subprocess.Popen(command, creationflags=creationflags)
