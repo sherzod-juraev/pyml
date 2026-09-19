@@ -146,10 +146,12 @@ plot_rcparams = {
 # ================================================================================= #
 ogp_site_url = _CANONICAL_URL
 ogp_image = "_static/branding/og-image.png"
-ogp_image_width = 1200
-ogp_image_height = 630
 ogp_description_length = 200
 ogp_type = "website"
+ogp_custom_meta_tags = [
+    '<meta property="og:image:width" content="1200" />',
+    '<meta property="og:image:height" content="630" />',
+]
 
 # ================================================================================= #
 # ------------------------------- Sphinx Sitemap ---------------------------------- #
@@ -166,6 +168,9 @@ sitemap_excludes = [
 # ================================================================================= #
 templates_path = [
     "_templates",
+]
+html_extra_path = [
+    "_extra",
 ]
 exclude_patterns = []
 
