@@ -8,43 +8,49 @@ Development CLI
     pip install -e ".[dev]"
 
 pyml ships with a small ``pyml`` command for running its own quality
-checks — the same checks that run in CI.
+checks and building the docs — the same checks that run in CI.
 
 .. code-block:: bash
 
-    pyml --version
-    pyml --help
+    pyml --version    # or: pyml -V
+    pyml --help       # or: pyml -h
 
 .. code-block:: text
 
-    pyml check code    # ruff, mypy, interrogate
-    pyml check docs    # sphinx-lint, doc8, rstcheck, linkcheck, sphinx-build
-    pyml check tests   # ruff, mypy, pytest
-    pyml check all     # everything above
-    pyml check         # same as `pyml check all`
+    pyml code check    # ruff, mypy, interrogate
+    pyml docs check    # sphinx-lint, doc8, rstcheck, linkcheck, sphinx-build
+    pyml docs build    # build the HTML docs
+    pyml docs live     # build and serve the docs with live-reload
+    pyml tests check   # ruff, mypy, pytest
+    pyml check         # code + docs + tests checks, in sequence
 
-Each subcommand prints a PASS/FAIL summary; re-run the specific
-underlying tool directly (e.g. ``ruff check pyml``) to see a failing
-step's full output.
+Each ``check`` subcommand prints a PASS/FAIL summary; re-run the
+specific underlying tool directly (e.g. ``ruff check pyml``) to see a
+failing step's full output. ``pyml docs build`` and ``pyml docs live``
+stream their own output live instead, since they aren't checks.
+
+.. code-block:: bash
+
+    pyml docs build --fresh   # discard the cached environment and
+                              # rewrite every output file (-E -a)
 
 .. note::
-    ``pyml check docs`` and ``pyml check tests`` only work from a
-    source checkout of the repository — ``docs/`` and ``tests/`` are
-    excluded from the installed package, so these subcommands exit
-    with a clear error if run after a plain ``pip install``.
+    ``pyml docs check``, ``pyml docs build``, ``pyml docs live``, and
+    ``pyml tests check`` only work from a source checkout of the
+    repository — ``docs/`` and ``tests/`` are excluded from the
+    installed package, so these commands exit with a clear error if
+    run after a plain ``pip install``. ``pyml docs live`` additionally
+    requires the ``docs`` extras (``pip install -e ".[docs]"``) for
+    ``sphinx-autobuild``.
 
-.. only:: html
-
-    .. dropdown:: Building the documentation locally
-
-        .. code-block:: bash
-
-            pip install -e ".[docs]"
-            sphinx-build -b html docs/source docs/build/html
-
-        For live-reloading while editing:
-
-        .. code-block:: bash
-
-            pip install -e ".[live]"
-            sphinx-autobuild docs/source docs/build/html
+.. note::
+    ``pyml docs live`` is marked experimental, not stable. We fixed
+    one real problem during local testing — on Windows, ``Ctrl+C``
+    could leave ``sphinx-autobuild`` running in the background and
+    holding port 8000, which the command now handles by force-killing
+    the whole process tree on interrupt. That fix has been verified
+    on Windows and should hold on Unix-like systems too, but other
+    environment-specific issues may still surface that haven't been
+    caught yet. If the terminal doesn't return promptly after
+    ``Ctrl+C``, check for an orphaned ``sphinx-autobuild`` process
+    still holding the port.

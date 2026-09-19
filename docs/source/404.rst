@@ -2,11 +2,15 @@
 Oops! This page took a detour
 =============================
 
-.. image:: _static/images/404-img.jpg
-   :alt: Page not found illustration
-   :align: center
-   :width: 35%
-   :class: w-30 mx-auto d-block pe-none
+.. raw:: html
+
+    <div style="text-align: center;">
+    <svg viewBox="0 0 500 240" xmlns="http://www.w3.org/2000/svg" width="35%" role="img" aria-label="404">
+        <text x="0" y="190" font-family="Verdana, Geneva, sans-serif" font-weight="700" font-size="200" fill="currentColor">4</text>
+        <path d="M 170 30 L 300 30 L 235 175 Z" fill="none" stroke="currentColor" stroke-width="16" stroke-linejoin="round" stroke-linecap="round" />
+        <text x="320" y="190" font-family="Verdana, Geneva, sans-serif" font-weight="700" font-size="200" fill="currentColor">4</text>
+    </svg>
+    </div>
 
 **We couldn't find the page you were looking for.**
 

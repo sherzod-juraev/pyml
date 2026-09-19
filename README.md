@@ -1,4 +1,10 @@
-# pyml
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/branding/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/branding/logo.svg">
+    <img alt="pyml" src="assets/branding/logo.svg" width="300">
+  </picture>
+</p>
 
 [![Pyml](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml)
 [![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml)
@@ -57,6 +63,8 @@ pyml/
 │       ├── docs-linkcheck.yml
 │       ├── pyml.yml
 │       └── tests.yml
+│
+├── assets/
 │
 ├── docs/
 │

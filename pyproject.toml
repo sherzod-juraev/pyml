@@ -36,6 +36,7 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.5.0",
+    "click-help-colors>=0.9.4",
     "numpy>=1.24.0",
     "scipy>=1.10.0",
 ]

@@ -1,11 +1,15 @@
+:`og:description`: A machine learning library built from scratch on NumPy and SciPy
+ — no TensorFlow, no PyTorch, just the math.
+
 pyml
 ====
 .. only:: html
 
-    A machine learning library built from scratch on NumPy and
-    SciPy, with a shared estimator architecture (Regressor, Classifier,
-    Transformer, Clusterer), manual gradient derivations, and full
-    mathematical documentation. No TensorFlow, no PyTorch — just the math.
+    A machine learning library built from scratch on NumPy and SciPy — no TensorFlow,
+    no PyTorch, just the math.
+
+    Shared estimator architecture (Regressor, Classifier, Transformer, Clusterer),
+    manual gradient derivations, and full mathematical documentation.
 
 .. toctree::
     :hidden:
@@ -13,6 +17,7 @@ pyml
     philosophy
     quick_start/index
     api/pyml/index
+    known_limitations
 
 .. only:: html
 

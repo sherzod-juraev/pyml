@@ -1,4 +1,4 @@
-"""Shared step-runner used by all check_*.py scripts."""
+"""Shared execution helpers for pyml's CLI commands."""
 
 import subprocess
 import sys
@@ -10,7 +10,7 @@ import click
 def require_source_checkout(path: Path, label: str) -> None:
     """Exit with a clear error if a required source-only path is missing.
 
-    Some checks (docs, tests) only make sense when run from a git
+    Some commands (docs, tests) only make sense when run from a git
     checkout of the project, since ``tests/`` and ``docs/`` are
     excluded from the installed package. This gives a clear error
     instead of a confusing failure when run after ``pip install``.
@@ -18,7 +18,7 @@ def require_source_checkout(path: Path, label: str) -> None:
     Parameters
     ----------
     path : Path
-        The directory that must exist for the check to run.
+        The directory that must exist for the command to run.
     label : str
         Human-readable name of the missing directory, used in the
         error message.
@@ -34,15 +34,14 @@ def require_source_checkout(path: Path, label: str) -> None:
         sys.exit(1)
 
 
-def run_steps(steps: list[tuple[str, list[str]]]) -> int:
-    """Execute a sequence of check commands and print a summary.
+def run_checks(steps: list[tuple[str, list[str]]]) -> int:
+    """Execute a sequence of check commands and print a PASS/FAIL summary.
 
-    Each step's own stdout/stderr is suppressed — only the PASS/FAIL
-    summary is shown. Re-run the specific underlying command directly
-    (e.g. ``ruff check pyml``) to see a failing step's full output.
-    A step whose command is not found on PATH (e.g. a dev-only tool
-    that was never installed) is reported as FAIL with a clear reason,
-    rather than raising an unhandled exception.
+    Each step's own stdout/stderr is suppressed — only the summary is
+    shown. Re-run the specific underlying command directly (e.g.
+    ``ruff check pyml``) to see a failing step's full output. A step
+    whose command is not found on PATH is reported as FAIL with a
+    clear reason, rather than raising an unhandled exception.
 
     Parameters
     ----------
@@ -85,3 +84,69 @@ def run_steps(steps: list[tuple[str, list[str]]]) -> int:
                 click.echo(f"{status}: {name}")
 
     return 0 if all_passed else 1
+
+
+def run_live(command: list[str]) -> int:
+    """Run a long-lived command with its output streamed live.
+
+    Used for commands like sphinx-autobuild whose own progress output
+    the user needs to see in real time. Unlike `run_checks`, nothing
+    is captured or summarized. Polls the process with a short timeout
+    (rather than blocking indefinitely) so Ctrl+C is caught promptly
+    even on Windows, where an unbounded wait() call can otherwise
+    delay KeyboardInterrupt until the child exits on its own.
+
+    Parameters
+    ----------
+    command : list of str
+        The command and its arguments to run.
+
+    Returns
+    -------
+    int
+        The subprocess's exit code. 0 if interrupted with Ctrl+C.
+    """
+    creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if sys.platform == "win32" else 0
+
+    try:
+        process = subprocess.Popen(command, creationflags=creationflags)
+    except FileNotFoundError:
+        click.echo(
+            click.style("error: ", fg="red", bold=True)
+            + f"command '{command[0]}' not found — "
+            + "install the docs extras: pip install -e '.[docs]'",
+            err=True,
+        )
+        return 1
+
+    try:
+        while True:
+            try:
+                return process.wait(timeout=0.5)
+            except subprocess.TimeoutExpired:
+                continue
+    except KeyboardInterrupt:
+        _stop_process_tree(process)
+        return 0
+
+
+def _stop_process_tree(process: subprocess.Popen[bytes]) -> None:
+    """Force-stop a subprocess and all of its descendants.
+
+    Parameters
+    ----------
+    process : subprocess.Popen
+        The process to stop.
+    """
+    if sys.platform == "win32":
+        subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+            capture_output=True,
+        )
+    else:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+    process.wait()

@@ -123,6 +123,7 @@ plot_rcparams = {
 # ------------------------------- OpenGraph --------------------------------------- #
 # ================================================================================= #
 ogp_site_url = "https://pyml-edu.readthedocs.io"
+ogp_image = "_static/branding/og-image.png"
 ogp_description_length = 200
 ogp_type = "website"
 
@@ -150,28 +151,32 @@ html_copy_source = False
 # --------------------------- Theme Customizations -------------------------------- #
 # ================================================================================= #
 html_theme_options = {
+    "logo": {
+        "image_light": "_static/branding/logo.svg",
+        "image_dark": "_static/branding/logo-dark.svg",
+        "text": "",
+    },
     "github_url": "https://github.com/sherzod-juraev/pyml",
     "show_prev_next": True,
     "navigation_with_keys": True,
     "collapse_navigation": True,
     "show_nav_level": False,
-    "navbar_end": ["navbar-icon-links"],
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],
 }
 
 # ================================================================================= #
 # ------------------------------------- CSS Files --------------------------------- #
 # ================================================================================= #
-html_static_path = ["_static"]
+html_static_path = ["_static",]
 html_css_files = [
-    "header.css",
-    "cards.css",
-    "left_sidebar.css",
-    "right_sidebar.css",
-    "breadcrumb.css",
-    "footer_nav.css",
+    "css/header.css",
+    "css/cards.css",
+    "css/left_sidebar.css",
+    "css/right_sidebar.css",
+    "css/breadcrumb.css",
+    "css/footer_nav.css",
     "pygments.css",
-    "code_blocks.css",
-    "tab_set.css",
+    "css/code_blocks.css",
 ]
 
 # ================================================================================= #
