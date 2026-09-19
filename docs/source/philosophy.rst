@@ -107,10 +107,10 @@ indirectly, and their contribution deserves to be named.
 Foremost among them is the faculty of the Software Engineering and
 Artificial Intelligence department, and the Mathematics department,
 within the Faculty of Applied Mathematics and Intellectual
-Technologies at the `National University of Uzbekistan <https://nuu.uz/en/>`_.
-Their lectures and practicals gave me the room to grow in depth, and their
-habit of pointing me toward further reading, and giving their own time outside
-of class to my independent study, shaped a lasting respect for them.
+Technologies at the |nuu_link|_. Their lectures and practicals gave
+me the room to grow in depth, and their habit of pointing me toward
+further reading, and giving their own time outside of class to my
+independent study, shaped a lasting respect for them.
 
 I am also indirectly indebted to my brother, Maruf Juraev, who holds a PhD and
 currently serves as an Associate Professor in the Department of Cybersecurity.

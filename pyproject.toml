@@ -64,6 +64,7 @@ docs = [
     "sphinx-lint>=1.0.0",
     "sphinx-notfound-page>=1.1.0",
     "sphinxext-opengraph>=0.13.0",
+    "sphinx-sitemap>=2.6.0",
 ]
 live = [
     "pyml[docs]",
@@ -213,6 +214,10 @@ ignore_directives = [
 ]
 ignore_substitutions = [
     "home_description",
+    "nuu_link",
+]
+ignore_messages = [
+    "Unknown target name",
 ]
 ignore_rules = [
     "class",
@@ -228,6 +233,7 @@ ignore_paths = [
 
 [tool.doc8]
 max-line-length = 100
+ignore = ["D000",]
 ignore_paths = [
     "docs/build",
     "docs/source/_static",

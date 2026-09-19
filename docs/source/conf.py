@@ -22,6 +22,26 @@ source_suffix = {
 }
 
 # ================================================================================= #
+# --------------------------- RST Substitutions ----------------------------------- #
+# ================================================================================= #
+_HOME_DESCRIPTION = (
+    "A machine learning library built from scratch on NumPy and SciPy — "
+    "no TensorFlow, no PyTorch, just the math."
+)
+
+rst_prolog = f"""
+.. |home_description| replace:: {_HOME_DESCRIPTION}
+.. |nuu_link| replace:: National University of Uzbekistan
+.. _nuu_link: https://nuu.uz/en/
+"""
+
+# ================================================================================= #
+# ------------------------------ Canonical URL ------------------------------------ #
+# ================================================================================= #
+_READTHEDOCS_CANONICAL_URL = os.environ.get("READTHEDOCS_CANONICAL_URL")
+_CANONICAL_URL = _READTHEDOCS_CANONICAL_URL or "https://pyml-edu.readthedocs.io/en/latest/"
+
+# ================================================================================= #
 # ----------------------------------- Extensions ---------------------------------- #
 # ================================================================================= #
 extensions = [
@@ -35,6 +55,7 @@ extensions = [
     "notfound.extension",
     "matplotlib.sphinxext.plot_directive",
     "sphinxext.opengraph",
+    "sphinx_sitemap",
 ]
 
 # ================================================================================= #
@@ -123,20 +144,22 @@ plot_rcparams = {
 # ================================================================================= #
 # ------------------------------- OpenGraph --------------------------------------- #
 # ================================================================================= #
-_HOME_DESCRIPTION = (
-    "A machine learning library built from scratch on NumPy and SciPy — "
-    "no TensorFlow, no PyTorch, just the math."
-)
-rst_prolog = f"""
-.. |home_description| replace:: {_HOME_DESCRIPTION}
-"""
-
-ogp_site_url = "https://pyml-edu.readthedocs.io"
-_READTHEDOCS_CANONICAL_URL = os.environ.get("READTHEDOCS_CANONICAL_URL")
-ogp_site_url = _READTHEDOCS_CANONICAL_URL or "https://pyml-edu.readthedocs.io/en/latest/"
-ogp_image = "_static/branding/og-image.png"  # yana nisbiy, hardcode YO'Q
+ogp_site_url = _CANONICAL_URL
+ogp_image = "_static/branding/og-image.png"
+ogp_image_width = 1200
+ogp_image_height = 630
 ogp_description_length = 200
 ogp_type = "website"
+
+# ================================================================================= #
+# ------------------------------- Sphinx Sitemap ---------------------------------- #
+# ================================================================================= #
+html_baseurl = _CANONICAL_URL
+sitemap_url_scheme = "{link}"
+sitemap_excludes = [
+    "search.html",
+    "genindex.html",
+]
 
 # ================================================================================= #
 # -------------------------- Options For Html Output ------------------------------ #
