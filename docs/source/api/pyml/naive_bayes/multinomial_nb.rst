@@ -1,7 +1,6 @@
 Multinomial Naive Bayes
 =======================
 
-.. automodule:: pyml.naive_bayes.multinomial_nb
+.. autoclass:: pyml.naive_bayes.MultinomialNB
     :members:
     :show-inheritance:
-    :no-index-entry:

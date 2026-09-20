@@ -1,7 +1,6 @@
-ElasticNet
-==========
+Elastic Net
+===========
 
-.. automodule:: pyml.linear_model.elastic_net
+.. autoclass:: pyml.linear_model.ElasticNet
     :members:
     :show-inheritance:
-    :no-index-entry:

@@ -1,7 +1,6 @@
 Clusterer
 =========
 
-.. automodule:: pyml.core.base.clusterer
+.. autoclass:: pyml.core.base.Clusterer
     :members:
     :show-inheritance:
-    :no-index-entry:

@@ -1,7 +1,6 @@
 Logistic Regression
 ===================
 
-.. automodule:: pyml.linear_model.logistic_regression
+.. autoclass:: pyml.linear_model.LogisticRegression
     :members:
     :show-inheritance:
-    :no-index-entry:

@@ -1,7 +1,6 @@
-ElasticNet Classifier
-=====================
+Elastic Net Classifier
+======================
 
-.. automodule:: pyml.linear_model.elastic_net_classifier
+.. autoclass:: pyml.linear_model.ElasticNetClassifier
     :members:
     :show-inheritance:
-    :no-index-entry:

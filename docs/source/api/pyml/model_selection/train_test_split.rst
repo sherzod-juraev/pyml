@@ -1,6 +1,4 @@
 Train Test Split
 ================
 
-.. automodule:: pyml.model_selection.split
-    :members:
-    :no-index-entry:
+.. autofunction:: pyml.model_selection.train_test_split

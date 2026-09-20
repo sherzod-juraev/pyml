@@ -1,7 +1,22 @@
-Regression metrics
+Regression Metrics
 ==================
 
-.. automodule:: pyml.metrics.regression
-    :members:
-    :exclude-members: _validate_regression_inputs
-    :no-index-entry:
+mean absolute error
+-------------------
+
+.. autofunction:: pyml.metrics.mean_absolute_error
+
+mean squared error
+------------------
+
+.. autofunction:: pyml.metrics.mean_squared_error
+
+r2 score
+--------
+
+.. autofunction:: pyml.metrics.r2_score
+
+root mean squared error
+-----------------------
+
+.. autofunction:: pyml.metrics.root_mean_squared_error

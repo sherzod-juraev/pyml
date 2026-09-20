@@ -1,7 +1,6 @@
 DBSCAN
 ======
 
-.. automodule:: pyml.cluster.dbscan
+.. autoclass:: pyml.cluster.DBSCAN
     :members:
     :show-inheritance:
-    :no-index-entry:

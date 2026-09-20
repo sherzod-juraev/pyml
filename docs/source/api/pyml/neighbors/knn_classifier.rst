@@ -1,7 +1,6 @@
 KNN Classifier
 ==============
 
-.. automodule:: pyml.neighbors.knn_classifier
+.. autoclass:: pyml.neighbors.KNNClassifier
     :members:
     :show-inheritance:
-    :no-index-entry:

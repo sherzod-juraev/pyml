@@ -1,7 +1,6 @@
 Gaussian Naive Bayes
 ====================
 
-.. automodule:: pyml.naive_bayes.gaussian_nb
+.. autoclass:: pyml.naive_bayes.GaussianNB
     :members:
     :show-inheritance:
-    :no-index-entry:

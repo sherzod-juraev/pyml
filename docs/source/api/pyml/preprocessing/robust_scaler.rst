@@ -1,7 +1,6 @@
 Robust Scaler
 =============
 
-.. automodule:: pyml.preprocessing.robust_scaler
+.. autoclass:: pyml.preprocessing.RobustScaler
     :members:
     :show-inheritance:
-    :no-index-entry:

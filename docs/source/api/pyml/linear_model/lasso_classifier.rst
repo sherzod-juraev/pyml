@@ -1,7 +1,6 @@
 Lasso Classifier
 ================
 
-.. automodule:: pyml.linear_model.lasso_classifier
+.. autoclass:: pyml.linear_model.LassoClassifier
     :members:
     :show-inheritance:
-    :no-index-entry:

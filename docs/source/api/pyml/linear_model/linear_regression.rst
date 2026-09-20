@@ -1,7 +1,6 @@
 Linear Regression
 =================
 
-.. automodule:: pyml.linear_model.linear_regression
+.. autoclass:: pyml.linear_model.LinearRegression
     :members:
     :show-inheritance:
-    :no-index-entry:

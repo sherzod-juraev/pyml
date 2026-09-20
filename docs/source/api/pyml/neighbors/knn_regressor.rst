@@ -1,7 +1,6 @@
 KNN Regressor
 =============
 
-.. automodule:: pyml.neighbors.knn_regressor
+.. autoclass:: pyml.neighbors.KNNRegressor
     :members:
     :show-inheritance:
-    :no-index-entry:

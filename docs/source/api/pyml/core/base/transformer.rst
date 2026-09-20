@@ -1,7 +1,6 @@
 Transformer
 ===========
 
-.. automodule:: pyml.core.base.transformer
+.. autoclass:: pyml.core.base.Transformer
     :members:
     :show-inheritance:
-    :no-index-entry:

@@ -1,7 +1,6 @@
 Regressor
 =========
 
-.. automodule:: pyml.core.base.regressor
+.. autoclass:: pyml.core.base.Regressor
     :members:
     :show-inheritance:
-    :no-index-entry:

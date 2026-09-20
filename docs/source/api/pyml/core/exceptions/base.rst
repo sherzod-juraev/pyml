@@ -1,7 +1,6 @@
-PymlError
-=========
+Pyml Error
+==========
 
-.. automodule:: pyml.core.exceptions.base
+.. autoclass:: pyml.core.exceptions.PymlError
     :members:
     :show-inheritance:
-    :no-index-entry:

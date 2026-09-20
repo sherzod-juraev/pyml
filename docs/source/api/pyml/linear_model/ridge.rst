@@ -1,7 +1,6 @@
 Ridge
 =====
 
-.. automodule:: pyml.linear_model.ridge
+.. autoclass:: pyml.linear_model.Ridge
     :members:
     :show-inheritance:
-    :no-index-entry:

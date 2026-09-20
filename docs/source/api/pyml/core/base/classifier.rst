@@ -2,7 +2,6 @@ Classifier
 ==========
 
 
-.. automodule:: pyml.core.base.classifier
+.. autoclass:: pyml.core.base.Classifier
     :members:
     :show-inheritance:
-    :no-index-entry:

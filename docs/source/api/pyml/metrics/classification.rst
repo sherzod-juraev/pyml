@@ -1,7 +1,22 @@
 Classification Metrics
 ======================
 
-.. automodule:: pyml.metrics.classification
-    :members:
-    :exclude-members: _validate_classification_inputs
-    :no-index-entry:
+accuracy score
+--------------
+
+.. autofunction:: pyml.metrics.accuracy_score
+
+precision score
+---------------
+
+.. autofunction:: pyml.metrics.precision_score
+
+recall score
+------------
+
+.. autofunction:: pyml.metrics.recall_score
+
+f1 score
+--------
+
+.. autofunction:: pyml.metrics.f1_score

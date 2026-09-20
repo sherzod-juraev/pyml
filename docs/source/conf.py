@@ -56,6 +56,7 @@ extensions = [
     "matplotlib.sphinxext.plot_directive",
     "sphinxext.opengraph",
     "sphinx_sitemap",
+    "autodocsumm",
 ]
 
 # ================================================================================= #
@@ -66,8 +67,11 @@ autodoc_default_options = {
     "undoc-members": False,
     "private-members": False,
     "exclude-members": "_abc_impl,__init__",
+    "inherited-members": "object",
+    "autosummary": True,
 }
 autodoc_typehints_format = "short"
+autosummary_generate = False
 
 # ================================================================================= #
 # ------------------------------------ Napoleon ----------------------------------- #

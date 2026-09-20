@@ -1,7 +1,6 @@
 Standard Scaler
 ===============
 
-.. automodule:: pyml.preprocessing.standard_scaler
+.. autoclass:: pyml.preprocessing.StandardScaler
     :members:
     :show-inheritance:
-    :no-index-entry:

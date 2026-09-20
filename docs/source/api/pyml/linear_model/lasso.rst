@@ -1,7 +1,6 @@
 Lasso
 =====
 
-.. automodule:: pyml.linear_model.lasso
+.. autoclass:: pyml.linear_model.Lasso
     :members:
     :show-inheritance:
-    :no-index-entry:

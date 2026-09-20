@@ -1,7 +1,6 @@
 Radius Regressor
 ================
 
-.. automodule:: pyml.neighbors.radius_regressor
+.. autoclass:: pyml.neighbors.RadiusNeighborsRegressor
     :members:
     :show-inheritance:
-    :no-index-entry:

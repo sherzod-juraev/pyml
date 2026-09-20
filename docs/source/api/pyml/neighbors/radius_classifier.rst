@@ -1,7 +1,6 @@
 Radius Classifier
 =================
 
-.. automodule:: pyml.neighbors.radius_classifier
+.. autoclass:: pyml.neighbors.RadiusNeighborsClassifier
     :members:
     :show-inheritance:
-    :no-index-entry:

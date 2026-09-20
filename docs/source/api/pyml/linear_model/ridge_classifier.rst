@@ -1,7 +1,6 @@
 Ridge Classifier
 ================
 
-.. automodule:: pyml.linear_model.ridge_classifier
+.. autoclass:: pyml.linear_model.RidgeClassifier
     :members:
     :show-inheritance:
-    :no-index-entry:
