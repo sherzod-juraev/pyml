@@ -53,6 +53,8 @@ dev = [
     "pytest-sugar>=1.0",
 ]
 docs = [
+    "autodocsumm>=0.2.14",
+    "sphinxcontrib-programoutput>=0.18",
     "doc8>=1.0.0",
     "matplotlib>=3.9.0",
     "pydata-sphinx-theme>=0.15.0",
@@ -65,7 +67,6 @@ docs = [
     "sphinx-notfound-page>=1.1.0",
     "sphinxext-opengraph>=0.13.0",
     "sphinx-sitemap>=2.6.0",
-    "autodocsumm>=0.2.14",
 ]
 live = [
     "pyml[docs]",

@@ -57,6 +57,7 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx_sitemap",
     "autodocsumm",
+    "sphinxcontrib.programoutput",
 ]
 
 # ================================================================================= #
