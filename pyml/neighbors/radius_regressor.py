@@ -31,19 +31,19 @@ class RadiusNeighborsRegressor(Regressor):
     ----------
     radius : float, optional
         Radius within which training samples are considered neighbors.
-        Must be positive. Defaults to 1.0.
+        Must be positive.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric used to find neighbors, passed directly to
-        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when averaging their targets.
         "uniform" gives every neighbor equal weight; "distance" weights
         each neighbor by the inverse of its distance to the query point,
-        so closer neighbors contribute more. Defaults to "uniform".
+        so closer neighbors contribute more.
     outlier_label : float or None, optional
         Value to assign to a query point with no training samples within
         the radius. If None, such a query raises NoNeighborsError
-        instead. Defaults to None.
+        instead.
 
     Attributes
     ----------
@@ -86,7 +86,7 @@ class RadiusNeighborsRegressor(Regressor):
         ax.set_xlabel("X")
         ax.set_ylabel("y")
         ax.set_title("RadiusNeighborsRegressor fit (radius=1.5)")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

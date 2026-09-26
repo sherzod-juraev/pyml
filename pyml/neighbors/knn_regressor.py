@@ -29,15 +29,15 @@ class KNNRegressor(Regressor):
     ----------
     n_neighbors : int, optional
         Number of nearest neighbors to use. Must not exceed the number
-        of training samples. Defaults to 5.
+        of training samples.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric used to find neighbors, passed directly to
-        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when averaging their targets.
         "uniform" gives every neighbor equal weight; "distance" weights
         each neighbor by the inverse of its distance to the query point,
-        so closer neighbors contribute more. Defaults to "uniform".
+        so closer neighbors contribute more.
 
     Attributes
     ----------
@@ -80,7 +80,7 @@ class KNNRegressor(Regressor):
         ax.set_xlabel("X")
         ax.set_ylabel("y")
         ax.set_title("KNNRegressor fit (n_neighbors=5)")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

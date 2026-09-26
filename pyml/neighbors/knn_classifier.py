@@ -32,15 +32,15 @@ class KNNClassifier(Classifier):
     ----------
     n_neighbors : int, optional
         Number of nearest neighbors to use. Must not exceed the number
-        of training samples. Defaults to 5.
+        of training samples.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric used to find neighbors, passed directly to
-        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when voting. "uniform" gives every
         neighbor one equal vote; "distance" weights each neighbor's vote
         by the inverse of its distance to the query point, so closer
-        neighbors have more influence. Defaults to "uniform".
+        neighbors have more influence.
 
     Attributes
     ----------
@@ -94,7 +94,7 @@ class KNNClassifier(Classifier):
         ax.set_xlabel("X1")
         ax.set_ylabel("X2")
         ax.set_title("KNNClassifier decision boundary (n_neighbors=5)")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

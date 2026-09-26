@@ -83,15 +83,15 @@ def train_test_split(
         Target values of shape (n_samples,).
     test_size : float, optional
         Proportion of the data to allocate to the test set, strictly
-        between 0 and 1. Defaults to 0.2.
+        between 0 and 1.
     random_state : int or None, optional
         Seed for the random number generator used to shuffle the data,
         for reproducible splits. If None, the split is not reproducible
-        across calls. Defaults to None.
+        across calls.
     shuffle : bool, optional
         Whether to shuffle the data before splitting. If False, the
         first samples become the training set and the last become the
-        test set, in their original order. Defaults to True.
+        test set, in their original order.
 
     Returns
     -------

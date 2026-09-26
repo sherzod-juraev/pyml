@@ -7,6 +7,7 @@ Examples
     linear_model/index
     naive_bayes/index
     neighbors/index
+    tree/index
     cluster/index
     preprocessing/index
 
@@ -43,7 +44,16 @@ Examples
             Worked examples for KNN and Radius Neighbors classifiers and
             regressors.
 
-        .. grid-item-card:: Clustering
+        .. grid-item-card:: Tree
+            :link: tree/index
+            :link-type: doc
+            :text-align: center
+            :shadow: sm
+
+            Worked examples for decision tree classification and
+            regression.
+
+        .. grid-item-card:: Cluster
             :link: cluster/index
             :link-type: doc
             :text-align: center

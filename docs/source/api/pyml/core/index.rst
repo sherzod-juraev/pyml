@@ -6,6 +6,7 @@ Core
 
     base/index
     exceptions/index
+    distance_metrics
 
 .. only:: html
 

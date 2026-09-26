@@ -37,18 +37,17 @@ class LassoClassifier(_LogisticRegressionBase):
     Parameters
     ----------
     learning_rate : float, optional
-        Step size for each gradient descent update. Defaults to 0.01.
+        Step size for each gradient descent update.
     max_iter : int, optional
-        Maximum number of gradient descent iterations. Defaults to 1000.
+        Maximum number of gradient descent iterations.
     tol : float, optional
         Minimum absolute change in loss between consecutive iterations
-        required to continue optimizing. Defaults to 1e-4.
+        required to continue optimizing.
     fit_intercept : bool, optional
-        Whether to fit an intercept term b. Defaults to True.
+        Whether to fit an intercept term b.
     alpha : float, optional
         Regularization strength. Larger values push more coefficients
         exactly to zero. ``alpha=0`` recovers plain LogisticRegression.
-        Defaults to 1.0.
 
     Attributes
     ----------
@@ -107,7 +106,7 @@ class LassoClassifier(_LogisticRegressionBase):
         ax.set_xlabel("X1")
         ax.set_ylabel("X2")
         ax.set_title("LassoClassifier decision boundary")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

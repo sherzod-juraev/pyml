@@ -42,18 +42,18 @@ class Ridge(_LinearModelBase):
     Parameters
     ----------
     learning_rate : float, optional
-        Step size for each gradient descent update. Defaults to 0.01.
+        Step size for each gradient descent update.
     max_iter : int, optional
-        Maximum number of gradient descent iterations. Defaults to 1000.
+        Maximum number of gradient descent iterations.
     tol : float, optional
         Minimum absolute change in loss between consecutive iterations
-        required to continue optimizing. Defaults to 1e-4.
+        required to continue optimizing.
     fit_intercept : bool, optional
-        Whether to fit an intercept term b. Defaults to True.
+        Whether to fit an intercept term b.
     alpha : float, optional
         Regularization strength. Larger values shrink the coefficients
         more aggressively toward zero (but never exactly to zero).
-        ``alpha=0`` recovers ordinary least squares. Defaults to 1.0.
+        ``alpha=0`` recovers ordinary least squares.
 
     Attributes
     ----------
@@ -99,7 +99,7 @@ class Ridge(_LinearModelBase):
         ax.set_xlabel("X")
         ax.set_ylabel("y")
         ax.set_title("Ridge vs. OLS fit")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

@@ -1,6 +1,13 @@
 Validation Error
 ================
 
+Validation Error
+----------------
+
+.. autoclass:: pyml.core.exceptions.ValidationError
+    :members:
+    :show-inheritance:
+
 Invalid Parameter Error
 -----------------------
 
@@ -12,12 +19,5 @@ Shape Mismatch Error
 --------------------
 
 .. autoclass:: pyml.core.exceptions.ShapeMismatchError
-    :members:
-    :show-inheritance:
-
-Validation Error
-----------------
-
-.. autoclass:: pyml.core.exceptions.ValidationError
     :members:
     :show-inheritance:

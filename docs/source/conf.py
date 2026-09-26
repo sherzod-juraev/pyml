@@ -81,6 +81,10 @@ napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = False
 napoleon_use_rtype = False
+napoleon_use_ivar = False
+napoleon_custom_sections = [
+    ("Attributes", "params_style"),
+]
 
 # ================================================================================= #
 # ----------------------------- Code Syntax & Styling ----------------------------- #

@@ -32,19 +32,19 @@ class RadiusNeighborsClassifier(Classifier):
     ----------
     radius : float, optional
         Radius within which training samples are considered neighbors.
-        Must be positive. Defaults to 1.0.
+        Must be positive.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric used to find neighbors, passed directly to
-        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when voting. "uniform" gives every
         neighbor one equal vote; "distance" weights each neighbor's vote
         by the inverse of its distance to the query point, so closer
-        neighbors have more influence. Defaults to "uniform".
+        neighbors have more influence.
     outlier_label : int or None, optional
         Label to assign to a query point with no training samples within
         the radius. If None, such a query raises NoNeighborsError
-        instead. Defaults to None.
+        instead.
 
     Attributes
     ----------
@@ -96,7 +96,7 @@ class RadiusNeighborsClassifier(Classifier):
         ax.set_xlabel("X1")
         ax.set_ylabel("X2")
         ax.set_title("RadiusNeighborsClassifier decision boundary (radius=2.0)")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(

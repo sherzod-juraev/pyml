@@ -47,7 +47,7 @@ class MultinomialNB(_NaiveBayesBase):
         more probability mass to unseen feature/class combinations.
         ``alpha=0`` disables smoothing entirely, which can produce
         ``-inf`` log-probabilities for features never observed in a
-        class. Defaults to 1.0.
+        class.
 
     Attributes
     ----------

@@ -46,16 +46,14 @@ class DBSCAN(Clusterer):
     ----------
     eps : float, optional
         The maximum distance between two points for one to be considered
-        in the neighborhood of the other. Must be positive. Defaults to
-        0.5.
+        in the neighborhood of the other. Must be positive.
     min_samples : int, optional
         The number of points (including the point itself) required
         within a distance of eps for a point to be considered a core
-        point. Must not exceed the number of training samples. Defaults
-        to 5.
+        point. Must not exceed the number of training samples.
     metric : {"euclidean", "cityblock", "chebyshev"}, optional
-        Distance metric used to find neighbors, passed directly to
-        :func:`scipy.spatial.distance.cdist`. Defaults to "euclidean".
+        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
 
     Attributes
     ----------

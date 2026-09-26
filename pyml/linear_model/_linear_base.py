@@ -40,17 +40,15 @@ class _LinearModelBase(Regressor):
     Parameters
     ----------
     learning_rate : float, optional
-        Step size alpha for each gradient descent update. Defaults to
-        0.01.
+        Step size alpha for each gradient descent update.
     max_iter : int, optional
-        Maximum number of gradient descent iterations. Defaults to 1000.
+        Maximum number of gradient descent iterations.
     tol : float, optional
         Minimum absolute change in loss between consecutive iterations
         required to continue optimizing; if the change falls below this,
-        training stops early. Defaults to 1e-4.
+        training stops early.
     fit_intercept : bool, optional
         Whether to fit an intercept term b. If False, b remains 0.
-        Defaults to True.
 
     Attributes
     ----------

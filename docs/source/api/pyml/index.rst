@@ -2,8 +2,8 @@ API Reference
 =============
 
 Full reference documentation for every class and function in pyml,
-organized by module. Each page includes parameter descriptions,
-mathematical derivations, and a worked example.
+organized by module (see :ref:`limitation-api-reference-order` for
+the ordering) rather than alphabetically.
 
 .. toctree::
     :hidden:
@@ -12,6 +12,7 @@ mathematical derivations, and a worked example.
     linear_model/index
     naive_bayes/index
     neighbors/index
+    tree/index
     cluster/index
     preprocessing/index
     model_selection/index
@@ -58,6 +59,15 @@ mathematical derivations, and a worked example.
 
             Distance-based regression and classification: KNN and
             Radius Neighbors.
+
+        .. grid-item-card:: Tree
+            :link: tree/index
+            :link-type: doc
+            :text-align: center
+            :shadow: md
+
+            Decision tree regression and classification via recursive,
+            impurity-reducing splits.
 
         .. grid-item-card:: Cluster
             :link: cluster/index

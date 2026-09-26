@@ -76,17 +76,12 @@ Documentation commands
 
     .. program-output:: pyml docs live --help
 
-.. note::
-    ``pyml docs live`` is marked experimental, not stable. We fixed
-    one real problem during local testing — on Windows, ``Ctrl+C``
-    could leave ``sphinx-autobuild`` running in the background and
-    holding port 8000, which the command now handles by force-killing
-    the whole process tree on interrupt. That fix has been verified
-    on Windows and should hold on Unix-like systems too, but other
-    environment-specific issues may still surface that haven't been
-    caught yet. If the terminal doesn't return promptly after
-    ``Ctrl+C``, check for an orphaned ``sphinx-autobuild`` process
-    still holding the port.
+.. warning::
+    ``pyml docs live`` is experimental — see :ref:`limitation-docs-live-experimental`.
+
+.. warning::
+    ``docs check``/``build``/``live`` require a source checkout — see
+    :ref:`limitation-source-checkout-required`.
 
 Code quality commands
 ----------------------
@@ -114,11 +109,5 @@ Test suite commands
 
     .. program-output:: pyml tests --help
 
-.. note::
-    ``pyml docs check``, ``pyml docs build``, ``pyml docs live``, and
-    ``pyml tests check`` only work from a source checkout of the
-    repository — ``docs/`` and ``tests/`` are excluded from the
-    installed package, so these commands exit with a clear error if
-    run after a plain ``pip install``. ``pyml docs live`` additionally
-    requires the ``docs`` extras (``pip install -e ".[docs]"``) for
-    ``sphinx-autobuild``.
+.. warning::
+    Requires a source checkout — see :ref:`limitation-source-checkout-required`.

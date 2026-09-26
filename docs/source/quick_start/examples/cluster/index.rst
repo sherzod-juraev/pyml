@@ -1,5 +1,5 @@
-Clustering
-==========
+Cluster
+=======
 
 .. toctree::
     :hidden:

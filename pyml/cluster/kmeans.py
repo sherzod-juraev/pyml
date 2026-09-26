@@ -37,14 +37,14 @@ class KMeans(PredictableClusterer):
         The number of clusters to form. Must not exceed the number of
         training samples.
     max_iter : int, optional
-        Maximum number of assignment/update iterations. Defaults to 300.
+        Maximum number of assignment/update iterations.
     tol : float, optional
         Minimum total squared centroid movement between consecutive
         iterations required to continue; if the movement falls below
-        this, training stops early. Defaults to 1e-4.
+        this, training stops early.
     random_state : int or None, optional
         Seed for the random number generator used in k-means++
-        initialization, for reproducible results. Defaults to None.
+        initialization, for reproducible results.
 
     Attributes
     ----------
@@ -92,7 +92,7 @@ class KMeans(PredictableClusterer):
         ax.set_xlabel("X1")
         ax.set_ylabel("X2")
         ax.set_title("KMeans clustering")
-        ax.legend()
+        ax.legend(loc="best")
     """
 
     def __init__(
