@@ -1,9 +1,10 @@
 """Tests for BaseEstimator's parameter management and fit-state tracking."""
 
+import numpy as np
 import pytest
 
 from pyml.core.base.estimator import BaseEstimator
-from pyml.core.exceptions import InvalidParameterError, NotFittedError
+from pyml.core.exceptions import InvalidParameterError, NotFittedError, ShapeMismatchError
 
 
 class _DummyEstimator(BaseEstimator):
@@ -83,3 +84,36 @@ class TestSetParams:
         estimator = _DummyEstimator()
         with pytest.raises(InvalidParameterError, match="alpha"):
             estimator.set_params(gamma=1.0)
+
+
+class TestSetNFeatures:
+    def test_records_number_of_features(self):
+        estimator = _DummyEstimator()
+        X = np.zeros((10, 4))
+        estimator._set_n_features(X)
+        assert estimator.n_features_in_ == 4
+
+    def test_overwrites_previous_value_on_refit(self):
+        estimator = _DummyEstimator()
+        estimator._set_n_features(np.zeros((10, 4)))
+        estimator._set_n_features(np.zeros((5, 7)))
+        assert estimator.n_features_in_ == 7
+
+
+class TestCheckNFeatures:
+    def test_does_not_raise_when_feature_count_matches(self):
+        estimator = _DummyEstimator()
+        estimator._set_n_features(np.zeros((10, 4)))
+        estimator._check_n_features(np.zeros((3, 4)))
+
+    def test_raises_shape_mismatch_error_when_feature_count_differs(self):
+        estimator = _DummyEstimator()
+        estimator._set_n_features(np.zeros((10, 4)))
+        with pytest.raises(ShapeMismatchError):
+            estimator._check_n_features(np.zeros((3, 5)))
+
+    def test_shape_mismatch_error_message_mentions_class_name(self):
+        estimator = _DummyEstimator()
+        estimator._set_n_features(np.zeros((10, 4)))
+        with pytest.raises(ShapeMismatchError, match="_DummyEstimator"):
+            estimator._check_n_features(np.zeros((3, 5)))
