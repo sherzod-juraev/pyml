@@ -10,7 +10,8 @@ Transformer, Clusterer) provide the actual fit/predict contracts.
 import inspect
 from typing import Self
 
-from ..exceptions import InvalidParameterError, NotFittedError
+from ..dtypes import FeatureMatrix
+from ..exceptions import InvalidParameterError, NotFittedError, ShapeMismatchError
 
 
 class BaseEstimator:
@@ -105,3 +106,32 @@ class BaseEstimator:
                 )
             setattr(self, key, val)
         return self
+
+    def _set_n_features(self, X: FeatureMatrix, /) -> None:
+        """Record the number of features seen during fit.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Training data of shape (n_samples, n_features).
+        """
+        self.n_features_in_: int = X.shape[1]
+
+    def _check_n_features(self, X: FeatureMatrix, /) -> None:
+        """Validate that X has the same number of features seen during fit.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
+
+        Raises
+        ------
+        ShapeMismatchError
+            If X's feature count doesn't match the one seen during fit.
+        """
+        if X.shape[1] != self.n_features_in_:
+            raise ShapeMismatchError(
+                f"X has {X.shape[1]} features, but this {type(self).__name__} "
+                f"was fitted with {self.n_features_in_} features."
+            )

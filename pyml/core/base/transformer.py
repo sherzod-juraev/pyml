@@ -58,6 +58,7 @@ class Transformer(ABC, BaseEstimator, DataValidatorMixin):
             If X has an invalid dtype.
         """
         self._validate_X(X)
+        self._set_n_features(X)
         self._fit(X)
         self.is_fitted_ = True
         return self

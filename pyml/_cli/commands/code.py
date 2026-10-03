@@ -1,7 +1,5 @@
 """Code quality commands for the pyml package source."""
 
-import sys
-
 import click
 from click_help_colors import HelpColorsGroup
 
@@ -30,6 +28,7 @@ def code_group() -> None:
 
 
 @code_group.command(name="check")
-def check() -> None:
+@click.pass_context
+def check(ctx: click.Context) -> None:
     """Check source code quality."""
-    sys.exit(run_checks(CHECK_STEPS))
+    ctx.exit(run_checks(CHECK_STEPS))

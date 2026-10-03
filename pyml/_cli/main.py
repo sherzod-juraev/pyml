@@ -1,7 +1,5 @@
 """Command-line interface for the pyml development workflow."""
 
-import sys
-
 import click
 from click_help_colors import HelpColorsGroup
 
@@ -37,7 +35,8 @@ cli.add_command(tests_group)
 
 
 @cli.command(name="check")
-def check_all() -> None:
+@click.pass_context
+def check_all(ctx: click.Context) -> None:
     """Run all quality checks (code, docs, tests) in sequence."""
     require_source_checkout(DOCS_ROOT, "docs/")
     require_source_checkout(TESTS_ROOT, "tests/")
@@ -47,4 +46,4 @@ def check_all() -> None:
     docs_result = run_checks(DOCS_CHECK_STEPS)
     click.echo(click.style("\n>> Checking tests\n", fg="cyan", bold=True))
     tests_result = run_checks(TEST_CHECK_STEPS)
-    sys.exit(0 if code_result == 0 and docs_result == 0 and tests_result == 0 else 1)
+    ctx.exit(0 if all(r == 0 for r in [code_result, docs_result, tests_result]) else 1)

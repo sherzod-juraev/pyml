@@ -1,7 +1,5 @@
 """Test suite commands for pyml."""
 
-import sys
-
 import click
 from click_help_colors import HelpColorsGroup
 
@@ -30,7 +28,8 @@ def tests_group() -> None:
 
 
 @tests_group.command(name="check")
-def check() -> None:
+@click.pass_context
+def check(ctx: click.Context) -> None:
     """Check the test suite."""
     require_source_checkout(TESTS_ROOT, "tests/")
-    sys.exit(run_checks(CHECK_STEPS))
+    ctx.exit(run_checks(CHECK_STEPS))

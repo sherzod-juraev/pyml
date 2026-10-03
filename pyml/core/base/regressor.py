@@ -64,6 +64,7 @@ class Regressor(ABC, BaseEstimator, DataValidatorMixin):
         self._validate_X(X)
         self._validate_y_numeric(y)
         self._validate_X_y_samples(X, y)
+        self._set_n_features(X)
         self._fit(X, y)
         self.is_fitted_ = True
         return self
@@ -104,9 +105,12 @@ class Regressor(ABC, BaseEstimator, DataValidatorMixin):
             If the estimator has not been fitted yet.
         ValueError
             If X fails shape/dtype/finiteness validation.
+        ShapeMismatchError
+            If X's feature count doesn't match the one seen during fit.
         """
         self._check_is_fitted()
         self._validate_X(X)
+        self._check_n_features(X)
         return self._predict(X)
 
     def score(self, X: FeatureMatrix, y: RegressionTarget, /) -> float:

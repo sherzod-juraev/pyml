@@ -1,4 +1,5 @@
 __version__: str
+__author__: str
 
 from . import cluster as cluster
 from . import core as core

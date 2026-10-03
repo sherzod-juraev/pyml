@@ -61,6 +61,7 @@ class Clusterer(ABC, BaseEstimator, DataValidatorMixin):
             If X has an invalid dtype.
         """
         self._validate_X(X)
+        self._set_n_features(X)
         self._fit(X)
         self.is_fitted_ = True
         return self
@@ -142,7 +143,10 @@ class PredictableClusterer(Clusterer):
             If the estimator has not been fitted yet.
         ValueError
             If X fails shape/dtype/finiteness validation.
+        ShapeMismatchError
+            If X's feature count doesn't match the one seen during fit.
         """
         self._check_is_fitted()
         self._validate_X(X)
+        self._check_n_features(X)
         return self._predict(X)

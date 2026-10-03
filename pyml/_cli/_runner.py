@@ -1,5 +1,6 @@
 """Shared execution helpers for pyml's CLI commands."""
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -24,14 +25,11 @@ def require_source_checkout(path: Path, label: str) -> None:
         error message.
     """
     if not path.is_dir():
-        click.echo(
-            click.style("error: ", fg="red", bold=True)
-            + f"'{label}' not found at {path}.\n"
-            + "This command only works from a source checkout of the "
-            + "repository, not an installed package.",
-            err=True,
+        raise click.ClickException(
+            f"'{label}' not found at {path}.\n"
+            "This command only works from a source checkout of the "
+            "repository, not an installed package."
         )
-        sys.exit(1)
 
 
 def run_checks(steps: list[tuple[str, list[str]]]) -> int:
@@ -152,3 +150,65 @@ def _stop_process_tree(process: subprocess.Popen[bytes]) -> None:
         except subprocess.TimeoutExpired:
             process.kill()
     process.wait()
+
+
+def remove_tree(
+    path: Path,
+    *,
+    allowed_root: Path,
+    dry_run: bool = False,
+) -> bool:
+    """Safely remove a directory tree, refusing to escape ``allowed_root``.
+
+    Guards against accidental deletion of the wrong path (e.g. if a
+    caller passes ``PROJECT_ROOT`` by mistake, or if ``paths.py`` is
+    edited incorrectly). Only ``allowed_root`` itself or paths inside
+    it may be removed.
+
+    Both paths are resolved before comparison, so symlinks cannot be
+    used to escape the boundary.
+
+    Parameters
+    ----------
+    path : Path
+        The directory to remove.
+    allowed_root : Path
+        The boundary that ``path`` must live inside. Any path outside
+        this root raises ``click.ClickException``.
+    dry_run : bool, optional
+        If True, print the path without deleting anything.
+
+    Returns
+    -------
+    bool
+        True if the path was removed (or would be removed in dry-run),
+        False if the path did not exist.
+
+    Raises
+    ------
+    click.ClickException
+        If ``path`` is not ``allowed_root`` or inside it, or if the
+        removal itself fails (e.g. permission denied).
+    """
+    target = path.resolve()
+    root = allowed_root.resolve()
+
+    if target != root and root not in target.parents:
+        raise click.ClickException(
+            f"Refusing to remove '{target}' — outside allowed root '{root}'."
+        )
+
+    if not target.exists():
+        return False
+
+    if dry_run:
+        click.echo(f"Would remove: {target}")
+        return True
+
+    try:
+        shutil.rmtree(target)
+    except OSError as e:
+        raise click.ClickException(f"Failed to remove '{target}': {e}") from e
+
+    click.secho(f"Removed: {target}", fg="green")
+    return True
