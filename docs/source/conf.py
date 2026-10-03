@@ -13,8 +13,8 @@ project = "pyml"
 year = 2026
 current_year = datetime.now().year
 year_str = str(year) if current_year == year else f"{year}-{current_year}"
-copyright = f"{year_str}, Sherzod Juraev"
-author = "Sherzod Juraev"
+author = pyml.__author__
+copyright = f"{year_str}, {author}"
 release = pyml.__version__
 version = release
 source_suffix = {
@@ -72,6 +72,7 @@ autodoc_default_options = {
     "autosummary": True,
 }
 autodoc_typehints_format = "short"
+autodoc_class_signature = "separated"
 autosummary_generate = False
 
 # ================================================================================= #
@@ -117,11 +118,6 @@ intersphinx_mapping = {
 copybutton_prompt_text = r">>> |\$ "
 copybutton_prompt_is_regexp = True
 copybutton_only_copy_prompt_lines = True
-
-# ================================================================================= #
-# --------------------------------- Not Found ------------------------------------- #
-# ================================================================================= #
-notfound_urls_prefix = "/en/latest/"
 
 # ================================================================================= #
 # --------------------------------- Matplotlib ------------------------------------ #
@@ -251,9 +247,60 @@ latex_documents = [
         "index",
         "pyml.tex",
         "pyml Documentation",
-        "Sherzod Juraev",
+        author,
         "manual",
     ),
 ]
 latex_show_urls = "no"
 latex_domain_indices = False
+
+# ================================================================================= #
+# -------------------------- Autodoc Base Filtering ------------------------------- #
+# ================================================================================= #
+_HIDDEN_BASES: frozenset[str] = frozenset({
+    "BaseEstimator",
+    "DataValidatorMixin",
+})
+
+
+def _should_hide_base(base: type) -> bool:
+    """Return True if ``base`` should be hidden from autodoc output.
+
+    A base is hidden if either:
+
+    * its name starts with an underscore (``_LinearModelBase``), or
+    * its name is explicitly registered in ``_HIDDEN_BASES`` — used
+      for public-named classes that are internal implementation
+      details (``BaseEstimator``, ``DataValidatorMixin``).
+    """
+    name = getattr(base, "__name__", "")
+    return name.startswith("_") or name in _HIDDEN_BASES
+
+
+def _unwrap_one_level_hidden_bases(app, name, obj, options, bases):
+    """Replace hidden base classes with their immediate parents (1-level unwrapping).
+
+    This function inspects the direct base classes. If a base class is registered
+    in the _HIDDEN_BASES set, it is removed and replaced by its own immediate
+    parent classes, preventing empty base lists and removing internal mixins.
+    """
+    new_bases = []
+
+    for base in bases:
+        if _should_hide_base(base):
+            for parent in getattr(base, "__bases__", ()):
+                if parent is not object:
+                    new_bases.append(parent)
+        else:
+            new_bases.append(base)
+
+    # Modify the Sphinx bases list in-place
+    bases[:] = new_bases
+
+
+# ================================================================================= #
+# ------------------------ Sphinx Configuration Setup ----------------------------- #
+# ================================================================================= #
+def setup(app):
+    """Sphinx extension setup function, executed at the very end of conf.py."""
+    app.connect("autodoc-process-bases", _unwrap_one_level_hidden_bases)
