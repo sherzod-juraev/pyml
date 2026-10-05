@@ -1,113 +1,49 @@
-Development CLI
-================
+Nox sessions
+============
+
+This project uses `Nox <https://nox.thea.codes/>`_ to run all quality
+checks in isolated environments — the same checks that run in CI.
+
+Nox creates a separate virtual environment for each session, installs
+the required dependencies, and runs the configured commands. This
+guarantees reproducibility across machines and Python versions.
+
+Setup
+-----
+
+Install the ``nox`` extra to get Nox:
 
 .. code-block:: bash
 
     git clone https://github.com/sherzod-juraev/pyml.git
     cd pyml
-    pip install -e ".[dev]"
+    pip install -e ".[nox]"
 
-pyml ships with a small ``pyml`` command for running its own quality
-checks and building the docs — the same checks that run in CI.
-
-Overview
---------
+Run all default sessions
+------------------------
 
 .. code-block:: bash
 
-    pyml --version # or pyml -V
+    nox
 
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
+This runs every session listed in ``nox.options.sessions``.
 
-    .. program-output:: pyml --version
-
-.. code-block:: bash
-
-    pyml --help # or pyml -h
-
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml --help
-
-Documentation commands
------------------------
+List all available sessions
+---------------------------
 
 .. code-block:: bash
 
-    pyml docs --help
+    nox -l
 
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
+This prints every session Nox can run, including parametrized
+combinations such as ``check-3.13(pyml)`` and ``check-3.13(tests)``.
 
-    .. program-output:: pyml docs --help
-
-.. code-block:: bash
-
-    pyml docs build --help
-
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml docs build --help
-
-.. code-block:: bash
-
-    pyml docs check --help
-
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml docs check --help
-
-.. code-block:: bash
-
-    pyml docs live --help
-
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml docs live --help
-
-.. warning::
-    ``pyml docs live`` is experimental — see :ref:`limitation-docs-live-experimental`.
-
-.. warning::
-    ``docs check``/``build``/``live`` require a source checkout — see
-    :ref:`limitation-source-checkout-required`.
-
-Code quality commands
+Run a specific session
 ----------------------
 
 .. code-block:: bash
 
-    pyml code --help
+    nox -s <session-name>
 
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml code --help
-
-Test suite commands
----------------------
-
-.. code-block:: bash
-
-    pyml tests --help
-
-.. dropdown:: Output
-    :icon: terminal
-    :color: light
-
-    .. program-output:: pyml tests --help
-
-.. warning::
-    Requires a source checkout — see :ref:`limitation-source-checkout-required`.
+Replace ``<session-name>`` with one of the sessions listed by
+``nox -l``.

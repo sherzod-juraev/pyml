@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Education",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -35,8 +36,6 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "click>=8.5.0",
-    "click-help-colors>=0.9.4",
     "numpy>=1.24.0",
     "scipy>=1.10.0",
 ]
@@ -45,6 +44,9 @@ dependencies = [
 # --------------------------- Optional Dependencies ------------------------------- #
 # ================================================================================= #
 [project.optional-dependencies]
+nox = [
+    "nox>=2026.2.9",
+]
 dev = [
     "interrogate>=1.7.0",
     "mypy>=1.11",
@@ -54,7 +56,6 @@ dev = [
 ]
 docs = [
     "autodocsumm>=0.2.14",
-    "sphinxcontrib-programoutput>=0.18",
     "doc8>=1.0.0",
     "matplotlib>=3.9.0",
     "pydata-sphinx-theme>=0.15.0",
@@ -86,12 +87,6 @@ Documentation = "https://pyml-edu.readthedocs.io"
 Repository = "https://github.com/sherzod-juraev/pyml"
 
 # ================================================================================= #
-# ---------------------------------- CLI Scripts ---------------------------------- #
-# ================================================================================= #
-[project.scripts]
-pyml = "pyml._cli.main:cli"
-
-# ================================================================================= #
 # ------------------------------------ Setuptools --------------------------------- #
 # ================================================================================= #
 [tool.setuptools.dynamic]
@@ -106,7 +101,7 @@ exclude = [
 ]
 
 [tool.setuptools.package-data]
-pyml = ["**/*.pyi",]
+pyml = ["**/*.pyi", "py.typed"]
 
 # ================================================================================= #
 # ------------------------------------- Pytest ------------------------------------ #

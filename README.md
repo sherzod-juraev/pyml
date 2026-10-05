@@ -11,7 +11,7 @@
 [![Docs](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml)
 [![Documentation Status](https://readthedocs.org/projects/pyml-edu/badge/?version=latest)](https://pyml-edu.readthedocs.io/en/latest/?badge=latest)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/)
 [![Ruff](https://img.shields.io/badge/Ruff-enabled-brightgreen)](https://docs.astral.sh/ruff/)
 [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy.readthedocs.io/)
 [![Interrogate](https://img.shields.io/badge/Interrogate-100%25-brightgreen)](https://interrogate.readthedocs.io/)
@@ -20,7 +20,8 @@ A from-scratch machine learning library built on NumPy and SciPy, with
 a shared estimator architecture, manual gradient derivations, and full
 mathematical documentation. No TensorFlow, no PyTorch — just the math.
 
-📖 [pyml-edu.readthedocs.io](https://pyml-edu.readthedocs.io)
+- **Documentation**: https://pyml-edu.readthedocs.io
+- **Source code**: https://github.com/sherzod-juraev/pyml
 
 Curious why this project exists, not just what it does? See
 [Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html).
@@ -54,65 +55,12 @@ pip install git+https://github.com/sherzod-juraev/pyml.git
 | Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                  |
 | Model selection       |                                Train/test split                                 |
 
-## Project structure
+## Documentation
 
-```text
-pyml/
-├── .github/
-│   └── workflows/
-│       ├── docs.yml
-│       ├── docs-linkcheck.yml
-│       ├── pyml.yml
-│       └── tests.yml
-│
-├── assets/
-│
-├── docs/
-│
-├── pyml/
-│   ├── _cli/
-│   ├── cluster/
-│   ├── core/
-│   ├── linear_model/
-│   ├── metrics/
-│   ├── model_selection/
-│   ├── naive_bayes/
-│   ├── neighbors/
-│   ├── preprocessing/
-│   └── tree/
-│
-├── tests/
-│   ├── cluster/
-│   ├── core/
-│   ├── linear_model/
-│   ├── metrics/
-│   ├── model_selection/
-│   ├── naive_bayes/
-│   ├── neighbors/
-│   ├── preprocessing/
-│   ├── tree/
-│   └── conftest.py
-│
-├── .gitignore
-├── .readthedocs.yaml
-├── pyproject.toml
-├── README.md
-└── LICENSE
-```
-
-## Quality tooling
-
-| Tool                        |               Checks                |
-|:----------------------------|:-----------------------------------:|
-| mypy (strict)               |        Static type checking         |
-| interrogate                 |      Docstring coverage (100%)      |
-| ruff                        |       Linting and formatting        |
-| pytest                      |             Test suite              |
-| sphinx-lint, doc8, rstcheck |   Documentation style and syntax    |
-| sphinx linkcheck            | Validity of every link in the docs  |
-
-Each row runs via the `pyml` CLI. See [Development](https://pyml-edu.readthedocs.io/en/latest/quick_start/cli.html)
-for setup and usage.
+- [Quick Start](https://pyml-edu.readthedocs.io/en/latest/quick_start/index.html)
+- [API Reference](https://pyml-edu.readthedocs.io/en/latest/api/pyml/index.html)
+- [Examples](https://pyml-edu.readthedocs.io/en/latest/quick_start/examples/index.html)
+- [Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html)
 
 ## License
 
