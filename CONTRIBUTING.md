@@ -12,29 +12,33 @@ However, this project is open-source under the
 - **Modify** it for your own needs.
 - **Develop** your own version independently.
 
-You do **not** need my permission. The **MIT License** already
-grants you these rights.
-
 If you build something interesting, I would love to hear about it.
 
 ## Project structure
 
 ```text
 pyml/
-├── .github/workflows/     # CI workflows
-├── assets/                # Branding
-├── docs/                  # Sphinx documentation
-├── pyml/                  # Source code
-│   ├── cluster/           # Clustering
-│   ├── core/              # Base classes
-│   ├── linear_model/      # Linear models
-│   ├── metrics/           # Metrics
-│   ├── model_selection/   # Train/test split
-│   ├── naive_bayes/       # Naive Bayes
-│   ├── neighbors/         # KNN, Radius
-│   ├── preprocessing/     # Scalers
-│   └── tree/              # Decision trees
-└── tests/                 # Test suite
+├── .github/workflows/          # CI workflows
+├── assets/                     # Branding
+├── docs/                       # Sphinx documentation
+├── pyml/                       # Source code
+│   ├── cluster/                # Clustering
+│   ├── core/                   # Base classes
+│   ├── linear_model/           # Linear models
+│   ├── metrics/                # Metrics
+│   ├── model_selection/        # Train/test split
+│   ├── naive_bayes/            # Naive Bayes
+│   ├── neighbors/              # KNN, Radius
+│   ├── preprocessing/          # Scalers
+│   └── tree/                   # Decision trees
+├── tests/                      # Test suite
+├── .gitignore                  # Git ignore rules
+├── .readthedocs.yaml           # Read the Docs config
+├── CONTRIBUTING.md             # Contributing guide
+├── README.md                   # Project overview
+├── LICENSE                     # MIT License
+├── noxfile.py                  # Nox sessions
+└── pyproject.toml              # Project metadata and tool config
 ```
 
 ## Development setup

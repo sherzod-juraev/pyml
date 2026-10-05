@@ -41,7 +41,7 @@ combinations such as ``check-3.13(pyml)`` and ``check-3.13(tests)``.
 Run a specific session
 ----------------------
 
-.. code-block:: bash
+.. code-block:: console
 
     nox -s <session-name>
 
