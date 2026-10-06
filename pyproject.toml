@@ -36,8 +36,8 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "numpy>=1.24.0",
-    "scipy>=1.10.0",
+    "numpy>=1.26.0",
+    "scipy>=1.11.2",
 ]
 
 # ================================================================================= #
@@ -76,6 +76,7 @@ live = [
 all = [
     "pyml[dev]",
     "pyml[live]",
+    "pyml[nox]",
 ]
 
 # ================================================================================= #
@@ -124,6 +125,7 @@ line-length = 100
 include = [
     "pyml/**/*.py",
     "tests/**/*.py",
+    "noxfile.py",
 ]
 exclude = [
     "pyml/__pycache__", "pyml/**/__pycache__",

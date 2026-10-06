@@ -2,20 +2,30 @@ name: Tests
 
 on:
   push:
-    branches: [main, dev]
+    branches: [dev, main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  quality:
+  tests:
     name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.12", "3.13", "3.14"]
-
     steps:
       - uses: actions/checkout@v4
 
@@ -23,21 +33,35 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
-      - name: Install dependencies (with Dev tools)
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+      - name: Install Nox
+        run: python -m pip install --upgrade pip nox
 
-      - name: Ruff — lint
-        run: ruff check tests
+      - name: Run the test suite
+        run: nox -s tests-${{ matrix.python-version }}
 
-      - name: Ruff — format check
-        run: ruff format --check tests
+  tests-min:
+    name: Oldest dependencies / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Mypy — type check
-        run: mypy tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
-      - name: Pytest - run test suite
-        run: pytest
+      - name: Install Nox
+        run: python -m pip install --upgrade pip nox
+
+      - name: Run the test suite with the oldest NumPy and SciPy
+        run: nox -s tests-min
