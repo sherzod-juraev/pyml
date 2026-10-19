@@ -9,6 +9,7 @@ method and by test suites for verifying model correctness.
 from typing import Literal, get_args
 
 import numpy as np
+import numpy.typing as npt
 
 from ..core.dtypes import ClassificationTarget
 from ..core.exceptions import InvalidParameterError, ShapeMismatchError
@@ -61,6 +62,41 @@ def _validate_classification_inputs(
             f"Invalid parameter {average} for average. "
             f"Valid parameters are: {', '.join(_VALID_AVERAGE)}"
         )
+
+
+def _count_per_class(
+    y_true: ClassificationTarget, y_pred: ClassificationTarget, classes: ClassificationTarget, /
+) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp], npt.NDArray[np.intp]]:
+    """Count the true positives, false positives and false negatives of every class.
+
+    Classes are processed one at a time, so the temporary boolean masks have
+    shape (n_samples,) instead of (n_classes, n_samples).
+
+    Parameters
+    ----------
+    y_true : ClassificationTarget
+        Ground truth class labels.
+    y_pred : ClassificationTarget
+        Predicted class labels.
+    classes : ClassificationTarget
+        Class labels to count for, of shape (n_classes,).
+
+    Returns
+    -------
+    tuple[ndarray, ndarray, ndarray]
+        True positives, false positives and false negatives, each of shape
+        (n_classes,) and ordered like `classes`.
+    """
+    tp = np.empty(classes.shape[0], dtype=np.intp)
+    fp = np.empty(classes.shape[0], dtype=np.intp)
+    fn = np.empty(classes.shape[0], dtype=np.intp)
+    for index, label in enumerate(classes):
+        is_true = y_true == label
+        is_pred = y_pred == label
+        tp[index] = np.sum(is_true & is_pred)
+        fp[index] = np.sum(~is_true & is_pred)
+        fn[index] = np.sum(is_true & ~is_pred)
+    return tp, fp, fn
 
 
 def accuracy_score(y_true: ClassificationTarget, y_pred: ClassificationTarget, /) -> float:
@@ -134,10 +170,10 @@ def precision_score(
     if average == "micro":
         return accuracy_score(y_true, y_pred)
     y_uniq, class_counts = np.unique(y_true, return_counts=True)
-    classes = y_uniq[:, np.newaxis]
-    tp = np.sum((classes == y_true) & (classes == y_pred), axis=1)
-    fp = np.sum((classes != y_true) & (classes == y_pred), axis=1)
-    precisions = np.where((tp + fp) > 0, tp / (tp + fp), 0.0)
+    tp, fp, _ = _count_per_class(y_true, y_pred, y_uniq)
+    denom = tp + fp
+    precisions = np.zeros_like(denom, dtype=float)
+    np.divide(tp, denom, out=precisions, where=denom > 0)
     # macro
     if average == "macro":
         return float(np.mean(precisions))
@@ -193,10 +229,10 @@ def recall_score(
     if average == "micro":
         return accuracy_score(y_true, y_pred)
     y_uniq, class_counts = np.unique(y_true, return_counts=True)
-    classes = y_uniq[:, np.newaxis]
-    tp = np.sum((classes == y_true) & (classes == y_pred), axis=1)
-    fn = np.sum((classes == y_true) & (classes != y_pred), axis=1)
-    recalls = np.where((tp + fn) > 0, tp / (tp + fn), 0.0)
+    tp, _, fn = _count_per_class(y_true, y_pred, y_uniq)
+    denom = tp + fn
+    recalls = np.zeros_like(denom, dtype=float)
+    np.divide(tp, denom, out=recalls, where=denom > 0)
     # macro
     if average == "macro":
         return float(np.mean(recalls))
@@ -253,14 +289,30 @@ def f1_score(
     if average == "micro":
         return accuracy_score(y_true, y_pred)
     y_uniq, class_counts = np.unique(y_true, return_counts=True)
-    classes = y_uniq[:, np.newaxis]
-    tp = np.sum((classes == y_true) & (classes == y_pred), axis=1)
-    fp = np.sum((classes != y_true) & (classes == y_pred), axis=1)
-    fn = np.sum((classes == y_true) & (classes != y_pred), axis=1)
-    precisions = np.where((tp + fp) > 0, tp / (tp + fp), 0.0)
-    recalls = np.where((tp + fn) > 0, tp / (tp + fn), 0.0)
-    f1_per_class = np.where(
-        (precisions + recalls) > 0, 2 * ((precisions * recalls) / (precisions + recalls)), 0.0
+    tp, fp, fn = _count_per_class(y_true, y_pred, y_uniq)
+
+    denom_p = tp + fp
+    precisions = np.divide(
+        tp,
+        denom_p,
+        out=np.zeros_like(denom_p, dtype=float),
+        where=denom_p > 0,
+    )
+
+    denom_r = tp + fn
+    recalls = np.divide(
+        tp,
+        denom_r,
+        out=np.zeros_like(denom_r, dtype=float),
+        where=denom_r > 0,
+    )
+
+    denom_f = precisions + recalls
+    f1_per_class = np.divide(
+        2 * precisions * recalls,
+        denom_f,
+        out=np.zeros_like(denom_f, dtype=float),
+        where=denom_f > 0,
     )
     # macro
     if average == "macro":
