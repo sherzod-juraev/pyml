@@ -9,6 +9,8 @@ from ..core.base import PredictableClusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
 
+_CHUNK_SIZE = 4096
+
 
 class KMeans(PredictableClusterer):
     r"""K-Means clustering with k-means++ centroid initialization.
@@ -135,12 +137,13 @@ class KMeans(PredictableClusterer):
         self.centroids_ = np.zeros(shape=(self.n_clusters, X.shape[1]), dtype=X.dtype)
         first_idx = rng.integers(X.shape[0])
         self.centroids_[0] = X[first_idx].copy()
+        min_dists = cdist(self.centroids_[:1], X, "sqeuclidean")[0]
         for i in range(1, self.n_clusters):
-            dists = cdist(self.centroids_[:i], X, "sqeuclidean")
-            min_dists = np.min(dists, axis=0)
             prob = min_dists / (np.sum(min_dists) + 1e-10)
             idx = rng.choice(X.shape[0], p=prob)
             self.centroids_[i] = X[idx].copy()
+            new_dists = cdist(self.centroids_[i : i + 1], X, "sqeuclidean")[0]
+            min_dists = np.minimum(min_dists, new_dists)
 
     def _assign_clusters(self, X: FeatureMatrix, /) -> ClusterLabels:
         """Assign each sample to its nearest centroid.
@@ -156,8 +159,11 @@ class KMeans(PredictableClusterer):
             Index of the nearest centroid for each sample, of shape
             (n_samples,).
         """
-        dists = cdist(X, self.centroids_, "sqeuclidean")
-        labels = np.argmin(dists, axis=1)
+        labels = np.empty(X.shape[0], dtype=np.intp)
+        for start in range(0, X.shape[0], _CHUNK_SIZE):
+            stop = start + _CHUNK_SIZE
+            dists = cdist(X[start:stop], self.centroids_, "sqeuclidean")
+            labels[start:stop] = np.argmin(dists, axis=1)
         return labels
 
     def _get_labels(self) -> ClusterLabels:

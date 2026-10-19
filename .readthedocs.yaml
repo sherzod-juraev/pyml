@@ -7,10 +7,10 @@ build:
 
 python:
   install:
-    - method: pip
-      path: .
-      extra_requirements:
-        - docs
+    - method: uv
+      command: sync
+      groups:
+        - docs-build
 
 sphinx:
   configuration: docs/source/conf.py

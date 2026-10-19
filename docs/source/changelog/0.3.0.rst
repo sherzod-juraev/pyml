@@ -1,0 +1,4 @@
+0.3.0
+=====
+
+- Added ``GaussianNB`` and ``MultinomialNB``, built on a shared Naive Bayes base class.

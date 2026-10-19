@@ -1,0 +1,7 @@
+0.2.0
+=====
+
+- Rebuilt the estimator base classes.
+- Expanded the documentation site.
+- Rewrote the test suite (287 tests).
+- Split the CI into dedicated workflows.

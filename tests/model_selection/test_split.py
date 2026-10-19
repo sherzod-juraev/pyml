@@ -36,6 +36,34 @@ class TestValidation:
         with pytest.raises(ShapeMismatchError):
             train_test_split(X, y)
 
+    def test_rejects_1d_X(self, rng):
+        with pytest.raises(ValueError, match="2D"):
+            train_test_split(rng.uniform(size=10), rng.uniform(size=10))
+
+    def test_rejects_integer_X(self):
+        with pytest.raises(TypeError, match="X must be"):
+            train_test_split(np.arange(20).reshape(10, 2), np.arange(10))  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf])
+    def test_rejects_non_finite_X(self, rng, bad_value):
+        X = rng.uniform(0, 10, size=(10, 2))
+        X[3, 1] = bad_value
+
+        with pytest.raises(ValueError, match="NaN, infinity"):
+            train_test_split(X, np.arange(10))
+
+    def test_rejects_non_numeric_y(self, rng):
+        X = rng.uniform(0, 10, size=(4, 2))
+
+        with pytest.raises(TypeError, match="y must be"):
+            train_test_split(X, np.array(["a", "b", "a", "b"]))
+
+    def test_rejects_2d_y(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        with pytest.raises(ValueError, match="1D"):
+            train_test_split(X, rng.uniform(size=(10, 2)))
+
 
 class TestSplit:
     def test_split_sizes_match_test_size(self, rng):

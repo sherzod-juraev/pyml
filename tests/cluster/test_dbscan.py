@@ -80,3 +80,79 @@ class TestGetLabels:
         labels = model.fit_predict(X)
 
         assert np.array_equal(model.labels_, labels)
+
+
+class TestDensityReachability:
+    def test_chain_of_core_points_forms_a_single_cluster(self):
+        # neighbors are 1.0 apart, so only expansion through core points
+        # can link the two ends of the chain (they are 9.0 apart)
+        X = np.arange(10.0).reshape(-1, 1)
+
+        labels = DBSCAN(eps=1.5, min_samples=3).fit_predict(X)
+
+        assert len(np.unique(labels)) == 1
+        assert labels[0] != -1
+
+    def test_border_point_joins_cluster_but_does_not_extend_it(self):
+        # the point at 1.5 is within eps of a core point, but has too few
+        # neighbors to be core itself; the point at 2.4 is reachable only
+        # through that border point, so it must stay noise
+        X = np.array([[0.0], [0.2], [0.4], [0.6], [1.5], [2.4]])
+
+        labels = DBSCAN(eps=1.0, min_samples=4).fit_predict(X)
+
+        assert labels[4] == labels[0]
+        assert labels[0] != -1
+        assert labels[5] == -1
+
+    @pytest.mark.parametrize("metric", ["euclidean", "cityblock", "chebyshev"])
+    def test_eps_boundary_is_inclusive(self, metric):
+        # the two points are exactly eps apart under every metric
+        X = np.array([[0.0, 0.0], [1.0, 0.0]])
+
+        labels = DBSCAN(eps=1.0, min_samples=2, metric=metric).fit_predict(X)
+
+        assert np.all(labels == 0)
+
+
+class TestBlocking:
+    @pytest.mark.parametrize("metric", ["euclidean", "cityblock", "chebyshev"])
+    @pytest.mark.parametrize("rows_per_block", [1, 7, 50, 1000])
+    def test_blocked_fit_matches_single_block(self, rng, monkeypatch, metric, rows_per_block):
+        X = np.vstack(
+            [
+                rng.normal(loc=(-5, -5), scale=0.8, size=(40, 2)),
+                rng.normal(loc=(5, 5), scale=0.8, size=(40, 2)),
+                rng.uniform(-10, 10, size=(10, 2)),
+            ]
+        )
+        expected = DBSCAN(eps=1.2, min_samples=4, metric=metric).fit_predict(X)
+
+        monkeypatch.setattr("pyml.cluster.dbscan._MAX_BLOCK_ELEMENTS", rows_per_block * X.shape[0])
+        labels = DBSCAN(eps=1.2, min_samples=4, metric=metric).fit_predict(X)
+
+        assert np.array_equal(labels, expected)
+
+    def test_budget_smaller_than_one_row_still_fits(self, rng, monkeypatch):
+        X = rng.normal(size=(30, 2))
+        expected = DBSCAN(eps=0.8, min_samples=3).fit_predict(X)
+
+        monkeypatch.setattr("pyml.cluster.dbscan._MAX_BLOCK_ELEMENTS", 1)
+
+        assert np.array_equal(DBSCAN(eps=0.8, min_samples=3).fit_predict(X), expected)
+
+    def test_neighborhoods_are_computed_in_blocks_of_the_budgeted_size(self, rng, monkeypatch):
+        X = rng.normal(size=(23, 2))
+        block_sizes = []
+        original = DBSCAN._eps_neighborhoods
+
+        def spy(self, X_block, X_all):
+            block_sizes.append(X_block.shape[0])
+            return original(self, X_block, X_all)
+
+        monkeypatch.setattr(DBSCAN, "_eps_neighborhoods", spy)
+        monkeypatch.setattr("pyml.cluster.dbscan._MAX_BLOCK_ELEMENTS", 10 * X.shape[0])
+
+        DBSCAN(eps=0.8, min_samples=3).fit(X)
+
+        assert block_sizes == [10, 10, 3]

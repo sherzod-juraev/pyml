@@ -1,0 +1,6 @@
+0.1.1
+=====
+
+- Improved typing, expanded the tests (204) and enforced linting.
+- Added CI for Python 3.12 and 3.13.
+- No new models.

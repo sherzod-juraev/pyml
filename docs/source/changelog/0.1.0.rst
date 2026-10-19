@@ -1,0 +1,5 @@
+0.1.0
+=====
+
+- First alpha release: 12 classical machine learning models built from scratch, with 111 passing
+  tests.

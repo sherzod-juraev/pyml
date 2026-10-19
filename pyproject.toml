@@ -2,9 +2,7 @@
 requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
-# ================================================================================= #
-# ------------------------------------ Project ------------------------------------ #
-# ================================================================================= #
+# --- Project --- #
 [project]
 name = "pyml"
 dynamic = ["version"]
@@ -40,56 +38,58 @@ dependencies = [
     "scipy>=1.11.2",
 ]
 
-# ================================================================================= #
-# --------------------------- Optional Dependencies ------------------------------- #
-# ================================================================================= #
-[project.optional-dependencies]
-nox = [
-    "nox>=2026.2.9",
-]
-dev = [
-    "interrogate>=1.7.0",
-    "mypy>=1.11",
-    "ruff>=0.6.0",
+# --- Dependency groups --- #
+[dependency-groups]
+# --- Development tools --- #
+dev-test = [
     "pytest>=9.0",
+    "pytest-cov>=7.1.0",
     "pytest-sugar>=1.0",
 ]
-docs = [
-    "autodocsumm>=0.2.14",
+dev-lint = ["ruff>=0.6.0"]
+dev-types = ["mypy>=1.11", "scipy-stubs>=1.18.1.1", ]
+dev-docstring = ["interrogate>=1.7.0"]
+dev = [
+    {include-group = "dev-test"},
+    {include-group = "dev-lint"},
+    {include-group = "dev-types"},
+    {include-group = "dev-docstring"},
+]
+# --- Documentation tools --- #
+docs-lint = [
     "doc8>=1.0.0",
+    "rstcheck>=6.0.0",
+    "sphinx-lint>=1.0.0",
+]
+docs-build = [
+    "autodocsumm>=0.2.14",
     "matplotlib>=3.9.0",
     "pydata-sphinx-theme>=0.15.0",
-    "rstcheck>=6.0.0",
     "sphinx>=7.0.0",
     "sphinx-autodoc-typehints>=2.2.0",
     "sphinx-copybutton>=0.5.0",
     "sphinx-design>=0.5.0",
-    "sphinx-lint>=1.0.0",
     "sphinx-notfound-page>=1.1.0",
     "sphinxext-opengraph>=0.13.0",
     "sphinx-sitemap>=2.6.0",
 ]
-live = [
-    "pyml[docs]",
+docs = [
+    {include-group = "docs-lint"},
+    {include-group = "docs-build"},
+]
+docs-live = [
+    {include-group = "docs-build"},
     "sphinx-autobuild>=2025.8.25",
 ]
-all = [
-    "pyml[dev]",
-    "pyml[live]",
-    "pyml[nox]",
-]
+nox = ["nox>=2026.2.9"]
 
-# ================================================================================= #
-# ------------------------------------- URLs -------------------------------------- #
-# ================================================================================= #
+# --- Urls --- #
 [project.urls]
 Homepage = "https://github.com/sherzod-juraev/pyml"
 Documentation = "https://pyml-edu.readthedocs.io"
 Repository = "https://github.com/sherzod-juraev/pyml"
 
-# ================================================================================= #
-# ------------------------------------ Setuptools --------------------------------- #
-# ================================================================================= #
+# --- Setuptools --- #
 [tool.setuptools.dynamic]
 version = {attr = "pyml.__version__"}
 
@@ -104,21 +104,27 @@ exclude = [
 [tool.setuptools.package-data]
 pyml = ["**/*.pyi", "py.typed"]
 
-# ================================================================================= #
-# ------------------------------------- Pytest ------------------------------------ #
-# ================================================================================= #
+# --- Pytest --- #
 [tool.pytest.ini_options]
 minversion = "9.0"
 testpaths = ["tests",]
 python_files = ["test_*.py", "*_test.py",]
 python_classes = ["Test*",]
 python_functions = ["test_*",]
-addopts = "-v --tb=short --strict-markers --strict-config -p no:warnings"
-filterwarnings = ["ignore::UserWarning",]
+addopts = "-v --tb=short --strict-markers --strict-config"
+filterwarnings = ["error"]
 
-# ================================================================================= #
-# -------------------------------------- Ruff ------------------------------------- #
-# ================================================================================= #
+# --- Pytest-cov --- #
+[tool.coverage.run]
+source = ["pyml"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 98
+
+# --- Ruff --- #
 [tool.ruff]
 target-version = "py312"
 line-length = 100
@@ -157,25 +163,17 @@ convention = "numpy"
     "SIM",
 ]
 
-# ================================================================================= #
-# -------------------------------------- Mypy ------------------------------------- #
-# ================================================================================= #
+# --- Mypy --- #
 [tool.mypy]
 python_version = "3.12"
 strict = true
-
-[[tool.mypy.overrides]]
-module = ["scipy.*",]
-ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
-# ================================================================================= #
-# ----------------------------------- Interrogate --------------------------------- #
-# ================================================================================= #
+# --- Interrogate --- #
 [tool.interrogate]
 fail-under = 100
 verbose = 1
@@ -196,9 +194,7 @@ ignore-module = false
 ignore-nested-functions = false
 ignore-nested-classes = false
 
-# ================================================================================= #
-# --------------------------------- Docs Quality Tools ---------------------------- #
-# ================================================================================= #
+# --- Docs quality tools --- #
 [tool.rstcheck]
 ignore_directives = [
     "autoclass", "autofunction",

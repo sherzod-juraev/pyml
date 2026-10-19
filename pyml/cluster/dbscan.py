@@ -3,11 +3,14 @@
 from typing import Literal
 
 import numpy as np
+import numpy.typing as npt
 from scipy.spatial.distance import cdist
 
 from ..core.base import Clusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
+
+_MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
 
 class DBSCAN(Clusterer):
@@ -120,6 +123,27 @@ class DBSCAN(Clusterer):
         self.min_samples: int = min_samples
         self.metric: Literal["euclidean", "cityblock", "chebyshev"] = metric
 
+    def _eps_neighborhoods(
+        self, X_block: FeatureMatrix, X: FeatureMatrix, /
+    ) -> list[npt.NDArray[np.intp]]:
+        """Find the eps-neighborhood of every point in a block.
+
+        Parameters
+        ----------
+        X_block : FeatureMatrix
+            Block of points of shape (n_block, n_features).
+        X : FeatureMatrix
+            All training data of shape (n_samples, n_features).
+
+        Returns
+        -------
+        list[ndarray]
+            For each point of the block, the indices of all samples in `X`
+            within eps of it (the point itself included).
+        """
+        dists = cdist(X_block, X, self.metric)
+        return [np.where(row <= self.eps)[0] for row in dists]
+
     def _fit(self, X: FeatureMatrix, /) -> None:
         """Assign cluster labels using the DBSCAN density-reachability algorithm.
 
@@ -146,17 +170,20 @@ class DBSCAN(Clusterer):
                 f"training samples ({X.shape[0]})."
             )
         self.labels_ = np.full(X.shape[0], -2, dtype=np.int32)
-        dists = cdist(X, X, self.metric)
+        neighborhoods: list[npt.NDArray[np.intp]] = []
+        block_size = max(1, _MAX_BLOCK_ELEMENTS // X.shape[0])
+        for start in range(0, X.shape[0], block_size):
+            neighborhoods.extend(self._eps_neighborhoods(X[start : start + block_size], X))
         cluster_idx = 0
         for i in range(X.shape[0]):
             if self.labels_[i] >= 0:
                 continue
-            neigh_idx = np.where(dists[i] <= self.eps)[0]
+            neigh_idx = neighborhoods[i]
             if neigh_idx.shape[0] >= self.min_samples:
                 j = 0
                 while j < neigh_idx.shape[0]:
                     core_idx = neigh_idx[j]
-                    new_neigh_idx = np.where(dists[core_idx] <= self.eps)[0]
+                    new_neigh_idx = neighborhoods[core_idx]
                     if new_neigh_idx.shape[0] >= self.min_samples:
                         mask = np.isin(new_neigh_idx, neigh_idx, invert=True)
                         if np.any(mask):

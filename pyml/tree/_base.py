@@ -110,6 +110,7 @@ class _DecisionTreeBase(ABC):
             split whose gain falls below this becomes a leaf instead.
             Defaults to 1e-7.
         """
+        super().__init__()
         self.max_depth: int = max_depth
         self.min_samples: int = min_samples
         self.min_impurity_decrease: float = min_impurity_decrease

@@ -17,6 +17,7 @@ pyml
     quick_start/index
     api/pyml/index
     known_limitations
+    changelog/index
 
 .. only:: html
 

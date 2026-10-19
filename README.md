@@ -88,6 +88,7 @@ pip install git+https://github.com/sherzod-juraev/pyml-datasets.git
 - [API Reference](https://pyml-edu.readthedocs.io/en/latest/api/pyml/index.html)
 - [Examples](https://pyml-edu.readthedocs.io/en/latest/quick_start/examples/index.html)
 - [Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html)
+- [Changelog](https://pyml-edu.readthedocs.io/en/latest/changelog/index.html)
 
 ## Development
 

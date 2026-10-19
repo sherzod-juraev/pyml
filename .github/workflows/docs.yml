@@ -19,17 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.13"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          enable-cache: true
 
       - name: Install Nox
-        run: python -m pip install --upgrade pip nox
+        run: uv sync --locked --only-group nox
 
       - name: Check the style and build the docs (warnings as errors)
-        run: nox -s docs
+        run: uv run --no-sync nox -s docs

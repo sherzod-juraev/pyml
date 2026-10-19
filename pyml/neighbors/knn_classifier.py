@@ -10,6 +10,8 @@ from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
 
+_MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
+
 
 class KNNClassifier(Classifier):
     r"""K-Nearest Neighbors classification.
@@ -163,6 +165,30 @@ class KNNClassifier(Classifier):
             (optionally distance-weighted) majority vote among each query
             point's nearest neighbors' labels.
         """
+        y_pred = np.empty(X.shape[0], dtype=self.y_.dtype)
+        block_size = max(1, _MAX_BLOCK_ELEMENTS // self.X_.shape[0])
+        for start in range(0, X.shape[0], block_size):
+            stop = start + block_size
+            y_pred[start:stop] = self._predict_block(X[start:stop])
+        return y_pred
+
+    def _predict_block(self, X: FeatureMatrix, /) -> ClassificationTarget:
+        """Predict labels for one block of query points.
+
+        The distances from the whole block to every training sample are
+        computed at once, so the block has to be small enough for an
+        (n_block, n_train) matrix to fit in memory.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Block of input data of shape (n_block, n_features).
+
+        Returns
+        -------
+        ClassificationTarget
+            Predicted labels of shape (n_block,).
+        """
         dists = cdist(X, self.X_, metric=self.metric)
         neighbor_ind = np.argpartition(dists, kth=self.n_neighbors - 1, axis=1)[
             :, : self.n_neighbors
@@ -173,8 +199,8 @@ class KNNClassifier(Classifier):
         neighbor_dist = np.take_along_axis(dists, neighbor_ind, axis=1)
         neighbor_labels = self.y_[neighbor_ind]
         weights = 1 / (neighbor_dist + 1e-10)
-        one_hot = neighbor_labels[:, :, np.newaxis] == self.classes_
-        weighted_votes = one_hot * weights[:, :, np.newaxis]
-        class_scores = np.sum(weighted_votes, axis=1)
+        class_scores = np.empty((X.shape[0], len(self.classes_)))
+        for index, label in enumerate(self.classes_):
+            class_scores[:, index] = np.sum(weights * (neighbor_labels == label), axis=1)
         predicted_idx = np.argmax(class_scores, axis=1)
         return self.classes_[predicted_idx]

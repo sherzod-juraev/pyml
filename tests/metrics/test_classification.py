@@ -6,6 +6,71 @@ import pytest
 from pyml.core.exceptions import InvalidParameterError, ShapeMismatchError
 from pyml.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+_CLASSIFICATION_METRICS = [accuracy_score, precision_score, recall_score, f1_score]
+
+
+class TestInputValidation:
+    @pytest.mark.parametrize("metric", _CLASSIFICATION_METRICS)
+    def test_rejects_2d_y_true(self, metric):
+        with pytest.raises(ValueError, match="y_true"):
+            metric(np.array([[0, 1], [1, 0]]), np.array([0, 1]))
+
+    @pytest.mark.parametrize("metric", _CLASSIFICATION_METRICS)
+    def test_rejects_2d_y_pred(self, metric):
+        with pytest.raises(ValueError, match="y_pred"):
+            metric(np.array([0, 1]), np.array([[0, 1], [1, 0]]))
+
+    @pytest.mark.parametrize("metric", _CLASSIFICATION_METRICS)
+    def test_rejects_float_y_true(self, metric):
+        with pytest.raises(TypeError, match="y_true"):
+            metric(np.array([0.0, 1.0]), np.array([0, 1]))
+
+    @pytest.mark.parametrize("metric", _CLASSIFICATION_METRICS)
+    def test_rejects_float_y_pred(self, metric):
+        with pytest.raises(TypeError, match="y_pred"):
+            metric(np.array([0, 1]), np.array([0.0, 1.0]))
+
+    @pytest.mark.parametrize("metric", _CLASSIFICATION_METRICS)
+    def test_rejects_mismatched_samples(self, metric):
+        with pytest.raises(ShapeMismatchError):
+            metric(np.array([0, 1, 0]), np.array([0, 1]))
+
+
+class TestPerClassCounts:
+    def test_known_three_class_values(self):
+        # class 0: TP=1, FP=1, FN=1 | class 1: TP=1, FP=1, FN=1 | class 2: TP=1, FP=0, FN=0
+        y_true = np.array([0, 0, 1, 1, 2])
+        y_pred = np.array([0, 1, 1, 0, 2])
+
+        assert precision_score(y_true, y_pred, "macro") == pytest.approx((0.5 + 0.5 + 1.0) / 3)
+        assert recall_score(y_true, y_pred, "macro") == pytest.approx((0.5 + 0.5 + 1.0) / 3)
+        assert f1_score(y_true, y_pred, "macro") == pytest.approx((0.5 + 0.5 + 1.0) / 3)
+
+    def test_class_never_predicted_has_zero_precision_not_nan(self):
+        y_true = np.array([0, 1, 1])
+        y_pred = np.array([0, 0, 0])
+
+        result = precision_score(y_true, y_pred, "macro")
+
+        assert np.isfinite(result)
+        assert result == pytest.approx((1 / 3 + 0.0) / 2)
+
+    def test_weighted_scores_match_manual_counts(self, rng):
+        y_true = rng.integers(0, 4, size=200)
+        y_pred = rng.integers(0, 4, size=200)
+        support = np.array([np.sum(y_true == c) for c in range(4)]) / 200
+        tp = np.array([np.sum((y_pred == c) & (y_true == c)) for c in range(4)])
+        predicted = np.array([np.sum(y_pred == c) for c in range(4)])
+        actual = np.array([np.sum(y_true == c) for c in range(4)])
+
+        precision = tp / predicted
+        recall = tp / actual
+        f1 = 2 * precision * recall / (precision + recall)
+
+        assert precision_score(y_true, y_pred) == pytest.approx(np.sum(support * precision))
+        assert recall_score(y_true, y_pred) == pytest.approx(np.sum(support * recall))
+        assert f1_score(y_true, y_pred) == pytest.approx(np.sum(support * f1))
+
 
 class TestAccuracyScore:
     def test_perfect_predictions_give_one(self):

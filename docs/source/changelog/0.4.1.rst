@@ -1,0 +1,6 @@
+0.4.1
+=====
+
+- Removed the custom development CLI and moved the quality checks to Nox.
+- Added support for Python 3.14.
+- Cleaned up the documentation.

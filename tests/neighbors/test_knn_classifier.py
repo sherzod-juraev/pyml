@@ -76,3 +76,60 @@ class TestPredict:
         prediction = model.predict(query)
 
         assert prediction[0] == 1
+
+
+class TestBlocking:
+    @pytest.mark.parametrize("weights", ["uniform", "distance"])
+    @pytest.mark.parametrize("rows_per_block", [1, 3, 7, 100])
+    def test_blocked_predict_matches_single_block(self, rng, monkeypatch, weights, rows_per_block):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.integers(0, 3, size=40)
+        queries = rng.uniform(0, 10, size=(17, 3))
+        model = KNNClassifier(n_neighbors=5, weights=weights).fit(X, y)
+        expected = model.predict(queries)
+
+        monkeypatch.setattr(
+            "pyml.neighbors.knn_classifier._MAX_BLOCK_ELEMENTS", rows_per_block * X.shape[0]
+        )
+
+        assert np.array_equal(model.predict(queries), expected)
+
+    def test_budget_smaller_than_one_row_still_predicts(self, rng, monkeypatch):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.integers(0, 3, size=40)
+        queries = rng.uniform(0, 10, size=(6, 3))
+        model = KNNClassifier(n_neighbors=5).fit(X, y)
+        expected = model.predict(queries)
+
+        monkeypatch.setattr("pyml.neighbors.knn_classifier._MAX_BLOCK_ELEMENTS", 1)
+
+        assert np.array_equal(model.predict(queries), expected)
+
+    def test_blocked_predict_keeps_label_dtype(self, rng, monkeypatch):
+        X = rng.uniform(0, 10, size=(30, 2))
+        y = rng.integers(0, 3, size=30).astype(np.int32)
+        queries = rng.uniform(0, 10, size=(10, 2))
+        model = KNNClassifier(n_neighbors=3).fit(X, y)
+
+        monkeypatch.setattr("pyml.neighbors.knn_classifier._MAX_BLOCK_ELEMENTS", 4 * X.shape[0])
+
+        assert model.predict(queries).dtype == y.dtype
+
+    def test_queries_are_processed_in_blocks_of_the_budgeted_size(self, rng, monkeypatch):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.integers(0, 3, size=40)
+        queries = rng.uniform(0, 10, size=(17, 3))
+        model = KNNClassifier(n_neighbors=5).fit(X, y)
+        block_sizes = []
+        original = KNNClassifier._predict_block
+
+        def spy(self, X_block):
+            block_sizes.append(X_block.shape[0])
+            return original(self, X_block)
+
+        monkeypatch.setattr(KNNClassifier, "_predict_block", spy)
+        monkeypatch.setattr("pyml.neighbors.knn_classifier._MAX_BLOCK_ELEMENTS", 5 * X.shape[0])
+
+        model.predict(queries)
+
+        assert block_sizes == [5, 5, 5, 2]

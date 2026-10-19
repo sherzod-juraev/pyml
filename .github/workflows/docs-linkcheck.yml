@@ -2,7 +2,7 @@ name: Docs linkcheck
 
 on:
   schedule:
-    - cron: "0 6 * * 1"
+    - cron: "0 6 1 * *"
   workflow_dispatch:
 
 permissions:
@@ -13,17 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: "3.13"
-          cache: pip
-          cache-dependency-path: pyproject.toml
+          enable-cache: true
 
       - name: Install Nox
-        run: python -m pip install --upgrade pip nox
+        run: uv sync --locked --only-group nox
 
       - name: Check every link in the docs
-        run: nox -s linkcheck
+        run: uv run --no-sync nox -s linkcheck

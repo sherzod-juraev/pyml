@@ -71,3 +71,62 @@ class TestPredict:
         model = KNNRegressor(n_neighbors=3).fit(X, y)
 
         assert model.score(X, y) > 0.95
+
+
+class TestBlocking:
+    @pytest.mark.parametrize("weights", ["uniform", "distance"])
+    @pytest.mark.parametrize("rows_per_block", [1, 3, 7, 100])
+    def test_blocked_predict_matches_single_block(self, rng, monkeypatch, weights, rows_per_block):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.uniform(0, 10, size=40)
+        queries = rng.uniform(0, 10, size=(17, 3))
+        model = KNNRegressor(n_neighbors=5, weights=weights).fit(X, y)
+        expected = model.predict(queries)
+
+        monkeypatch.setattr(
+            "pyml.neighbors.knn_regressor._MAX_BLOCK_ELEMENTS", rows_per_block * X.shape[0]
+        )
+
+        assert np.allclose(model.predict(queries), expected)
+
+    def test_budget_smaller_than_one_row_still_predicts(self, rng, monkeypatch):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.uniform(0, 10, size=40)
+        queries = rng.uniform(0, 10, size=(6, 3))
+        model = KNNRegressor(n_neighbors=5).fit(X, y)
+        expected = model.predict(queries)
+
+        monkeypatch.setattr("pyml.neighbors.knn_regressor._MAX_BLOCK_ELEMENTS", 1)
+
+        assert np.allclose(model.predict(queries), expected)
+
+    @pytest.mark.parametrize("weights", ["uniform", "distance"])
+    def test_blocked_predict_keeps_target_dtype(self, rng, monkeypatch, weights):
+        X = rng.uniform(0, 10, size=(30, 2))
+        y = rng.uniform(0, 10, size=30).astype(np.float32)
+        queries = rng.uniform(0, 10, size=(10, 2))
+        model = KNNRegressor(n_neighbors=3, weights=weights).fit(X, y)
+        expected_dtype = model.predict(queries).dtype
+
+        monkeypatch.setattr("pyml.neighbors.knn_regressor._MAX_BLOCK_ELEMENTS", 4 * X.shape[0])
+
+        assert model.predict(queries).dtype == expected_dtype
+
+    def test_queries_are_processed_in_blocks_of_the_budgeted_size(self, rng, monkeypatch):
+        X = rng.uniform(0, 10, size=(40, 3))
+        y = rng.uniform(0, 10, size=40)
+        queries = rng.uniform(0, 10, size=(17, 3))
+        model = KNNRegressor(n_neighbors=5).fit(X, y)
+        block_sizes = []
+        original = KNNRegressor._predict_block
+
+        def spy(self, X_block):
+            block_sizes.append(X_block.shape[0])
+            return original(self, X_block)
+
+        monkeypatch.setattr(KNNRegressor, "_predict_block", spy)
+        monkeypatch.setattr("pyml.neighbors.knn_regressor._MAX_BLOCK_ELEMENTS", 5 * X.shape[0])
+
+        model.predict(queries)
+
+        assert block_sizes == [5, 5, 5, 2]

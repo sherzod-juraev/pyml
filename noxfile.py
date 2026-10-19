@@ -36,7 +36,21 @@ print("pyml", pyml.__version__, "imported from", location.parent)
 """
 
 nox.options.sessions = ["lint", "types", "docstrings", "tests", "tests-min", "docs", "package"]
+nox.options.default_venv_backend = "uv"
 nox.options.error_on_external_run = True
+
+
+def sync(session: nox.Session, *flags: str) -> None:
+    """Install the locked environment into the session's own venv."""
+    session.run_install(
+        "uv",
+        "sync",
+        "--locked",
+        "--no-default-groups",
+        *flags,
+        env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
+        external=True,
+    )
 
 
 def _minimum_requirements() -> list[str]:
@@ -79,7 +93,7 @@ def _check_wheel_contents(session: nox.Session, wheel: Path) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def lint(session: nox.Session) -> None:
     """Check the code style and the formatting with ruff."""
-    session.install(".[dev]")
+    sync(session, "--only-group", "dev-lint")
     session.run("ruff", "check", *_SOURCE_PATHS)
     session.run("ruff", "format", "--check", *_SOURCE_PATHS)
 
@@ -87,7 +101,7 @@ def lint(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def types(session: nox.Session) -> None:
     """Check the types with mypy in strict mode."""
-    session.install(".[dev]")
+    sync(session, "--group", "dev-types", "--group", "dev-test")
     session.run("mypy", "pyml")
     session.run("mypy", "tests")
 
@@ -95,7 +109,7 @@ def types(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def docstrings(session: nox.Session) -> None:
     """Check that the docstring coverage of the package is 100%."""
-    session.install(".[dev]")
+    sync(session, "--only-group", "dev-docstring")
     session.run("interrogate", "pyml")
 
 
@@ -105,15 +119,15 @@ def tests(session: nox.Session) -> None:
 
     Arguments after ``--`` are passed to pytest, for example ``nox -s tests -- -k tree``.
     """
-    session.install(".[dev]")
+    sync(session, "--group", "dev-test")
     session.run("pytest", *session.posargs)
 
 
 @nox.session(name="tests-min", python=PYTHON_VERSIONS[0])
 def tests_min(session: nox.Session) -> None:
     """Run the test suite with the oldest NumPy and SciPy that pyml claims to support."""
+    sync(session, "--group", "dev-test")
     session.install(*_minimum_requirements())
-    session.install(".[dev]")
     session.run(
         "python",
         "-c",
@@ -125,7 +139,7 @@ def tests_min(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def docs(session: nox.Session) -> None:
     """Check the style of the documentation and build it with warnings as errors."""
-    session.install(".[docs]")
+    sync(session, "--group", "docs")
     session.run("sphinx-lint", _DOCS_SOURCE)
     session.run("doc8", _DOCS_SOURCE)
     session.run("rstcheck", "--recursive", _DOCS_SOURCE)
@@ -135,7 +149,7 @@ def docs(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def linkcheck(session: nox.Session) -> None:
     """Check that every link in the documentation is valid (needs the network, so it is slow)."""
-    session.install(".[docs]")
+    sync(session, "--group", "docs-build")
     session.run("sphinx-build", "-b", "linkcheck", "-E", _DOCS_SOURCE, _DOCS_LINKCHECK)
 
 
