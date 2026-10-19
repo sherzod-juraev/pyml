@@ -79,6 +79,46 @@ all = [
     "pyml[nox]",
 ]
 
+[dependency-groups]
+# --- Development tools ---
+dev-test = ["pytest>=9.0", "pytest-sugar>=1.0"]
+dev-lint = ["ruff>=0.6.0"]
+dev-types = ["mypy>=1.11"]
+dev-docstring = ["interrogate>=1.7.0"]
+dev = [
+    {include-group = "dev-test"},
+    {include-group = "dev-lint"},
+    {include-group = "dev-types"},
+    {include-group = "dev-docstring"},
+]
+# --- Documentation tools ---
+docs-lint = [
+    "doc8>=1.0.0",
+    "rstcheck>=6.0.0",
+    "sphinx-lint>=1.0.0",
+]
+docs-build = [
+    "autodocsumm>=0.2.14",
+    "matplotlib>=3.9.0",
+    "pydata-sphinx-theme>=0.15.0",
+    "sphinx>=7.0.0",
+    "sphinx-autodoc-typehints>=2.2.0",
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-design>=0.5.0",
+    "sphinx-notfound-page>=1.1.0",
+    "sphinxext-opengraph>=0.13.0",
+    "sphinx-sitemap>=2.6.0",
+]
+docs = [
+    {include-group = "docs-lint"},
+    {include-group = "docs-build"},
+]
+docs-live = [
+    {include-group = "docs-build"},
+    "sphinx-autobuild>=2025.8.25",
+]
+nox = ["nox>=2026.2.9"]
+
 # ================================================================================= #
 # ------------------------------------- URLs -------------------------------------- #
 # ================================================================================= #
