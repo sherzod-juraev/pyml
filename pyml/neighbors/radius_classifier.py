@@ -10,6 +10,8 @@ from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix
 from ..core.exceptions import InvalidParameterError, NoNeighborsError
 
+_MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
+
 
 class RadiusNeighborsClassifier(Classifier):
     r"""Radius Neighbors classification.
@@ -161,6 +163,36 @@ class RadiusNeighborsClassifier(Classifier):
             Predicted labels of shape (n_samples,), computed as the
             (optionally distance-weighted) majority vote among each query
             point's neighbors within the radius.
+
+        Raises
+        ------
+        NoNeighborsError
+            If a query point has no training samples within the radius and
+            outlier_label is None.
+        """
+        y_pred = np.empty(X.shape[0], dtype=self.y_.dtype)
+        block_size = max(1, _MAX_BLOCK_ELEMENTS // self.X_.shape[0])
+        for start in range(0, X.shape[0], block_size):
+            stop = start + block_size
+            y_pred[start:stop] = self._predict_block(X[start:stop])
+        return y_pred
+
+    def _predict_block(self, X: FeatureMatrix, /) -> ClassificationTarget:
+        """Predict for one block of query points.
+
+        The distances from the whole block to every training sample are
+        computed at once, so the block has to be small enough for an
+        (n_block, n_train) matrix to fit in memory.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Block of input data of shape (n_block, n_features).
+
+        Returns
+        -------
+        ClassificationTarget
+            Predictions of shape (n_block,).
 
         Raises
         ------

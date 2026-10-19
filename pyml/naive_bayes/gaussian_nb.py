@@ -111,15 +111,10 @@ class GaussianNB(_NaiveBayesBase):
             (n_samples, n_classes).
         """
         class_params = cast(list[tuple[_FloatArray, _FloatArray]], self._class_params)
-        class_params_arr = np.array(class_params)
-        means = class_params_arr[:, 0, :]
-        variances = class_params_arr[:, 1, :]
-        X_expanded = X[:, np.newaxis, :]
-        means_expanded = means[np.newaxis, :, :]
-        variances_expanded = variances[np.newaxis, :, :]
-        var_stable = variances_expanded + 1e-10
-        term1 = -0.5 * np.log(2 * np.pi)
-        term2 = -0.5 * np.log(var_stable)
-        term3 = -((X_expanded - means_expanded) ** 2) / (2 * var_stable)
-        log_likelihood = np.sum(term1 + term2 + term3, axis=2)
+        log_likelihood = np.empty((X.shape[0], len(class_params)))
+        for index, (mean, variance) in enumerate(class_params):
+            var_stable = variance + 1e-10
+            constant = np.sum(-0.5 * np.log(2 * np.pi * var_stable))
+            quadratic = np.sum((X - mean) ** 2 / (2 * var_stable), axis=1)
+            log_likelihood[:, index] = constant - quadratic
         return log_likelihood
