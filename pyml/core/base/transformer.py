@@ -99,9 +99,12 @@ class Transformer(ABC, BaseEstimator, DataValidatorMixin):
             If the estimator has not been fitted yet.
         ValueError
             If X fails shape/dtype/finiteness validation.
+        ShapeMismatchError
+            If X's feature count doesn't match the one seen during fit.
         """
         self._check_is_fitted()
         self._validate_X(X)
+        self._check_n_features(X)
         return self._transform(X)
 
     @abstractmethod
@@ -124,6 +127,14 @@ class Transformer(ABC, BaseEstimator, DataValidatorMixin):
 
     def inverse_transform(self, X: FeatureMatrix, /) -> FeatureMatrix:
         """Validate input and reverse the learned transformation.
+
+        .. note::
+            The feature count of X is deliberately not checked here. For some
+            transformers (e.g. PCA) the transformed data has a different width
+            than the original data, so a check against the number of features
+            seen during fit would reject valid input. A transformer whose
+            inverse needs that check calls ``_check_n_features`` itself inside
+            ``_inverse_transform``.
 
         Parameters
         ----------
