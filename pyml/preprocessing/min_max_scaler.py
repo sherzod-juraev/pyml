@@ -97,5 +97,11 @@ class MinMaxScaler(Transformer):
         -------
         FeatureMatrix
             Data mapped back to its original scale, of the same shape as X.
+
+        Raises
+        ------
+        ShapeMismatchError
+            If X's feature count doesn't match the one seen during fit.
         """
+        self._check_n_features(X)
         return X * (self.range_ + 1e-10) + self.min_
