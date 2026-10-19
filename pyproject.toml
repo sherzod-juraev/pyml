@@ -41,9 +41,13 @@ dependencies = [
 # --- Dependency groups --- #
 [dependency-groups]
 # --- Development tools --- #
-dev-test = ["pytest>=9.0", "pytest-sugar>=1.0"]
+dev-test = [
+    "pytest>=9.0",
+    "pytest-cov>=7.1.0",
+    "pytest-sugar>=1.0",
+]
 dev-lint = ["ruff>=0.6.0"]
-dev-types = ["mypy>=1.11"]
+dev-types = ["mypy>=1.11", "scipy-stubs>=1.18.1.1", ]
 dev-docstring = ["interrogate>=1.7.0"]
 dev = [
     {include-group = "dev-test"},
@@ -107,8 +111,18 @@ testpaths = ["tests",]
 python_files = ["test_*.py", "*_test.py",]
 python_classes = ["Test*",]
 python_functions = ["test_*",]
-addopts = "-v --tb=short --strict-markers --strict-config -p no:warnings"
-filterwarnings = ["ignore::UserWarning",]
+addopts = "-v --tb=short --strict-markers --strict-config"
+filterwarnings = ["error"]
+
+# --- Pytest-cov --- #
+[tool.coverage.run]
+source = ["pyml"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 98
 
 # --- Ruff --- #
 [tool.ruff]
@@ -153,10 +167,6 @@ convention = "numpy"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-
-[[tool.mypy.overrides]]
-module = ["scipy.*",]
-ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "tests.*"
