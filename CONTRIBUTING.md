@@ -38,7 +38,7 @@ environments, the same way as the CI.
 pyml/
 ├── .github/workflows/          # CI workflows
 ├── assets/                     # Branding
-├── docs/                       # Sphinx documentation
+├── docs/                       # Sphinx documentation and changelog
 ├── pyml/                       # Source code
 │   ├── cluster/                # Clustering
 │   ├── core/                   # Base classes, validation, exceptions, type aliases
@@ -77,10 +77,10 @@ Groups are not part of the package metadata, so users who install pyml never see
 runtime dependencies (NumPy and SciPy) stay in `[project].dependencies`.
 
 | Group           |                      Purpose                      |
-|-----------------|:-------------------------------------------------:|
-| `dev-test`      |                 pytest, pytest-sugar              |
+|:----------------|:-------------------------------------------------:|
+| `dev-test`      |     pytest, pytest-sugar, pytest-cov              |
 | `dev-lint`      |                       ruff                        |
-| `dev-types`     |                       mypy                        |
+| `dev-types`     |                    mypy, scipy-stubs              |
 | `dev-docstring` |                    interrogate                    |
 | `dev`           |           All four `dev-*` groups above           |
 | `docs-lint`     |          doc8, rstcheck, sphinx-lint              |
@@ -116,10 +116,14 @@ uv run mypy pyml
 uv add --group dev-test pytest-xdist       # add to a group
 uv remove --group dev-test pytest-xdist    # remove from a group
 uv lock                                    # refresh the lock after editing pyproject.toml
+uv lock --check                            # fail if uv.lock is out of date, change nothing
+uv lock --upgrade                          # move every package to the newest allowed version
 ```
 
 - The Nox sessions install with `--locked`, so a session fails when `uv.lock` does not match
   `pyproject.toml`. Commit both files together.
+- After `uv lock --upgrade`, run `uv run nox`: a newer ruff or mypy can report new problems.
+  Commit the refreshed lock on its own.
 - The lock fixes the versions used in development and in the CI. Users get the ranges from
   `pyproject.toml`, and the `tests-min` session checks the lowest of them.
 
@@ -178,6 +182,9 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
   independently and declare their own abstract methods. Code shared by several models goes
   into a private base or a mixin (`_LinearModelBase`, `_DecisionTreeBase`), and a base is
   shared only when the algorithm really is shared.
+- A private base or mixin that defines `__init__` calls `super().__init__()` first. It comes
+  before `Classifier`/`Regressor` in the MRO, so without the call `BaseEstimator.__init__`
+  never runs and `is_fitted_` is missing.
 - Errors come from the hierarchy in `pyml/core/exceptions/`, starting at `PymlError`.
 - Everything is checked by mypy in strict mode, ruff (line length 100) and interrogate
   (100% docstring coverage, private members included).
@@ -201,17 +208,50 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
   only a module docstring, no docstrings on the tests.
 - A test file covers the behavior of its own layer and does not repeat what lower layers
   already guarantee. Abstract bases have no test file of their own.
+- `tests/test_estimator_contract.py` is the one file that does not mirror `pyml/`. It runs the
+  same checks over every public estimator: `fit` returns `self`, `NotFittedError` before fit,
+  feature-count mismatch, inputs are not modified, and the `get_params`/`set_params` round trip.
 
 ### Commits and versions
 
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`,
-  `docs`, `test`, `build`, `refactor` and `chore`, with a body that explains what changed and
-  why.
+  `perf`, `docs`, `test`, `build`, `refactor` and `chore`, with a body that explains what
+  changed and why.
 - Work happens on `dev`. `main` receives a merge only when all checks pass.
 - `__version__` in `pyml/__init__.py` is the single source of truth, `pyproject.toml` and the
-  docs read it. It changes only when the public API changes (a new model family or a breaking
-  change is a MINOR bump while the version is 0.x). Housekeeping commits, such as tooling and
-  documentation changes, do not change it.
+  docs read it. A new model family or a breaking change is a MINOR bump while the version is
+  0.x, and a bug fix that changes behavior is a PATCH bump. Housekeeping commits, such as
+  tooling, performance and documentation changes, do not change it.
+- Versions before 0.4.2 predate these rules, see the
+  [changelog](docs/source/changelog/index.rst).
+
+### Changelog
+
+Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the toctree of
+`docs/source/changelog/index.rst` (newest first). The format follows
+[Keep a Changelog](https://keepachangelog.com/).
+
+- **Title:** `X.Y.Z` (`=` underline). While the release is developed on `dev`, the title is
+  `X.Y.Z (unreleased)`. No dates, because the page shows no years.
+- **Sections** (`-` underline), always in this order, and only the ones that have entries:
+
+  | Section         | What goes in                              | Commit types             |
+  |:----------------|:------------------------------------------|:-------------------------|
+  | `Added`         | new models, parameters, public functions  | `feat`                   |
+  | `Changed`       | behavior changes of existing public API   | `feat`, `refactor`       |
+  | `Deprecated`    | features that will be removed             | -                        |
+  | `Removed`       | removed features                          | -                        |
+  | `Fixed`         | bug fixes                                 | `fix`                    |
+  | `Performance`   | speed and memory improvements             | `perf`                   |
+  | `Documentation` | user-visible documentation changes        | `docs`                   |
+  | `Development`   | tests, tooling, dependencies, CI          | `test`, `build`, `chore` |
+
+- **Entries:** one bullet per change, written for the user, not as a commit message. Start with
+  the affected class or module in double backticks, say what was wrong or new, and say what
+  happens now. Keep it to one or two sentences.
+- **Breaking changes** are marked with `**Breaking:**` at the start of the bullet, under `Changed`
+  or `Removed`.
+- Pages of past releases are not edited after the release, except for typos.
 
 ## Adding a model
 
@@ -219,7 +259,8 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
    private base is justified.
 2. Implement it in `pyml/<family>/` with a lazy-loading `__init__.py` and `__init__.pyi`.
 3. Write the docstrings following the conventions above.
-4. Write the tests in `tests/<family>/`, including the lazy-loading `__init__` test.
+4. Write the tests in `tests/<family>/`, including the lazy-loading `__init__` test, and add the
+   model to the matching list in `tests/test_estimator_contract.py`.
 5. Add the documentation: an API page in `docs/source/api/pyml/`, an example page in
    `docs/source/quick_start/examples/<family>/`, and a row in the README table.
 6. Run `uv run nox` until every session passes.
@@ -227,7 +268,11 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
 ## Releasing
 
 1. Run `uv run nox` on `dev`, and make sure the CI is green.
-2. Bump `__version__` in `pyml/__init__.py` if the public API changed.
-3. Merge `dev` into `main` and push.
-4. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
-5. Check that the Read the Docs build is green.
+2. Bump `__version__` in `pyml/__init__.py`.
+3. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
+   toctree in `docs/source/changelog/index.rst`. While the release is developed on `dev`, its
+   title is `X.Y.Z (unreleased)`; remove the suffix in the release commit, before merging into
+   `main`.
+4. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
+5. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
+6. Check that the Read the Docs build is green.

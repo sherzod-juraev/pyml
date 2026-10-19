@@ -1,0 +1,41 @@
+0.4.2
+=====
+
+Fixed
+-----
+
+- ``DecisionTreeClassifier`` and ``DecisionTreeRegressor`` raised ``AttributeError`` instead of
+  ``NotFittedError`` when ``predict`` was called before ``fit``. The private tree base did not
+  call ``super().__init__()``, so the fit state was never initialized.
+- ``StandardScaler``, ``MinMaxScaler`` and ``RobustScaler`` did not check the number of features
+  in ``transform``. Input with fewer columns could be broadcast silently and return a result of
+  the wrong shape. ``transform`` now raises ``ShapeMismatchError``, and so does the
+  ``inverse_transform`` of the three scalers.
+- ``precision_score``, ``recall_score`` and ``f1_score`` no longer emit a ``RuntimeWarning``
+  from a ``0/0`` division when a class is never predicted. The scores are unchanged.
+
+Performance
+-----------
+
+- ``KNNClassifier``, ``KNNRegressor``, ``RadiusNeighborsClassifier`` and
+  ``RadiusNeighborsRegressor`` now predict in blocks of query points. The distance matrix held
+  in memory is capped at about 32 MB, however many samples are predicted at once.
+- ``DBSCAN`` no longer builds the full ``n x n`` distance matrix. Neighborhoods are computed in
+  blocks and stored as index arrays, so the memory use depends on how dense the neighborhoods
+  are rather than always growing with ``n²``.
+- ``KMeans`` assigns samples to centroids in chunks, and k-means++ initialization keeps a running
+  minimum distance instead of recomputing the distances to every earlier centroid.
+- ``GaussianNB`` computes the log-likelihood one class at a time instead of one 3D array, and
+  the precision, recall and F1 counts are taken per class, which removes large temporary arrays.
+
+Development
+-----------
+
+- The development environment is managed with uv. Dependencies are dependency groups in
+  ``pyproject.toml``, ``uv.lock`` is committed, and the CI installs from it with ``--locked``.
+- The test suite now has 707 tests. It includes a contract test that runs the same checks over
+  every public estimator, tests for the block boundaries of the chunked code, and tests for the
+  input validation of the metrics and ``train_test_split``.
+- Warnings are errors in the test suite, and coverage is measured with pytest-cov (branch
+  coverage, at least 98%).
+- ``scipy-stubs`` was added to the type-checking group, so ``mypy`` checks SciPy calls.
