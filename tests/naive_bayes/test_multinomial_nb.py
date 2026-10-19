@@ -1,6 +1,7 @@
 """Tests for MultinomialNB."""
 
 import numpy as np
+import pytest
 
 from pyml.naive_bayes import MultinomialNB
 
@@ -59,7 +60,8 @@ class TestLogLikelihood:
         X = np.array([[5, 0]] * 20).astype(np.float64)
         y = np.array([0] * 20)
 
-        model = MultinomialNB(alpha=0.0).fit(X, y)
+        with pytest.warns(RuntimeWarning, match="divide by zero"):
+            model = MultinomialNB(alpha=0.0).fit(X, y)
 
         assert np.isneginf(model._class_params[0][1])
 

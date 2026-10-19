@@ -1,6 +1,7 @@
 """Tests for DecisionTreeRegressor."""
 
 import numpy as np
+import pytest
 
 from pyml.tree import DecisionTreeRegressor
 
@@ -29,6 +30,24 @@ class TestFit:
         model = DecisionTreeRegressor(max_depth=10, min_samples=4).fit(X, y)
 
         assert model.tree_.is_leaf
+
+    def test_constant_features_with_varying_target_become_a_leaf(self):
+        X = np.ones((4, 2))
+        y = np.array([1.0, 2.0, 3.0, 6.0])
+
+        model = DecisionTreeRegressor(max_depth=5).fit(X, y)
+
+        assert model.tree_.is_leaf
+        assert model.predict(X[:1])[0] == pytest.approx(3.0)
+
+    def test_repeated_feature_values_split_between_distinct_values(self):
+        X = np.array([[0.0], [0.0], [1.0], [1.0]])
+        y = np.array([1.0, 1.0, 5.0, 5.0])
+
+        model = DecisionTreeRegressor(max_depth=3).fit(X, y)
+
+        assert model.tree_.threshold == pytest.approx(0.5)
+        assert np.allclose(model.predict(X), y)
 
 
 class TestPredict:

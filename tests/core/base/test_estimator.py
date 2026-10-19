@@ -14,6 +14,12 @@ class _DummyEstimator(BaseEstimator):
         self.beta = beta
 
 
+class _VariadicEstimator(BaseEstimator):
+    def __init__(self, alpha: float = 1.0, *args: object, **kwargs: object) -> None:
+        super().__init__()
+        self.alpha = alpha
+
+
 class TestInit:
     def test_is_fitted_starts_false(self):
         estimator = _DummyEstimator()
@@ -50,6 +56,10 @@ class TestGetParams:
         estimator = _DummyEstimator()
         estimator.alpha = 99.0
         assert estimator.get_params()["alpha"] == 99.0
+
+    def test_ignores_variadic_args_and_kwargs(self):
+        estimator = _VariadicEstimator(alpha=3.0)
+        assert estimator.get_params() == {"alpha": 3.0}
 
 
 class TestSetParams:

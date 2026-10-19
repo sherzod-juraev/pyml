@@ -11,6 +11,52 @@ from pyml.metrics import (
     root_mean_squared_error,
 )
 
+_REGRESSION_METRICS = [
+    mean_squared_error,
+    root_mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+]
+
+
+class TestInputValidation:
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_2d_y_true(self, metric):
+        with pytest.raises(ValueError, match="y_true"):
+            metric(np.ones((2, 2)), np.ones(2))
+
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_2d_y_pred(self, metric):
+        with pytest.raises(ValueError, match="y_pred"):
+            metric(np.ones(2), np.ones((2, 2)))
+
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_integer_y_true(self, metric):
+        with pytest.raises(TypeError, match="y_true"):
+            metric(np.array([1, 2, 3]), np.array([1.0, 2.0, 3.0]))
+
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_integer_y_pred(self, metric):
+        with pytest.raises(TypeError, match="y_pred"):
+            metric(np.array([1.0, 2.0, 3.0]), np.array([1, 2, 3]))
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf])
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_non_finite_y_true(self, metric, bad_value):
+        with pytest.raises(ValueError, match="y_true"):
+            metric(np.array([1.0, bad_value, 3.0]), np.array([1.0, 2.0, 3.0]))
+
+    @pytest.mark.parametrize("bad_value", [np.nan, np.inf])
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_non_finite_y_pred(self, metric, bad_value):
+        with pytest.raises(ValueError, match="y_pred"):
+            metric(np.array([1.0, 2.0, 3.0]), np.array([1.0, bad_value, 3.0]))
+
+    @pytest.mark.parametrize("metric", _REGRESSION_METRICS)
+    def test_rejects_mismatched_samples(self, metric):
+        with pytest.raises(ShapeMismatchError):
+            metric(np.array([1.0, 2.0, 3.0]), np.array([1.0, 2.0]))
+
 
 class TestMeanSquaredError:
     def test_perfect_predictions_give_zero(self):

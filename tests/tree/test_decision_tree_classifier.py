@@ -1,6 +1,7 @@
 """Tests for DecisionTreeClassifier."""
 
 import numpy as np
+import pytest
 
 from pyml.tree import DecisionTreeClassifier
 
@@ -29,6 +30,32 @@ class TestFit:
         model = DecisionTreeClassifier(max_depth=10, min_samples=4).fit(X, y)
 
         assert model.tree_.is_leaf
+
+    def test_constant_features_with_mixed_labels_become_a_leaf(self):
+        X = np.ones((6, 2))
+        y = np.array([0, 1, 1, 1, 0, 1])
+
+        model = DecisionTreeClassifier(max_depth=5).fit(X, y)
+
+        assert model.tree_.is_leaf
+        assert model.predict(X[:1])[0] == 1
+
+    def test_gain_below_min_impurity_decrease_becomes_a_leaf(self):
+        X = np.array([[0.0], [1.0], [2.0], [3.0]])
+        y = np.array([0, 0, 1, 1])
+
+        model = DecisionTreeClassifier(max_depth=5, min_impurity_decrease=10.0).fit(X, y)
+
+        assert model.tree_.is_leaf
+
+    def test_repeated_feature_values_split_between_distinct_values(self):
+        X = np.array([[0.0], [0.0], [1.0], [1.0]])
+        y = np.array([0, 0, 1, 1])
+
+        model = DecisionTreeClassifier(max_depth=3).fit(X, y)
+
+        assert model.tree_.threshold == pytest.approx(0.5)
+        assert np.array_equal(model.predict(X), y)
 
 
 class TestPredict:
