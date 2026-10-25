@@ -2,7 +2,7 @@
 
 import math
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pyml
 
@@ -11,7 +11,7 @@ import pyml
 # ================================================================================= #
 project = "pyml"
 year = 2026
-current_year = datetime.now().year
+current_year = datetime.now(UTC).year
 year_str = str(year) if current_year == year else f"{year}-{current_year}"
 author = pyml.__author__
 copyright = f"{year_str}, {author}"
@@ -256,10 +256,12 @@ latex_domain_indices = False
 # ================================================================================= #
 # -------------------------- Autodoc Base Filtering ------------------------------- #
 # ================================================================================= #
-_HIDDEN_BASES: frozenset[str] = frozenset({
-    "BaseEstimator",
-    "DataValidatorMixin",
-})
+_HIDDEN_BASES: frozenset[str] = frozenset(
+    {
+        "BaseEstimator",
+        "DataValidatorMixin",
+    }
+)
 
 
 def _should_hide_base(base: type) -> bool:
