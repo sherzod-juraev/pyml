@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0"]
+requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 # --- Project --- #
@@ -66,7 +66,7 @@ docs-build = [
     "matplotlib>=3.9.0",
     "pydata-sphinx-theme>=0.15.0",
     "pyml-datasets",
-    "sphinx>=7.0.0",
+    "sphinx>=9.1.1",
     "sphinx-autodoc-typehints>=2.2.0",
     "sphinx-copybutton>=0.5.0",
     "sphinx-design>=0.5.0",
@@ -82,7 +82,7 @@ docs-live = [
     {include-group = "docs-build"},
     "sphinx-autobuild>=2025.8.25",
 ]
-nox = ["nox>=2026.2.9"]
+nox = ["nox>=2026.10.20"]
 
 # --- Source of dependencies that are not on PyPi --- #
 [tool.uv.sources]
