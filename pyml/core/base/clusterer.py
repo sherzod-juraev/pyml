@@ -59,7 +59,10 @@ class Clusterer(ABC, BaseEstimator, DataValidatorMixin):
             If X fails shape/dtype/finiteness validation.
         TypeError
             If X has an invalid dtype.
+        InvalidParameterError
+            If a hyper-parameter has an invalid value.
         """
+        self._validate_params()
         self._validate_X(X)
         self._set_n_features(X)
         self._fit(X)

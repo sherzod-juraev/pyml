@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from pyml.core.exceptions import InvalidParameterError
 from pyml.naive_bayes import MultinomialNB
 
 
@@ -106,3 +107,20 @@ class TestScore:
 
         model = MultinomialNB().fit(X, y)
         assert model.score(X, y) == 1.0
+
+
+class TestValidateParams:
+    def test_error_message_names_the_parameter(self, rng):
+        X = rng.poisson(lam=3, size=(20, 2)).astype(np.float64)
+        y = np.array([0, 1] * 10)
+
+        with pytest.raises(InvalidParameterError, match="alpha"):
+            MultinomialNB(alpha=-1.0).fit(X, y)
+
+    def test_zero_alpha_is_accepted_when_every_feature_is_seen(self, rng):
+        X = rng.integers(1, 5, size=(20, 2)).astype(np.float64)
+        y = np.array([0, 1] * 10)
+
+        model = MultinomialNB(alpha=0.0).fit(X, y)
+
+        assert model.is_fitted_ is True

@@ -5,6 +5,7 @@ from typing import Any, cast
 import numpy as np
 
 from ..core.dtypes import FeatureMatrix
+from ..core.param_checks import check_non_negative
 from ._base import _FloatArray, _NaiveBayesBase
 
 
@@ -47,7 +48,7 @@ class MultinomialNB(_NaiveBayesBase):
         more probability mass to unseen feature/class combinations.
         ``alpha=0`` disables smoothing entirely, which can produce
         ``-inf`` log-probabilities for features never observed in a
-        class.
+        class. Must be non-negative and finite.
 
     Attributes
     ----------
@@ -106,10 +107,21 @@ class MultinomialNB(_NaiveBayesBase):
         ----------
         alpha : float, optional
             Additive (Laplace) smoothing parameter; must be
-            non-negative. Defaults to 1.0.
+            non-negative and finite. Defaults to 1.0.
         """
         super().__init__()
         self.alpha: float = alpha
+
+    def _validate_params(self) -> None:
+        """Validate the smoothing hyper-parameter.
+
+        Raises
+        ------
+        InvalidParameterError
+            If alpha is negative, infinite or NaN.
+        """
+        super()._validate_params()
+        check_non_negative("alpha", self.alpha, finite=True)
 
     def _fit_class_params(self, X_c: FeatureMatrix, /) -> Any:
         """Compute the smoothed log feature probabilities for one class.

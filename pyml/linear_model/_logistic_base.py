@@ -16,6 +16,7 @@ import numpy.typing as npt
 
 from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix
+from ..core.param_checks import check_at_least, check_non_negative, check_positive
 
 _FloatArray = npt.NDArray[np.floating[Any]]
 
@@ -275,3 +276,17 @@ class _LogisticRegressionBase(Classifier):
         y_pred = 1 / (1 + np.exp(-z))
         np.clip(y_pred, 1e-15, 1 - 1e-15, out=y_pred)
         return y_pred
+
+    def _validate_params(self) -> None:
+        """Validate the gradient-descent hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If learning_rate is not a positive finite number, max_iter is
+            less than 1, or tol is negative or NaN.
+        """
+        super()._validate_params()
+        check_positive("learning_rate", self.learning_rate, finite=True)
+        check_at_least("max_iter", self.max_iter, 1)
+        check_non_negative("tol", self.tol)

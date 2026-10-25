@@ -16,6 +16,7 @@ import numpy as np
 import numpy.typing as npt
 
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
+from ..core.param_checks import check_at_least, check_non_negative
 
 _FloatArray = npt.NDArray[np.floating[Any]]
 
@@ -100,20 +101,38 @@ class _DecisionTreeBase(ABC):
         Parameters
         ----------
         max_depth : int
-            Maximum depth of the tree. Splitting stops once a node reaches
-            this depth, regardless of impurity.
+            Maximum depth of the tree; must be non-negative. Splitting
+            stops once a node reaches this depth, regardless of impurity.
+            A depth of 0 gives a tree made of a single leaf.
         min_samples : int, optional
-            Minimum number of samples required to consider splitting a node.
-            Nodes with fewer samples become leaves. Defaults to 2.
+            Minimum number of samples required to consider splitting a node;
+            must be at least 1. Nodes with fewer samples become leaves.
+            Defaults to 2.
         min_impurity_decrease : float, optional
             Minimum impurity gain required to accept a split. A candidate
-            split whose gain falls below this becomes a leaf instead.
-            Defaults to 1e-7.
+            split whose gain falls below this becomes a leaf instead; must
+            be non-negative. Defaults to 1e-7.
         """
         super().__init__()
         self.max_depth: int = max_depth
         self.min_samples: int = min_samples
         self.min_impurity_decrease: float = min_impurity_decrease
+
+    def _validate_params(self) -> None:
+        """Validate the tree-growth stopping criteria.
+
+        Raises
+        ------
+        InvalidParameterError
+            If max_depth is negative, min_samples is less than 1, or
+            min_impurity_decrease is negative or NaN.
+        """
+        # This class sits in front of the family base in the MRO, so super() reaches
+        # DataValidatorMixin; mypy cannot see that from a plain ABC base.
+        cast(Any, super())._validate_params()
+        check_at_least("max_depth", self.max_depth, 0)
+        check_at_least("min_samples", self.min_samples, 1)
+        check_non_negative("min_impurity_decrease", self.min_impurity_decrease)
 
     def _fit(self, X: FeatureMatrix, y: ClassificationTarget | RegressionTarget, /) -> None:
         """Grow the tree recursively from the root.

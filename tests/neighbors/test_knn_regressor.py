@@ -8,19 +8,43 @@ from pyml.neighbors import KNNRegressor
 
 
 class TestFit:
-    def test_rejects_zero_or_negative_n_neighbors(self, rng):
-        X = rng.uniform(0, 10, size=(10, 2))
-        y = rng.uniform(0, 10, size=10)
-
-        with pytest.raises(InvalidParameterError):
-            KNNRegressor(n_neighbors=0).fit(X, y)
-
     def test_rejects_n_neighbors_exceeding_sample_count(self, rng):
         X = rng.uniform(0, 10, size=(5, 2))
         y = rng.uniform(0, 10, size=5)
 
         with pytest.raises(InvalidParameterError):
             KNNRegressor(n_neighbors=10).fit(X, y)
+
+
+class TestValidateParams:
+    def test_error_message_names_the_parameter(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = rng.uniform(0, 10, size=10)
+
+        with pytest.raises(InvalidParameterError, match="n_neighbors"):
+            KNNRegressor(n_neighbors=0).fit(X, y)
+
+    def test_unknown_weights_message_lists_the_options(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = rng.uniform(0, 10, size=10)
+
+        with pytest.raises(InvalidParameterError, match="uniform.*distance"):
+            KNNRegressor(weights="inverse").fit(X, y)  # type: ignore[arg-type]
+
+    def test_unknown_metric_message_lists_the_supported_metrics(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = rng.uniform(0, 10, size=10)
+
+        with pytest.raises(InvalidParameterError, match="euclidean.*cityblock.*chebyshev"):
+            KNNRegressor(metric="euclidian").fit(X, y)  # type: ignore[arg-type]
+
+    def test_accepts_boundary_values(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = rng.uniform(0, 10, size=10)
+
+        model = KNNRegressor(n_neighbors=1).fit(X, y)
+
+        assert model.is_fitted_ is True
 
 
 class TestPredict:

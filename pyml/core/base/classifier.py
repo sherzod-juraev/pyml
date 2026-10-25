@@ -61,7 +61,10 @@ class Classifier(ABC, BaseEstimator, DataValidatorMixin):
             If X or y have an invalid dtype.
         ShapeMismatchError
             If X and y have a different number of samples.
+        InvalidParameterError
+            If a hyper-parameter has an invalid value.
         """
+        self._validate_params()
         self._validate_X(X)
         self._validate_y_label(y)
         self._validate_X_y_samples(X, y)

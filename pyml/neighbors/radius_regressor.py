@@ -7,7 +7,8 @@ from scipy.spatial.distance import cdist
 
 from ..core.base import Regressor
 from ..core.dtypes import FeatureMatrix, RegressionTarget
-from ..core.exceptions import InvalidParameterError, NoNeighborsError
+from ..core.exceptions import NoNeighborsError
+from ..core.param_checks import DISTANCE_METRICS, check_choice, check_positive
 
 _MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
@@ -33,7 +34,7 @@ class RadiusNeighborsRegressor(Regressor):
     ----------
     radius : float, optional
         Radius within which training samples are considered neighbors.
-        Must be positive.
+        Must be positive and finite.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
         Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
@@ -103,8 +104,8 @@ class RadiusNeighborsRegressor(Regressor):
         Parameters
         ----------
         radius : float, optional
-            Radius within which training samples are considered neighbors.
-            Defaults to 1.0.
+            Radius within which training samples are considered neighbors;
+            must be positive and finite. Defaults to 1.0.
         metric : {"euclidean", "chebyshev", "cityblock"}, optional
             Distance metric used to find neighbors. Defaults to "euclidean".
         weights : {"uniform", "distance"}, optional
@@ -120,8 +121,22 @@ class RadiusNeighborsRegressor(Regressor):
         self.weights: Literal["uniform", "distance"] = weights
         self.outlier_label: float | None = outlier_label
 
+    def _validate_params(self) -> None:
+        """Validate the hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If radius is not a positive finite number, or metric or
+            weights is not one of the supported values.
+        """
+        super()._validate_params()
+        check_positive("radius", self.radius, finite=True)
+        check_choice("metric", self.metric, DISTANCE_METRICS)
+        check_choice("weights", self.weights, ("uniform", "distance"))
+
     def _fit(self, X: FeatureMatrix, y: RegressionTarget, /) -> None:
-        """Validate radius and store the training data.
+        """Store the training data.
 
         Parameters
         ----------
@@ -129,14 +144,7 @@ class RadiusNeighborsRegressor(Regressor):
             Training data of shape (n_samples, n_features).
         y : RegressionTarget
             Continuous target values of shape (n_samples,).
-
-        Raises
-        ------
-        InvalidParameterError
-            If radius is not positive.
         """
-        if self.radius <= 0:
-            raise InvalidParameterError(f"radius must be a positive float, got {self.radius}")
         self.X_ = X.copy()
         self.y_ = y.copy()
 

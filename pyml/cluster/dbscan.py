@@ -9,6 +9,7 @@ from scipy.spatial.distance import cdist
 from ..core.base import Clusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
+from ..core.param_checks import DISTANCE_METRICS, check_at_least, check_choice, check_positive
 
 _MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
@@ -49,11 +50,12 @@ class DBSCAN(Clusterer):
     ----------
     eps : float, optional
         The maximum distance between two points for one to be considered
-        in the neighborhood of the other. Must be positive.
+        in the neighborhood of the other. Must be positive and finite.
     min_samples : int, optional
         The number of points (including the point itself) required
         within a distance of eps for a point to be considered a core
-        point. Must not exceed the number of training samples.
+        point. Must be at least 1 and must not exceed the number of
+        training samples.
     metric : {"euclidean", "cityblock", "chebyshev"}, optional
         Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
@@ -111,10 +113,12 @@ class DBSCAN(Clusterer):
         ----------
         eps : float, optional
             The maximum distance between two points for one to be
-            considered in the neighborhood of the other. Defaults to 0.5.
+            considered in the neighborhood of the other; must be positive
+            and finite. Defaults to 0.5.
         min_samples : int, optional
             The number of points required within a distance of eps for a
-            point to be considered a core point. Defaults to 5.
+            point to be considered a core point; must be at least 1.
+            Defaults to 5.
         metric : {"euclidean", "cityblock", "chebyshev"}, optional
             Distance metric used to find neighbors. Defaults to "euclidean".
         """
@@ -122,6 +126,20 @@ class DBSCAN(Clusterer):
         self.eps: float = eps
         self.min_samples: int = min_samples
         self.metric: Literal["euclidean", "cityblock", "chebyshev"] = metric
+
+    def _validate_params(self) -> None:
+        """Validate the data-independent hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If eps is not a positive finite number, min_samples is less
+            than 1, or metric is not one of the supported metrics.
+        """
+        super()._validate_params()
+        check_positive("eps", self.eps, finite=True)
+        check_at_least("min_samples", self.min_samples, 1)
+        check_choice("metric", self.metric, DISTANCE_METRICS)
 
     def _eps_neighborhoods(
         self, X_block: FeatureMatrix, X: FeatureMatrix, /
@@ -155,15 +173,8 @@ class DBSCAN(Clusterer):
         Raises
         ------
         InvalidParameterError
-            If eps is not positive, min_samples is not positive, or
-            min_samples exceeds the number of training samples.
+            If min_samples exceeds the number of training samples.
         """
-        if self.eps <= 0:
-            raise InvalidParameterError(f"eps must be a positive float, got {self.eps}")
-        if self.min_samples <= 0:
-            raise InvalidParameterError(
-                f"min_samples must be a positive integer, got {self.min_samples}"
-            )
         if self.min_samples > X.shape[0]:
             raise InvalidParameterError(
                 f"min_samples={self.min_samples} cannot exceed the number of "

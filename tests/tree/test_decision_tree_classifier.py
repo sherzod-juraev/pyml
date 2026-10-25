@@ -3,6 +3,7 @@
 import numpy as np
 import pytest
 
+from pyml.core.exceptions import InvalidParameterError
 from pyml.tree import DecisionTreeClassifier
 
 
@@ -86,3 +87,30 @@ class TestPredict:
         prediction = model.predict(np.array([[0.5]]))
 
         assert prediction[0] == 0
+
+
+class TestValidateParams:
+    @pytest.mark.parametrize(
+        ("name", "value"),
+        [("max_depth", -1), ("min_samples", 0), ("min_impurity_decrease", -1.0)],
+    )
+    def test_error_message_names_the_parameter(self, two_blobs, name, value):
+        X, y = two_blobs(n_per_class=20)
+
+        with pytest.raises(InvalidParameterError, match=name):
+            DecisionTreeClassifier(**{"max_depth": 3, name: value}).fit(X, y)
+
+    def test_zero_max_depth_gives_a_single_leaf(self, two_blobs):
+        X, y = two_blobs(n_per_class=20)
+
+        model = DecisionTreeClassifier(max_depth=0).fit(X, y)
+
+        assert model.tree_.is_leaf
+
+    @pytest.mark.parametrize("params", [{"min_samples": 1}, {"min_impurity_decrease": 0.0}])
+    def test_accepts_boundary_values(self, two_blobs, params):
+        X, y = two_blobs(n_per_class=20)
+
+        model = DecisionTreeClassifier(**{"max_depth": 3, **params}).fit(X, y)
+
+        assert model.is_fitted_ is True

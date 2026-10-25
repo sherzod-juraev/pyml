@@ -22,15 +22,17 @@ class DecisionTreeRegressor(_DecisionTreeBase, Regressor):
     Parameters
     ----------
     max_depth : int
-        Maximum depth of the tree. Splitting stops once a node reaches
-        this depth, regardless of variance.
+        Maximum depth of the tree; must be non-negative. Splitting stops
+        once a node reaches this depth, regardless of variance. A depth of 0
+        gives a tree made of a single leaf.
     min_samples : int, optional
-        Minimum number of samples required to consider splitting a node.
-        Nodes with fewer samples become leaves. Defaults to 2.
+        Minimum number of samples required to consider splitting a node;
+        must be at least 1. Nodes with fewer samples become leaves.
+        Defaults to 2.
     min_impurity_decrease : float, optional
         Minimum variance reduction required to accept a split. A
         candidate split whose gain falls below this becomes a leaf
-        instead. Defaults to 1e-7.
+        instead. Must be non-negative. Defaults to 1e-7.
 
     Attributes
     ----------

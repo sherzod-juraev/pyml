@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyml.core.base import Transformer
-from pyml.core.exceptions import NotFittedError
+from pyml.core.exceptions import InvalidParameterError, NotFittedError
 
 
 class _DummyScaler(Transformer):
@@ -18,6 +18,13 @@ class _DummyScaler(Transformer):
 
     def _inverse_transform(self, X):
         return X + self._mean
+
+
+class _BadParamsScaler(_DummyScaler):
+    """Rejects its hyper-parameters on every fit."""
+
+    def _validate_params(self):
+        raise InvalidParameterError("bad hyper-parameter")
 
 
 @pytest.fixture
@@ -51,6 +58,46 @@ class TestFit:
         X = rng.random(10)  # 1D, invalid
         with pytest.raises(ValueError, match="2D"):
             transformer.fit(X)
+
+
+class TestValidateParams:
+    def test_rejects_invalid_hyperparameters(self, rng):
+        X = rng.random((10, 3))
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsScaler().fit(X)
+
+    def test_is_checked_before_the_data(self, rng):
+        X = rng.random(10)  # 1D, invalid
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsScaler().fit(X)
+
+    def test_failed_fit_leaves_the_estimator_untouched(self, rng):
+        X = rng.random((10, 3))
+        model = _BadParamsScaler()
+
+        with pytest.raises(InvalidParameterError):
+            model.fit(X)
+
+        assert model.is_fitted_ is False
+        assert not hasattr(model, "n_features_in_")
+        assert not hasattr(model, "_mean")
+
+    def test_runs_once_per_fit(self, transformer, rng, monkeypatch):
+        X = rng.random((10, 3))
+        calls = []
+        monkeypatch.setattr(transformer, "_validate_params", lambda: calls.append(1))
+
+        transformer.fit(X)
+
+        assert calls == [1]
+
+    def test_fit_transform_checks_the_hyperparameters_too(self, rng):
+        X = rng.random((10, 3))
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsScaler().fit_transform(X)
 
 
 class TestTransform:

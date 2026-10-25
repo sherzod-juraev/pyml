@@ -8,6 +8,7 @@ from scipy.spatial.distance import cdist
 from ..core.base import PredictableClusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
+from ..core.param_checks import check_at_least, check_non_negative
 
 _CHUNK_SIZE = 4096
 
@@ -36,17 +37,19 @@ class KMeans(PredictableClusterer):
     Parameters
     ----------
     n_clusters : int
-        The number of clusters to form. Must not exceed the number of
-        training samples.
+        The number of clusters to form. Must be at least 1 and must not
+        exceed the number of training samples.
     max_iter : int, optional
-        Maximum number of assignment/update iterations.
+        Maximum number of assignment/update iterations. Must be at
+        least 1.
     tol : float, optional
         Minimum total squared centroid movement between consecutive
         iterations required to continue; if the movement falls below
-        this, training stops early.
+        this, training stops early. Must be non-negative.
     random_state : int or None, optional
         Seed for the random number generator used in k-means++
-        initialization, for reproducible results.
+        initialization, for reproducible results. Must be non-negative
+        when given.
 
     Attributes
     ----------
@@ -109,21 +112,39 @@ class KMeans(PredictableClusterer):
         Parameters
         ----------
         n_clusters : int
-            The number of clusters to form.
+            The number of clusters to form; must be at least 1.
         max_iter : int, optional
-            Maximum number of assignment/update iterations. Defaults to 300.
+            Maximum number of assignment/update iterations; must be at
+            least 1. Defaults to 300.
         tol : float, optional
             Minimum total squared centroid movement between consecutive
-            iterations required to continue. Defaults to 1e-4.
+            iterations required to continue; must be non-negative.
+            Defaults to 1e-4.
         random_state : int or None, optional
-            Seed for the random number generator used in initialization.
-            Defaults to None.
+            Seed for the random number generator used in initialization;
+            must be non-negative when given. Defaults to None.
         """
         super().__init__()
         self.n_clusters: int = n_clusters
         self.max_iter: int = max_iter
         self.tol: float = tol
         self.random_state: int | None = random_state
+
+    def _validate_params(self) -> None:
+        """Validate the data-independent hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If n_clusters or max_iter is less than 1, tol is negative or
+            NaN, or random_state is negative.
+        """
+        super()._validate_params()
+        check_at_least("n_clusters", self.n_clusters, 1)
+        check_at_least("max_iter", self.max_iter, 1)
+        check_non_negative("tol", self.tol)
+        if self.random_state is not None:
+            check_non_negative("random_state", self.random_state)
 
     def _initialize_centroids(self, X: FeatureMatrix, /) -> None:
         """Choose initial centroids using the k-means++ strategy.
@@ -187,13 +208,8 @@ class KMeans(PredictableClusterer):
         Raises
         ------
         InvalidParameterError
-            If n_clusters is not positive, or exceeds the number of
-            training samples.
+            If n_clusters exceeds the number of training samples.
         """
-        if self.n_clusters <= 0:
-            raise InvalidParameterError(
-                f"n_clusters must be a positive integer, got {self.n_clusters}"
-            )
         if self.n_clusters > X.shape[0]:
             raise InvalidParameterError(
                 f"n_clusters={self.n_clusters} cannot exceed the number of "

@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from ..core.param_checks import check_non_negative
 from ._logistic_base import _FloatArray, _LogisticRegressionBase
 
 
@@ -158,3 +159,14 @@ class LassoClassifier(_LogisticRegressionBase):
             sign(0) is taken as 0.
         """
         return self.alpha * np.sign(self.coef_)
+
+    def _validate_params(self) -> None:
+        """Validate the shared solver parameters and ``alpha``.
+
+        Raises
+        ------
+        InvalidParameterError
+            If a solver parameter is invalid, or alpha is negative or not finite.
+        """
+        super()._validate_params()
+        check_non_negative("alpha", self.alpha, finite=True)

@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from ..core.param_checks import check_in_range, check_non_negative
 from ._linear_base import _FloatArray, _LinearModelBase
 
 
@@ -174,3 +175,16 @@ class ElasticNet(_LinearModelBase):
         l1_term = self.alpha * (self.l1_ratio * np.sign(self.coef_))
         l2_term = self.alpha * ((1 - self.l1_ratio) * self.coef_)
         return l1_term + l2_term
+
+    def _validate_params(self) -> None:
+        """Validate the shared solver parameters, ``alpha`` and ``l1_ratio``.
+
+        Raises
+        ------
+        InvalidParameterError
+            If a solver parameter is invalid, alpha is negative or not finite,
+            or l1_ratio is outside [0, 1].
+        """
+        super()._validate_params()
+        check_non_negative("alpha", self.alpha, finite=True)
+        check_in_range("l1_ratio", self.l1_ratio, 0, 1)

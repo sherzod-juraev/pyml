@@ -9,6 +9,7 @@ from scipy.stats import mode
 from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
+from ..core.param_checks import DISTANCE_METRICS, check_at_least, check_choice
 
 _MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
@@ -33,8 +34,8 @@ class KNNClassifier(Classifier):
     Parameters
     ----------
     n_neighbors : int, optional
-        Number of nearest neighbors to use. Must not exceed the number
-        of training samples.
+        Number of nearest neighbors to use. Must be at least 1 and must
+        not exceed the number of training samples.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
         Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
@@ -110,7 +111,8 @@ class KNNClassifier(Classifier):
         Parameters
         ----------
         n_neighbors : int, optional
-            Number of nearest neighbors to use. Defaults to 5.
+            Number of nearest neighbors to use; must be at least 1.
+            Defaults to 5.
         metric : {"euclidean", "chebyshev", "cityblock"}, optional
             Distance metric used to find neighbors. Defaults to "euclidean".
         weights : {"uniform", "distance"}, optional
@@ -121,8 +123,22 @@ class KNNClassifier(Classifier):
         self.metric: Literal["euclidean", "chebyshev", "cityblock"] = metric
         self.weights: Literal["uniform", "distance"] = weights
 
+    def _validate_params(self) -> None:
+        """Validate the data-independent hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If n_neighbors is less than 1, or metric or weights is not
+            one of the supported values.
+        """
+        super()._validate_params()
+        check_at_least("n_neighbors", self.n_neighbors, 1)
+        check_choice("metric", self.metric, DISTANCE_METRICS)
+        check_choice("weights", self.weights, ("uniform", "distance"))
+
     def _fit(self, X: FeatureMatrix, y: ClassificationTarget, /) -> None:
-        """Validate n_neighbors and store the training data.
+        """Check n_neighbors against the sample count and store the training data.
 
         Parameters
         ----------
@@ -134,13 +150,8 @@ class KNNClassifier(Classifier):
         Raises
         ------
         InvalidParameterError
-            If n_neighbors is not positive, or exceeds the number of
-            training samples.
+            If n_neighbors exceeds the number of training samples.
         """
-        if self.n_neighbors <= 0:
-            raise InvalidParameterError(
-                f"n_neighbors must be a positive integer, got {self.n_neighbors}."
-            )
         if self.n_neighbors > X.shape[0]:
             raise InvalidParameterError(
                 f"n_neighbors={self.n_neighbors} cannot exceed the number of "

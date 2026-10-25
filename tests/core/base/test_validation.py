@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyml.core.base.validation import DataValidatorMixin
-from pyml.core.exceptions import ShapeMismatchError
+from pyml.core.exceptions import InvalidParameterError, ShapeMismatchError
 
 
 class _Validator(DataValidatorMixin):
@@ -104,3 +104,23 @@ class TestValidateXYSamples:
         y = rng.random(5)
         with pytest.raises(ShapeMismatchError, match=r"\[10, 5\]"):
             validator._validate_X_y_samples(X, y)
+
+
+class TestValidateParams:
+    def test_default_accepts_any_configuration(self, validator):
+        assert validator._validate_params() is None
+
+    def test_default_does_not_change_the_object(self, validator):
+        state_before = dict(vars(validator))
+
+        validator._validate_params()
+
+        assert vars(validator) == state_before
+
+    def test_subclass_override_is_used(self):
+        class _Strict(DataValidatorMixin):
+            def _validate_params(self) -> None:
+                raise InvalidParameterError("bad hyper-parameter")
+
+        with pytest.raises(InvalidParameterError):
+            _Strict()._validate_params()
