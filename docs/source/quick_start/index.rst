@@ -27,6 +27,49 @@ companion package pyml-datasets, see :doc:`installation`.
 
 ``score(X, y)`` returns the accuracy for classifiers and the R² for regressors.
 
+See what the model learned
+--------------------------
+
+A model with two features can be drawn. The plot below keeps only the petal length and the
+petal width of the Iris flowers, fits the same classifier, and colors the plane by the class
+that the model predicts at each point. The training samples are circles and the test samples
+are triangles.
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from matplotlib.colors import ListedColormap
+
+    from pyml.model_selection import train_test_split
+    from pyml.neighbors import KNNClassifier
+    from pyml_datasets import load_iris
+
+    data = load_iris()
+    X = data.X[:, 2:]  # petal length and petal width
+    X_train, X_test, y_train, y_test = train_test_split(X, data.y, test_size=0.2, random_state=42)
+
+    model = KNNClassifier(n_neighbors=5).fit(X_train, y_train)
+
+    xx, yy = np.meshgrid(
+        np.linspace(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5, 200),
+        np.linspace(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5, 200),
+    )
+    regions = model.predict(np.column_stack([xx.ravel(), yy.ravel()])).reshape(xx.shape)
+
+    fig, ax = plt.subplots()
+    colors = ListedColormap(["C0", "C1", "C2"])
+    ax.contourf(xx, yy, regions, levels=[-0.5, 0.5, 1.5, 2.5], cmap=colors, alpha=0.25)
+    for label, name in enumerate(data.target_names):
+        train = X_train[y_train == label]
+        test = X_test[y_test == label]
+        ax.scatter(train[:, 0], train[:, 1], c=f"C{label}", edgecolor="k", label=name)
+        ax.scatter(test[:, 0], test[:, 1], c=f"C{label}", edgecolor="k", marker="^")
+    ax.set_xlabel("Petal length (cm)")
+    ax.set_ylabel("Petal width (cm)")
+    ax.set_title(f"KNNClassifier, test accuracy {model.score(X_test, y_test):.2f}")
+    ax.legend(loc="upper left")
+
 .. note::
     The examples for the individual models focus on the API itself, so they use placeholder
     variables like ``X_train``, ``y_train``, and ``X_test`` to represent your own data.
