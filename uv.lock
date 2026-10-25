@@ -1625,6 +1625,7 @@ docs = [
     { name = "doc8" },
     { name = "matplotlib" },
     { name = "pydata-sphinx-theme" },
+    { name = "pyml-datasets" },
     { name = "rstcheck" },
     { name = "sphinx" },
     { name = "sphinx-autodoc-typehints" },
@@ -1639,6 +1640,7 @@ docs-build = [
     { name = "autodocsumm" },
     { name = "matplotlib" },
     { name = "pydata-sphinx-theme" },
+    { name = "pyml-datasets" },
     { name = "sphinx" },
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-copybutton" },
@@ -1656,6 +1658,7 @@ docs-live = [
     { name = "autodocsumm" },
     { name = "matplotlib" },
     { name = "pydata-sphinx-theme" },
+    { name = "pyml-datasets" },
     { name = "sphinx" },
     { name = "sphinx-autobuild" },
     { name = "sphinx-autodoc-typehints" },
@@ -1701,6 +1704,7 @@ docs = [
     { name = "doc8", specifier = ">=1.0.0" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
     { name = "rstcheck", specifier = ">=6.0.0" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
@@ -1715,6 +1719,7 @@ docs-build = [
     { name = "autodocsumm", specifier = ">=0.2.14" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
     { name = "sphinx-copybutton", specifier = ">=0.5.0" },
@@ -1732,6 +1737,7 @@ docs-live = [
     { name = "autodocsumm", specifier = ">=0.2.14" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autobuild", specifier = ">=2025.8.25" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
@@ -1742,6 +1748,14 @@ docs-live = [
     { name = "sphinxext-opengraph", specifier = ">=0.13.0" },
 ]
 nox = [{ name = "nox", specifier = ">=2026.2.9" }]
+
+[[package]]
+name = "pyml-datasets"
+version = "0.8.0"
+source = { git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0#4a8dcf9da517f6272c43f32f9a832006a3217d7e" }
+dependencies = [
+    { name = "numpy" },
+]
 
 [[package]]
 name = "pyparsing"
