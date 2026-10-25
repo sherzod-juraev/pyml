@@ -8,18 +8,6 @@ from pyml.core.exceptions import InvalidParameterError
 
 
 class TestFitPredict:
-    def test_rejects_zero_or_negative_eps(self, rng):
-        X = rng.uniform(0, 10, size=(10, 2))
-
-        with pytest.raises(InvalidParameterError):
-            DBSCAN(eps=0.0).fit_predict(X)
-
-    def test_rejects_zero_or_negative_min_samples(self, rng):
-        X = rng.uniform(0, 10, size=(10, 2))
-
-        with pytest.raises(InvalidParameterError):
-            DBSCAN(min_samples=0).fit_predict(X)
-
     def test_rejects_min_samples_exceeding_sample_count(self, rng):
         X = rng.uniform(0, 10, size=(5, 2))
 
@@ -68,6 +56,34 @@ class TestFitPredict:
         # every point should end up either in a cluster (>= 0) or noise (-1),
         # never left in the internal "unvisited" (-2) state
         assert np.all(labels != -2)
+
+
+class TestValidateParams:
+    def test_error_message_names_the_parameter(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        with pytest.raises(InvalidParameterError, match="eps"):
+            DBSCAN(eps=-1.0).fit_predict(X)
+
+    def test_unknown_metric_message_lists_the_supported_metrics(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        with pytest.raises(InvalidParameterError, match="euclidean.*cityblock.*chebyshev"):
+            DBSCAN(metric="euclidian").fit_predict(X)  # type: ignore[arg-type]
+
+    def test_accepts_boundary_values(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        labels = DBSCAN(eps=1e-9, min_samples=1).fit_predict(X)
+
+        assert labels.shape == (10,)
+
+    def test_min_samples_equal_to_sample_count_is_accepted(self, rng):
+        X = rng.uniform(0, 10, size=(5, 2))
+
+        labels = DBSCAN(eps=100.0, min_samples=5).fit_predict(X)
+
+        assert np.all(labels == 0)
 
 
 class TestGetLabels:

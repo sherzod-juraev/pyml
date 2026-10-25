@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyml.core.base import Regressor
-from pyml.core.exceptions import NotFittedError, ShapeMismatchError
+from pyml.core.exceptions import InvalidParameterError, NotFittedError, ShapeMismatchError
 from pyml.metrics import r2_score
 
 
@@ -16,6 +16,13 @@ class _DummyRegressor(Regressor):
 
     def _predict(self, X):
         return np.full(X.shape[0], self._mean)
+
+
+class _BadParamsRegressor(_DummyRegressor):
+    """Rejects its hyper-parameters on every fit."""
+
+    def _validate_params(self):
+        raise InvalidParameterError("bad hyper-parameter")
 
 
 @pytest.fixture
@@ -65,6 +72,44 @@ class TestFit:
         y = rng.random(5)
         with pytest.raises(ShapeMismatchError):
             regressor.fit(X, y)
+
+
+class TestValidateParams:
+    def test_rejects_invalid_hyperparameters(self, rng):
+        X = rng.random((10, 3))
+        y = rng.random(10)
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsRegressor().fit(X, y)
+
+    def test_is_checked_before_the_data(self, rng):
+        X = rng.random(10)  # 1D, invalid
+        y = rng.random(10)
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsRegressor().fit(X, y)
+
+    def test_failed_fit_leaves_the_estimator_untouched(self, rng):
+        X = rng.random((10, 3))
+        y = rng.random(10)
+        model = _BadParamsRegressor()
+
+        with pytest.raises(InvalidParameterError):
+            model.fit(X, y)
+
+        assert model.is_fitted_ is False
+        assert not hasattr(model, "n_features_in_")
+        assert not hasattr(model, "_mean")
+
+    def test_runs_once_per_fit(self, regressor, rng, monkeypatch):
+        X = rng.random((10, 3))
+        y = rng.random(10)
+        calls = []
+        monkeypatch.setattr(regressor, "_validate_params", lambda: calls.append(1))
+
+        regressor.fit(X, y)
+
+        assert calls == [1]
 
 
 class TestPredict:

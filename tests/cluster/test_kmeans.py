@@ -9,12 +9,6 @@ from pyml.core.exceptions import InvalidParameterError, NotFittedError
 
 
 class TestFit:
-    def test_rejects_zero_or_negative_n_clusters(self, rng):
-        X = rng.uniform(0, 10, size=(10, 2))
-
-        with pytest.raises(InvalidParameterError):
-            KMeans(n_clusters=0).fit(X)
-
     def test_rejects_n_clusters_exceeding_sample_count(self, rng):
         X = rng.uniform(0, 10, size=(5, 2))
 
@@ -70,6 +64,28 @@ class TestFit:
         assert np.allclose(model1.centroids_, model2.centroids_)
 
 
+class TestValidateParams:
+    def test_error_message_names_the_parameter(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        with pytest.raises(InvalidParameterError, match="tol"):
+            KMeans(n_clusters=2, tol=-1.0).fit(X)
+
+    def test_accepts_boundary_values(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+
+        model = KMeans(n_clusters=1, max_iter=1, tol=0.0, random_state=0).fit(X)
+
+        assert model.is_fitted_ is True
+
+    def test_n_clusters_equal_to_sample_count_is_accepted(self, rng):
+        X = rng.uniform(0, 10, size=(5, 2))
+
+        model = KMeans(n_clusters=5, random_state=0).fit(X)
+
+        assert model.is_fitted_ is True
+
+
 class TestInitialization:
     def test_single_cluster_centroid_is_the_data_mean(self, rng):
         X = rng.normal(loc=(3, -2), scale=2.0, size=(50, 2))
@@ -92,7 +108,7 @@ class TestInitialization:
     def test_max_iter_is_reported_when_not_converged(self, rng):
         X = rng.normal(size=(60, 2))
 
-        model = KMeans(n_clusters=3, max_iter=1, tol=-1.0, random_state=42).fit(X)
+        model = KMeans(n_clusters=3, max_iter=1, tol=0.0, random_state=42).fit(X)
 
         assert model.n_iter_ == 1
 
@@ -126,7 +142,7 @@ class TestEmptyCluster:
         monkeypatch.setattr(KMeans, "_initialize_centroids", far_away_second_centroid)
 
         with pytest.warns(RuntimeWarning):
-            model = KMeans(n_clusters=2, max_iter=1, tol=-1.0).fit(X)
+            model = KMeans(n_clusters=2, max_iter=1, tol=0.0).fit(X)
 
         # every sample was assigned to centroid 0, which then moved to the mean
         farthest_from_mean = X[np.argmax(np.linalg.norm(X - X.mean(axis=0), axis=1))]

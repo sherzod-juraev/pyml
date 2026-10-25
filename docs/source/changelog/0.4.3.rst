@@ -1,0 +1,41 @@
+0.4.3
+=====
+
+Added
+-----
+
+- Every estimator with hyper-parameters now validates them at the start of ``fit``, before the
+  data is touched. An invalid value raises ``InvalidParameterError`` with a message that names
+  the parameter, the accepted values and the value received. Examples are ``n_clusters=0``,
+  ``alpha=-1``, ``l1_ratio=1.5``, ``radius=0`` or ``metric="euclidian"``. A value that is NaN
+  is rejected as well.
+- ``pyml.core.base`` gained a ``_validate_params`` hook in ``DataValidatorMixin``. The default
+  accepts any configuration, and each estimator overrides it for its own parameters. The
+  shared range checks live in ``pyml.core.param_checks``.
+
+Fixed
+-----
+
+- A bad hyper-parameter used to surface late, or not at all. ``Ridge(alpha=-1)``,
+  ``LogisticRegression(learning_rate=0)``, ``ElasticNet(l1_ratio=2)`` and
+  ``MultinomialNB(alpha=-1)`` fitted without an error, and the neighbors models accepted an
+  unknown ``weights``. An unknown ``metric`` failed only later, in ``predict``, with a plain
+  ``ValueError`` from SciPy. All of them now fail on ``fit`` with ``InvalidParameterError``.
+- A failed ``fit`` no longer changes the estimator. Because the parameters are checked first,
+  a refit with an invalid value keeps the previous fitted attributes and ``n_features_in_``.
+- ``KMeans`` no longer accepts a negative ``tol``. It only forced the "not converged" branch.
+
+Development
+-----------
+
+- The test suite is organised around ``tests/registry.py``, a list of every public estimator
+  with its default parameters and its invalid values. The contract test and the new
+  hyper-parameter tests run over this list, and a test fails if a public estimator is missing
+  from it.
+- ``tests/test_lazy_imports.py`` replaces the twelve ``test_init.py`` files. It discovers the
+  lazy packages from ``pyml.__all__`` and checks name resolution, ``dir()`` and the ``.pyi``
+  stub re-exports.
+- ``tests/conftest.py`` provides the ``linear_data`` and ``two_blobs`` builders, and
+  ``LinearRegression`` and ``Ridge`` are now compared with their closed-form solutions.
+- The Bing and Yandex site verification files were removed from the documentation. Only the
+  Google verification is kept.

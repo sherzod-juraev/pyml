@@ -14,6 +14,7 @@ import numpy.typing as npt
 
 from ..core.base import Regressor
 from ..core.dtypes import FeatureMatrix, RegressionTarget
+from ..core.param_checks import check_at_least, check_non_negative, check_positive
 from ..metrics import mean_squared_error
 
 _FloatArray = npt.NDArray[np.floating[Any]]
@@ -218,3 +219,17 @@ class _LinearModelBase(Regressor):
             Predicted continuous values of shape (n_samples,).
         """
         return X @ self.coef_ + self.intercept_
+
+    def _validate_params(self) -> None:
+        """Validate the gradient-descent hyper-parameters.
+
+        Raises
+        ------
+        InvalidParameterError
+            If learning_rate is not a positive finite number, max_iter is
+            less than 1, or tol is negative or NaN.
+        """
+        super()._validate_params()
+        check_positive("learning_rate", self.learning_rate, finite=True)
+        check_at_least("max_iter", self.max_iter, 1)
+        check_non_negative("tol", self.tol)

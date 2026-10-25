@@ -7,13 +7,35 @@ from pyml.core.exceptions import InvalidParameterError, NoNeighborsError
 from pyml.neighbors import RadiusNeighborsClassifier
 
 
-class TestFit:
-    def test_rejects_zero_or_negative_radius(self, rng):
+class TestValidateParams:
+    def test_error_message_names_the_parameter(self, rng):
         X = rng.uniform(0, 10, size=(10, 2))
         y = np.array([0, 1] * 5)
 
-        with pytest.raises(InvalidParameterError):
-            RadiusNeighborsClassifier(radius=0.0).fit(X, y)
+        with pytest.raises(InvalidParameterError, match="radius"):
+            RadiusNeighborsClassifier(radius=-1.0).fit(X, y)
+
+    def test_unknown_weights_message_lists_the_options(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = np.array([0, 1] * 5)
+
+        with pytest.raises(InvalidParameterError, match="uniform.*distance"):
+            RadiusNeighborsClassifier(radius=1.0, weights="inverse").fit(X, y)  # type: ignore[arg-type]
+
+    def test_unknown_metric_message_lists_the_supported_metrics(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = np.array([0, 1] * 5)
+
+        with pytest.raises(InvalidParameterError, match="euclidean.*cityblock.*chebyshev"):
+            RadiusNeighborsClassifier(radius=1.0, metric="euclidian").fit(X, y)  # type: ignore[arg-type]
+
+    def test_accepts_boundary_values(self, rng):
+        X = rng.uniform(0, 10, size=(10, 2))
+        y = np.array([0, 1] * 5)
+
+        model = RadiusNeighborsClassifier(radius=1e-9).fit(X, y)
+
+        assert model.is_fitted_ is True
 
 
 class TestPredict:

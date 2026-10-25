@@ -186,11 +186,48 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
   before `Classifier`/`Regressor` in the MRO, so without the call `BaseEstimator.__init__`
   never runs and `is_fitted_` is missing.
 - Errors come from the hierarchy in `pyml/core/exceptions/`, starting at `PymlError`.
+- The constructor only stores the hyper-parameters. They are validated in `fit`, see
+  [Validating hyper-parameters](#validating-hyper-parameters).
 - Everything is checked by mypy in strict mode, ruff (line length 100) and interrogate
   (100% docstring coverage, private members included).
 - Files use LF line endings on every operating system. `.gitattributes` enforces this in Git,
   and `.editorconfig` makes editors save new files that way (PyCharm reads it out of the box,
   VS Code needs the EditorConfig extension).
+
+### Validating hyper-parameters
+
+`DataValidatorMixin` (`pyml/core/base/validation.py`) defines a no-op hook,
+`_validate_params(self) -> None`. The `fit` of every family base class (`Regressor`,
+`Classifier`, `Transformer`, `Clusterer`) calls it as its first line, before the data is
+checked and before any state is stored. A model with hyper-parameters overrides the hook:
+
+```python
+def _validate_params(self) -> None:
+    """Validate ``alpha`` and ``l1_ratio``."""
+    super()._validate_params()  # keep the checks of the parent class
+    check_non_negative("alpha", self.alpha, finite=True)
+    check_in_range("l1_ratio", self.l1_ratio, 0, 1)
+```
+
+- **Where a check comes from.** A check that several models can use lives in
+  `pyml/core/param_checks.py`: `check_positive`, `check_non_negative`, `check_at_least`,
+  `check_in_range`, `check_choice` and the `DISTANCE_METRICS` tuple. Import them with
+  `from ..core.param_checks import ...`. A check that only one model needs is written directly
+  in that model's hook, with `raise InvalidParameterError(...)`. If a second model needs the
+  same check, move it to `param_checks.py` together with its tests.
+- **What goes in the hook.** Only checks that do not need the data, such as the range of a
+  parameter or the choice between fixed options. They are written so that NaN is rejected
+  (`not x >= 0`, never `x < 0`). A check that needs the data, such as `n_clusters` against
+  `n_samples`, stays in `_fit`.
+- **Always call `super()._validate_params()` first** when a parent class also overrides the hook,
+  or its checks are silently skipped. `_DecisionTreeBase` is the one exception to the plain
+  `super()` call: it is a plain `ABC` in front of the family base in the MRO, so mypy cannot see
+  the method and the call is `cast(Any, super())._validate_params()`.
+- **Range, not type.** The hook does not check types, and parameters for which any value makes
+  sense (`fit_intercept`) are not checked at all. See
+  [Known limitations](docs/source/known_limitations.rst).
+- The hook has a full docstring (interrogate counts private members), and `Raises` lists
+  `InvalidParameterError`.
 
 ### Docstrings
 
@@ -203,14 +240,37 @@ Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C
 
 ### Tests
 
-- `tests/` mirrors `pyml/`, and `conftest.py` provides the `rng` fixture (seed 42).
+- `tests/` mirrors `pyml/`. `conftest.py` provides the `rng` fixture (seed 42) and two dataset
+  builders that use it: `linear_data(n_samples, coef, intercept)` and
+  `two_blobs(n_per_class, center, scale, n_features)`. Use them instead of repeating the data
+  generation, and keep `rng` for tests that need noise or special data.
 - Tests are grouped in classes by behavior (`TestFit`, `TestPredict`, `TestScore`). There is
   only a module docstring, no docstrings on the tests.
 - A test file covers the behavior of its own layer and does not repeat what lower layers
-  already guarantee. Abstract bases have no test file of their own.
-- `tests/test_estimator_contract.py` is the one file that does not mirror `pyml/`. It runs the
-  same checks over every public estimator: `fit` returns `self`, `NotFittedError` before fit,
-  feature-count mismatch, inputs are not modified, and the `get_params`/`set_params` round trip.
+  already guarantee. Abstract bases have no test file of their own, they are covered through
+  small dummy subclasses in `tests/core/base/`.
+- There is no `test_init.py` per package. `tests/test_lazy_imports.py` finds the lazy-loading
+  packages from `pyml.__all__` and checks name resolution, `dir()` and the `.pyi` stub, so a
+  new package only needs to be listed in `pyml.__all__`.
+- `tests/registry.py` is the list of every public estimator: its class, family, default
+  constructor arguments, a list of invalid parameter sets, and whether it can predict on new
+  data. `tests/test_estimator_contract.py` runs the same checks over this list: `fit` returns
+  `self`, `NotFittedError` before fit, feature-count mismatch, inputs are not modified, the
+  `get_params`/`set_params` round trip, copy and pickle, and the hyper-parameter validation
+  (an invalid value is rejected on `fit`, before the data is checked, and a failed refit keeps
+  the previous fit). A test fails when a public estimator is missing from the registry.
+
+Where the tests for validation go:
+
+| What                                                        | Where                                              |
+|:------------------------------------------------------------|:---------------------------------------------------|
+| An invalid value is rejected, before the data, state kept   | the model's `invalid` list in `tests/registry.py`  |
+| The message names the parameter, boundary values accepted   | `TestValidateParams` in the model's test file      |
+| A check that needs the data (`n_clusters > n_samples`)      | `TestFit` in the model's test file                 |
+| A new helper in `param_checks.py`                           | `tests/core/test_param_checks.py`                  |
+| The hook in a family base class                             | `tests/core/base/test_<family>.py`                 |
+
+Do not repeat in `TestValidateParams` what the registry already proves.
 
 ### Commits and versions
 
@@ -258,12 +318,17 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
 1. Decide the math and the architecture first: which base class, and whether a shared
    private base is justified.
 2. Implement it in `pyml/<family>/` with a lazy-loading `__init__.py` and `__init__.pyi`.
-3. Write the docstrings following the conventions above.
-4. Write the tests in `tests/<family>/`, including the lazy-loading `__init__` test, and add the
-   model to the matching list in `tests/test_estimator_contract.py`.
-5. Add the documentation: an API page in `docs/source/api/pyml/`, an example page in
+3. If the model has hyper-parameters, override `_validate_params` as described in
+   [Validating hyper-parameters](#validating-hyper-parameters). Reuse a helper from
+   `pyml/core/param_checks.py` when one fits.
+4. Write the docstrings following the conventions above.
+5. Write the tests in `tests/<family>/`: add the model to `tests/registry.py` with its defaults
+   and its invalid parameter sets, and add a `TestValidateParams` class only for what the
+   registry does not prove (messages, boundary values). A new package must be listed in
+   `pyml.__all__`, which is how `tests/test_lazy_imports.py` finds it.
+6. Add the documentation: an API page in `docs/source/api/pyml/`, an example page in
    `docs/source/quick_start/examples/<family>/`, and a row in the README table.
-6. Run `uv run nox` until every session passes.
+7. Run `uv run nox` until every session passes.
 
 ## Releasing
 

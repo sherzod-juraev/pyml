@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyml.core.base import Clusterer, PredictableClusterer
-from pyml.core.exceptions import NotFittedError
+from pyml.core.exceptions import InvalidParameterError, NotFittedError
 
 
 class _DummyClusterer(Clusterer):
@@ -28,6 +28,20 @@ class _DummyPredictableClusterer(PredictableClusterer):
 
     def _predict(self, X):
         return np.zeros(X.shape[0], dtype=np.int64)
+
+
+class _BadParamsClusterer(_DummyClusterer):
+    """Rejects its hyper-parameters on every fit."""
+
+    def _validate_params(self):
+        raise InvalidParameterError("bad hyper-parameter")
+
+
+class _BadParamsPredictableClusterer(_DummyPredictableClusterer):
+    """Rejects its hyper-parameters on every fit."""
+
+    def _validate_params(self):
+        raise InvalidParameterError("bad hyper-parameter")
 
 
 @pytest.fixture
@@ -65,6 +79,52 @@ class TestFit:
         X = rng.random(10)  # 1D, invalid
         with pytest.raises(ValueError, match="2D"):
             clusterer.fit(X)
+
+
+class TestValidateParams:
+    def test_rejects_invalid_hyperparameters(self, rng):
+        X = rng.random((10, 3))
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsClusterer().fit(X)
+
+    def test_is_checked_before_the_data(self, rng):
+        X = rng.random(10)  # 1D, invalid
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsClusterer().fit(X)
+
+    def test_failed_fit_leaves_the_estimator_untouched(self, rng):
+        X = rng.random((10, 3))
+        model = _BadParamsClusterer()
+
+        with pytest.raises(InvalidParameterError):
+            model.fit(X)
+
+        assert model.is_fitted_ is False
+        assert not hasattr(model, "n_features_in_")
+        assert not hasattr(model, "_labels")
+
+    def test_runs_once_per_fit(self, clusterer, rng, monkeypatch):
+        X = rng.random((10, 3))
+        calls = []
+        monkeypatch.setattr(clusterer, "_validate_params", lambda: calls.append(1))
+
+        clusterer.fit(X)
+
+        assert calls == [1]
+
+    def test_fit_predict_checks_the_hyperparameters_too(self, rng):
+        X = rng.random((10, 3))
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsClusterer().fit_predict(X)
+
+    def test_predictable_clusterer_inherits_the_check(self, rng):
+        X = rng.random((10, 3))
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsPredictableClusterer().fit(X)
 
 
 class TestFitPredict:

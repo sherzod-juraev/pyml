@@ -50,23 +50,34 @@ print(model.score(X_test, y_test))  # accuracy on the test set
 ## Installation
 
 pyml is a personal project and is not published on PyPI. It requires Python 3.12 or newer
-and is installed directly from GitHub:
+and is installed directly from GitHub, with pip or with [uv](https://docs.astral.sh/uv/).
+
+With pip:
 
 ```bash
 pip install git+https://github.com/sherzod-juraev/pyml.git
 ```
 
-To install a fixed release, add its tag after `@`, replacing `vX.Y.Z` with a tag from the
-[Releases](https://github.com/sherzod-juraev/pyml/releases) page:
+With uv, which also records pyml in the `pyproject.toml` of your project:
 
 ```bash
-pip install git+https://github.com/sherzod-juraev/pyml.git@vX.Y.Z
+uv add git+https://github.com/sherzod-juraev/pyml.git
+```
+
+To install a fixed release, replace `vX.Y.Z` with a tag from the
+[Releases](https://github.com/sherzod-juraev/pyml/releases) page. Pinning a tag keeps your
+results reproducible.
+
+```bash
+pip install git+https://github.com/sherzod-juraev/pyml.git@vX.Y.Z   # pip
+uv add git+https://github.com/sherzod-juraev/pyml.git --tag vX.Y.Z  # uv
 ```
 
 The quick example above also needs the datasets package:
 
 ```bash
-pip install git+https://github.com/sherzod-juraev/pyml-datasets.git
+pip install git+https://github.com/sherzod-juraev/pyml-datasets.git   # pip
+uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 ```
 
 ## What's inside

@@ -1,9 +1,9 @@
 """Shared input-validation helpers for fit/predict pipelines.
 
 Provides DataValidatorMixin, a set of reusable checks for feature
-matrices and targets (shape, dtype, finiteness) used by Regressor,
-Classifier, and other estimator base classes before delegating to
-their model-specific _fit/_predict implementations.
+matrices, targets (shape, dtype, finiteness) and hyper-parameters used
+by Regressor, Classifier, and other estimator base classes before
+delegating to their model-specific _fit/_predict implementations.
 """
 
 import numpy as np
@@ -18,7 +18,8 @@ class DataValidatorMixin:
     Intended to be combined with BaseEstimator subclasses. Each method
     validates one aspect of the input (X's shape/dtype, y's shape/dtype,
     or X/y sample-count consistency) and raises on the first violation
-    found.
+    found. Also defines a no-op ``_validate_params`` hook that
+    estimators override to validate their hyper-parameters.
     """
 
     def _validate_X(self, X: FeatureMatrix, /) -> None:  # noqa: N802
@@ -111,3 +112,20 @@ class DataValidatorMixin:
                 "Found input variables with inconsistent numbers of samples: "
                 f"[{X.shape[0]}, {y.shape[0]}]"
             )
+
+    def _validate_params(self) -> None:
+        """Validate the estimator's constructor hyper-parameters.
+
+        Called by ``fit`` before any data-dependent work. The default
+        implementation accepts every configuration. Subclasses override it to
+        check their own parameters, and call ``super()._validate_params()``
+        first when a parent class also overrides it. Checks that need the data,
+        such as ``n_clusters`` against ``n_samples``, belong in ``_fit``,
+        because the data is not available here.
+
+        Raises
+        ------
+        InvalidParameterError
+            If a hyper-parameter has an invalid value. Raised by overriding
+            implementations.
+        """

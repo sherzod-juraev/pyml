@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from ..core.param_checks import check_non_negative
 from ._logistic_base import _FloatArray, _LogisticRegressionBase
 
 
@@ -142,3 +143,14 @@ class RidgeClassifier(_LogisticRegressionBase):
             The value of 2 * alpha * ``coef_``, of shape (n_features,).
         """
         return 2 * (self.alpha * self.coef_)
+
+    def _validate_params(self) -> None:
+        """Validate the shared solver parameters and ``alpha``.
+
+        Raises
+        ------
+        InvalidParameterError
+            If a solver parameter is invalid, or alpha is negative or not finite.
+        """
+        super()._validate_params()
+        check_non_negative("alpha", self.alpha, finite=True)

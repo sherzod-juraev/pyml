@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from pyml.core.base import Classifier
-from pyml.core.exceptions import NotFittedError, ShapeMismatchError
+from pyml.core.exceptions import InvalidParameterError, NotFittedError, ShapeMismatchError
 from pyml.metrics import accuracy_score
 
 
@@ -17,6 +17,13 @@ class _DummyClassifier(Classifier):
 
     def _predict(self, X):
         return np.full(X.shape[0], self._majority_label, dtype=np.int64)
+
+
+class _BadParamsClassifier(_DummyClassifier):
+    """Rejects its hyper-parameters on every fit."""
+
+    def _validate_params(self):
+        raise InvalidParameterError("bad hyper-parameter")
 
 
 @pytest.fixture
@@ -66,6 +73,44 @@ class TestFit:
         y = np.zeros(5, dtype=np.int64)
         with pytest.raises(ShapeMismatchError):
             classifier.fit(X, y)
+
+
+class TestValidateParams:
+    def test_rejects_invalid_hyperparameters(self, rng):
+        X = rng.random((10, 3))
+        y = np.zeros(10, dtype=np.int64)
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsClassifier().fit(X, y)
+
+    def test_is_checked_before_the_data(self, rng):
+        X = rng.random(10)  # 1D, invalid
+        y = np.zeros(10, dtype=np.int64)
+
+        with pytest.raises(InvalidParameterError):
+            _BadParamsClassifier().fit(X, y)
+
+    def test_failed_fit_leaves_the_estimator_untouched(self, rng):
+        X = rng.random((10, 3))
+        y = np.zeros(10, dtype=np.int64)
+        model = _BadParamsClassifier()
+
+        with pytest.raises(InvalidParameterError):
+            model.fit(X, y)
+
+        assert model.is_fitted_ is False
+        assert not hasattr(model, "n_features_in_")
+        assert not hasattr(model, "_majority_label")
+
+    def test_runs_once_per_fit(self, classifier, rng, monkeypatch):
+        X = rng.random((10, 3))
+        y = np.zeros(10, dtype=np.int64)
+        calls = []
+        monkeypatch.setattr(classifier, "_validate_params", lambda: calls.append(1))
+
+        classifier.fit(X, y)
+
+        assert calls == [1]
 
 
 class TestPredict:
