@@ -171,6 +171,9 @@ uv run sphinx-autobuild docs\source docs\build\html\ # Windows
 
 Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C`.
 
+How the documentation is organized (layout, custom extensions, the PDF build and
+its pitfalls) is described in [docs/README.md](docs/README.md).
+
 ## Conventions
 
 ### Code
@@ -237,6 +240,12 @@ def _validate_params(self) -> None:
   documented separately. It holds the math derivation, `Parameters`, `Attributes` and a
   `.. note::`.
 - Concrete public models also get a `.. plot::` demo. Abstract bases do not.
+- Version markers: a class that is added, changed or deprecated from now on gets
+  `.. versionadded:: X.Y.Z`, `.. versionchanged:: X.Y.Z` or `.. deprecated:: X.Y.Z` in its
+  class docstring, directly after the one-line summary and before `Parameters`. `X.Y.Z` is the
+  version being developed. Before a release, list the markers with
+  `git grep -n -E "version(added|changed)|deprecated::" -- pyml` and check them. Models
+  released before this rule have no marker, see the [changelog](docs/source/changelog/index.rst).
 
 ### Tests
 
@@ -334,10 +343,13 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
 
 1. Run `uv run nox` on `dev`, and make sure the CI is green.
 2. Bump `__version__` in `pyml/__init__.py`.
-3. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
+3. Check the version markers: every `versionadded`, `versionchanged` and `deprecated` marker
+   that was added for this release must carry the new version (see
+   [Docstrings](#docstrings)).
+4. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
    toctree in `docs/source/changelog/index.rst`. While the release is developed on `dev`, its
    title is `X.Y.Z (unreleased)`; remove the suffix in the release commit, before merging into
    `main`.
-4. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
-5. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
-6. Check that the Read the Docs build is green.
+5. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
+6. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
+7. Check that the Read the Docs build is green.

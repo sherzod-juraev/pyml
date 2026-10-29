@@ -1,0 +1,122 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{pyml}[2026/10/30 pyml PDF style]
+
+\RequirePackage{fontspec}
+\RequirePackage{xcolor}
+\RequirePackage{titlesec}
+
+\providecommand{\pymltagline}{}
+
+% --- Palette --- %
+\definecolor{pymlInk}{HTML}{1E1E2E}         % logo
+\definecolor{pymlPrimary}{HTML}{0A7D91}     % --pst-color-primary
+\definecolor{pymlPrimaryDark}{HTML}{085D6C} % --pst-color-link-higher-contrast
+\definecolor{pymlPrimaryBg}{HTML}{E6F3F6}   % --pst-color-primary-bg ning yengilroq varianti
+\definecolor{pymlBorder}{HTML}{D1D5DA}      % --pst-color-border
+\definecolor{pymlMuted}{HTML}{48566B}       % --pst-color-text-muted
+\definecolor{pymlCodeBg}{HTML}{F6F8FA}
+
+% --- Fonts --- %
+\setmainfont{texgyrepagella}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  ItalicFont     = *-italic,
+  BoldFont       = *-bold,
+  BoldItalicFont = *-bolditalic,
+]
+\setsansfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  ItalicFont     = *-italic,
+  BoldFont       = *-bold,
+  BoldItalicFont = *-bolditalic,
+  Scale          = MatchLowercase,
+]
+\setmonofont{lmmono10-regular}[
+  Extension      = .otf,
+  UprightFont    = *,
+  ItalicFont     = lmmono10-italic,
+  BoldFont       = lmmonolt10-bold,
+  BoldItalicFont = lmmonolt10-boldoblique,
+  Scale          = MatchLowercase,
+]
+
+% --- Colors of Sphinx elements --- %
+\sphinxsetup{
+  TitleColor=pymlPrimaryDark,
+  InnerLinkColor=pymlPrimaryDark,
+  OuterLinkColor=pymlPrimaryDark,
+  VerbatimColor=pymlCodeBg,
+  VerbatimBorderColor=pymlBorder,
+  noteBorderColor=pymlPrimary,
+  noteBgColor=pymlPrimaryBg,
+}
+
+% --- Page --- %
+% Sarlavha balandligi: fancyhdr "headheight is too small" ogohlantirishi uchun.
+\setlength{\headheight}{14pt}
+% Qator uzunligi bo'yicha overfull qutilarni kamaytiradi.
+\setlength{\emergencystretch}{3em}
+
+% --- Chapter headings --- %
+% Katta raqam va qalin sarlavha, ostida ingichka chiziq. Sphinx'ning
+% fncychap'i conf.py da o'chirilgan ("fncychap": ""), shuning uchun
+% bu yerda titlesec ishlatiladi.
+\titleformat{\chapter}[display]
+  {\sffamily\bfseries}
+  {\fontsize{54}{58}\selectfont\color{pymlPrimary}\thechapter}
+  {0.1em}
+  {\Huge\color{pymlPrimaryDark}}
+  [\vspace{0.5em}{\color{pymlBorder}\titlerule[1pt]}]
+\titleformat{name=\chapter,numberless}[display]
+  {\sffamily\bfseries}
+  {}
+  {0pt}
+  {\Huge\color{pymlPrimaryDark}}
+  [\vspace{0.5em}{\color{pymlBorder}\titlerule[1pt]}]
+\titlespacing*{\chapter}{0pt}{0pt}{2em}
+
+% --- Title page --- %
+\makeatletter
+\renewcommand{\sphinxmaketitle}{%
+  \let\sphinxrestorepageanchorsetting\relax
+  \ifHy@pageanchor\def\sphinxrestorepageanchorsetting{\Hy@pageanchortrue}\fi
+  \hypersetup{pageanchor=false}% avoid duplicate destination warnings
+  \begin{titlepage}%
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \begingroup % for PDF information dictionary
+     \def\endgraf{ }\def\and{\& }%
+     \pdfstringdefDisableCommands{\def\\{, }}% overwrite hyperref setup
+     \hypersetup{pdfauthor={\@author}, pdftitle={\@title}}%
+    \endgroup
+    \raggedright
+    \vspace*{0.14\textheight}
+    {\color{pymlPrimary}\rule{3.5cm}{4pt}\par}
+    \vspace{1.6em}
+    {\color{pymlInk}\fontsize{64}{70}\selectfont\ttfamily\bfseries
+     $\boldsymbol{\nabla}$\,pyml\par}
+    \vspace{0.6em}
+    {\sffamily\color{pymlMuted}\fontsize{22}{26}\selectfont Documentation\par}
+    \ifx\pymltagline\@empty\else
+      \vspace{2.4em}
+      \parbox{0.78\textwidth}{\raggedright\color{pymlInk}\large\linespread{1.15}\selectfont
+        \pymltagline\par}%
+    \fi
+    \vfill
+    {\sffamily\bfseries\color{pymlPrimaryDark}\Large
+     \py@release\releaseinfo\par}
+    \vspace{0.8em}
+    {\sffamily\color{pymlInk}\large\@author\par}
+    \vspace{0.3em}
+    {\sffamily\color{pymlMuted}\normalsize\@date\par}
+    \@thanks
+  \end{titlepage}%
+  \setcounter{footnote}{0}%
+  \let\thanks\relax\let\maketitle\relax
+  \clearpage
+  \ifdefined\sphinxbackoftitlepage\sphinxbackoftitlepage\fi
+  \if@openright\cleardoublepage\else\clearpage\fi
+  \sphinxrestorepageanchorsetting
+}
+\makeatother
