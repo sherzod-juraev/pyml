@@ -2,13 +2,15 @@
 
 import math
 import os
+import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pyml
 
-# ================================================================================= #
-# ----------------------------- Project Configurations ---------------------------- #
-# ================================================================================= #
+sys.path.append(str(Path(__file__).parent / "_ext"))
+
+# --- Project Configurations --- #
 project = "pyml"
 year = 2026
 current_year = datetime.now(UTC).year
@@ -21,9 +23,7 @@ source_suffix = {
     ".rst": "restructuredtext",
 }
 
-# ================================================================================= #
-# --------------------------- RST Substitutions ----------------------------------- #
-# ================================================================================= #
+# --- RST Substitutions --- #
 _HOME_DESCRIPTION = (
     "A machine learning library built from scratch on NumPy and SciPy — "
     "no TensorFlow, no PyTorch, just the math."
@@ -35,15 +35,11 @@ rst_prolog = f"""
 .. _nuu_link: https://nuu.uz/en/
 """
 
-# ================================================================================= #
-# ------------------------------ Canonical URL ------------------------------------ #
-# ================================================================================= #
+# --- Canonical URL --- #
 _READTHEDOCS_CANONICAL_URL = os.environ.get("READTHEDOCS_CANONICAL_URL")
 _CANONICAL_URL = _READTHEDOCS_CANONICAL_URL or "https://pyml-edu.readthedocs.io/en/latest/"
 
-# ================================================================================= #
-# ----------------------------------- Extensions ---------------------------------- #
-# ================================================================================= #
+# --- Extensions --- #
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
@@ -57,11 +53,19 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx_sitemap",
     "autodocsumm",
+    # custom extensions
+    "pyml_hide_bases",
+    "pyml_themed_plot",
+    "pyml_empty_sidebar",
 ]
 
-# ================================================================================= #
-# ------------------------------------ Autodoc ------------------------------------ #
-# ================================================================================= #
+# --- Nitpicky --- #
+nitpicky = True
+nitpick_ignore = [
+    ("py:class", "numpy.typing.NDArray"),
+]
+
+# --- Autodoc --- #
 autodoc_default_options = {
     "member-order": "bysource",
     "undoc-members": False,
@@ -74,9 +78,7 @@ autodoc_typehints_format = "short"
 autodoc_class_signature = "separated"
 autosummary_generate = False
 
-# ================================================================================= #
-# ------------------------------------ Napoleon ----------------------------------- #
-# ================================================================================= #
+# --- Napoleon --- #
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 napoleon_include_init_with_doc = False
@@ -86,41 +88,31 @@ napoleon_custom_sections = [
     ("Attributes", "params_style"),
 ]
 
-# ================================================================================= #
-# ----------------------------- Code Syntax & Styling ----------------------------- #
-# ================================================================================= #
+# --- Code Syntax & Styling --- #
 toc_object_entries_show_parents = "hide"
 pygments_style = "friendly"
 default_role = "literal"
 add_module_names = False
 
-# ================================================================================= #
-# -------------------------- Sphinx Autodoc Typehints ----------------------------- #
-# ================================================================================= #
+# --- Sphinx Autodoc Typehints --- #
 typehints_fully_qualified = False
 typehints_use_signature = True
 typehints_use_signature_return = True
 typehints_defaults = "comma"
 
-# ================================================================================= #
-# -------------------------------- Intersphinx ------------------------------------ #
-# ================================================================================= #
+# --- Intersphinx --- #
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
 }
 
-# ================================================================================= #
-# --------------------------------- CopyButton ------------------------------------ #
-# ================================================================================= #
+# --- CopyButton --- #
 copybutton_prompt_text = r">>> |\$ "
 copybutton_prompt_is_regexp = True
 copybutton_only_copy_prompt_lines = True
 
-# ================================================================================= #
-# --------------------------------- Matplotlib ------------------------------------ #
-# ================================================================================= #
+# --- Matplotlib --- #
 plot_include_source = True
 plot_html_show_source_link = False
 plot_formats = [
@@ -145,9 +137,7 @@ plot_rcparams = {
     "text.usetex": False,
 }
 
-# ================================================================================= #
-# ------------------------------- OpenGraph --------------------------------------- #
-# ================================================================================= #
+# --- OpenGraph --- #
 ogp_site_url = _CANONICAL_URL
 ogp_image = "_static/branding/og-image.png"
 ogp_description_length = 200
@@ -157,9 +147,7 @@ ogp_custom_meta_tags = [
     '<meta property="og:image:height" content="630" />',
 ]
 
-# ================================================================================= #
-# ------------------------------- Sphinx Sitemap ---------------------------------- #
-# ================================================================================= #
+# --- Sphinx Sitemap --- #
 html_baseurl = _CANONICAL_URL
 sitemap_url_scheme = "{link}"
 sitemap_excludes = [
@@ -167,9 +155,7 @@ sitemap_excludes = [
     "genindex.html",
 ]
 
-# ================================================================================= #
-# -------------------------- Options For Html Output ------------------------------ #
-# ================================================================================= #
+# --- Options For Html Output --- #
 templates_path = [
     "_templates",
 ]
@@ -178,9 +164,7 @@ html_extra_path = [
 ]
 exclude_patterns = []
 
-# ================================================================================= #
-# ---------------------------- Theme & Branding ----------------------------------- #
-# ================================================================================= #
+# --- Theme & Branding --- #
 html_theme = "pydata_sphinx_theme"
 html_title = "pyml"
 html_context = {
@@ -190,9 +174,7 @@ html_domain_indices = False
 html_last_updated_fmt = "%b %d, %Y"
 html_copy_source = False
 
-# ================================================================================= #
-# --------------------------- Theme Customizations -------------------------------- #
-# ================================================================================= #
+# --- Theme Customizations --- #
 html_theme_options = {
     "logo": {
         "image_light": "_static/branding/logo.svg",
@@ -207,9 +189,7 @@ html_theme_options = {
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
 }
 
-# ================================================================================= #
-# ------------------------------------- CSS Files --------------------------------- #
-# ================================================================================= #
+# --- CSS Files --- #
 html_static_path = [
     "_static",
 ]
@@ -224,23 +204,23 @@ html_css_files = [
     "css/code_blocks.css",
 ]
 
-# ================================================================================= #
-# ------------------------------ LaTeX / PDF Output ------------------------------- #
-# ================================================================================= #
+# --- LaTeX / PDF Output --- #
 latex_engine = "xelatex"
 
 latex_elements = {
     "papersize": "a4paper",
     "pointsize": "11pt",
-    "preamble": r"""
-    \usepackage{amsmath}
-    \usepackage{amssymb}
-    \setlength{\headheight}{14pt}
-    """,
-    "tableofcontents": r"\setcounter{tocdepth}{2}",
-    "sphinxsetup": "noteBorderColor={rgb}{0.2,0.4,0.8}, noteBgColor={rgb}{0.93,0.95,1}",
-    "fncychap": r"\usepackage[Bjornstrup]{fncychap}",
+    "extraclassoptions": "openany,oneside",
+    "figure_align": "H",
+    "fontpkg": "",
+    "preamble": r"\newcommand{\pymltagline}{" + _HOME_DESCRIPTION + r"}" + r"\usepackage{pyml}",
+    # Keep \sphinxtableofcontents, otherwise the table of contents disappears.
+    "tableofcontents": r"\setcounter{tocdepth}{2}\sphinxtableofcontents",
+    "fncychap": "",
 }
+latex_additional_files = [
+    "_latex/pyml.sty",
+]
 latex_documents = [
     (
         "index",
@@ -250,58 +230,12 @@ latex_documents = [
         "manual",
     ),
 ]
-latex_show_urls = "no"
+# The default "colorrows" style fails with "TeX capacity exceeded" on 2026 TeX
+# distributions (sphinx-doc/sphinx#14465). Remove once Sphinx fixes it.
+latex_table_style = ["booktabs"]
 latex_domain_indices = False
+# xindy is not available on Windows/MiKTeX; makeindex ships with every TeX system.
+latex_use_xindy = False
 
-# ================================================================================= #
-# -------------------------- Autodoc Base Filtering ------------------------------- #
-# ================================================================================= #
-_HIDDEN_BASES: frozenset[str] = frozenset(
-    {
-        "BaseEstimator",
-        "DataValidatorMixin",
-    }
-)
-
-
-def _should_hide_base(base: type) -> bool:
-    """Return True if ``base`` should be hidden from autodoc output.
-
-    A base is hidden if either:
-
-    * its name starts with an underscore (``_LinearModelBase``), or
-    * its name is explicitly registered in ``_HIDDEN_BASES`` — used
-      for public-named classes that are internal implementation
-      details (``BaseEstimator``, ``DataValidatorMixin``).
-    """
-    name = getattr(base, "__name__", "")
-    return name.startswith("_") or name in _HIDDEN_BASES
-
-
-def _unwrap_one_level_hidden_bases(app, name, obj, options, bases):
-    """Replace hidden base classes with their immediate parents (1-level unwrapping).
-
-    This function inspects the direct base classes. If a base class is registered
-    in the _HIDDEN_BASES set, it is removed and replaced by its own immediate
-    parent classes, preventing empty base lists and removing internal mixins.
-    """
-    new_bases = []
-
-    for base in bases:
-        if _should_hide_base(base):
-            for parent in getattr(base, "__bases__", ()):
-                if parent is not object:
-                    new_bases.append(parent)
-        else:
-            new_bases.append(base)
-
-    # Modify the Sphinx bases list in-place
-    bases[:] = new_bases
-
-
-# ================================================================================= #
-# ------------------------ Sphinx Configuration Setup ----------------------------- #
-# ================================================================================= #
-def setup(app):
-    """Sphinx extension setup function, executed at the very end of conf.py."""
-    app.connect("autodoc-process-bases", _unwrap_one_level_hidden_bases)
+# --- Autodoc Base Filtering --- #
+pyml_hidden_bases = {"BaseEstimator", "DataValidatorMixin"}

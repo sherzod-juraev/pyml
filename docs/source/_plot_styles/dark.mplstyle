@@ -1,0 +1,16 @@
+# Plot colours for the dark docs theme (pydata-sphinx-theme dark tokens).
+# Hex colours are written without '#': in rc files '#' starts a comment.
+
+figure.facecolor: none
+axes.facecolor: none
+savefig.transparent: True
+
+text.color: ced6dd
+axes.labelcolor: ced6dd
+axes.edgecolor: 9ca4af
+xtick.color: 9ca4af
+ytick.color: 9ca4af
+grid.color: 48566b
+
+legend.facecolor: none
+legend.edgecolor: 48566b
