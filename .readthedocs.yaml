@@ -13,4 +13,8 @@ python:
         - docs-build
 
 sphinx:
+  fail_on_warning: true
   configuration: docs/source/conf.py
+
+formats:
+  - pdf

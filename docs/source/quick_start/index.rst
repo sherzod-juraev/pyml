@@ -74,6 +74,11 @@ are triangles.
     The examples for the individual models focus on the API itself, so they use placeholder
     variables like ``X_train``, ``y_train``, and ``X_test`` to represent your own data.
 
+Next steps
+----------
+
+Continue with the installation guide, or browse the worked examples for every model.
+
 .. toctree::
     :hidden:
 
