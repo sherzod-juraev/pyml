@@ -1,0 +1,103 @@
+/* Images of the sphinx-gallery examples. Each figure is saved twice, the light copy is in a
+   container with the class only-light, the dark copy in one with only-dark (see
+   _ext/pyml_gallery_scraper.py). The theme hides the one that does not match the mode. */
+
+/* In dark mode the theme puts a light background and a brightness filter on every image that
+   is not marked only-light. The dark copy is already drawn for the dark page. */
+html[data-theme="dark"] .bd-content .only-dark img {
+    background-color: transparent;
+    filter: none;
+}
+
+/* Each example offers a Jupyter notebook and the Python script. Two short outline buttons side
+   by side; the long "Download ...: kmeans.ipynb" text is replaced by a short label (the file
+   name is still in the link and in the tooltip). The zip and the "Go to the end" note are not
+   used. */
+.bd-content .sphx-glr-download-zip,
+.bd-content .sphx-glr-download-link-note {
+    display: none;
+}
+
+.bd-content .sphx-glr-footer-example {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.bd-content .sphx-glr-download {
+    margin: 0;
+    text-align: left;
+}
+
+.bd-content .sphx-glr-download a.reference.download {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border: 1px solid var(--pst-color-border);
+    border-radius: 999px;
+    background: none;
+    box-shadow: none;
+    color: var(--pst-color-text-base);
+    text-decoration: none;
+}
+
+.bd-content .sphx-glr-download a.reference.download code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-family: var(--pst-font-family-base);
+    font-size: 0;
+}
+
+.bd-content .sphx-glr-download a.reference.download code::after {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.bd-content .sphx-glr-download-jupyter a.reference.download code::after {
+    content: "Jupyter notebook";
+}
+
+.bd-content .sphx-glr-download-python a.reference.download code::after {
+    content: "Python script";
+}
+
+@media (hover: hover) {
+    .bd-content .sphx-glr-download a.reference.download:hover {
+        border-color: var(--pst-color-primary);
+        color: var(--pst-color-primary);
+    }
+}
+
+.bd-content .sphx-glr-download a.reference.download:focus-visible {
+    outline: 2px solid var(--pst-color-primary);
+    outline-offset: 2px;
+}
+
+.bd-content .sphx-glr-timing {
+    color: var(--pst-color-text-muted);
+    font-size: 0.85rem;
+}
+
+/* Thumbnails on the family pages: same card as cards.css. */
+.bd-content .sphx-glr-thumbcontainer {
+    min-height: 0;
+    padding: 0.75rem 0.75rem 0.5rem;
+    border: 1px solid var(--pst-color-border);
+    border-radius: 12px;
+    background: var(--pst-color-surface);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+
+.bd-content .sphx-glr-thumbcontainer img {
+    border-radius: 8px;
+    background: #fff;
+}
+
+.bd-content .sphx-glr-thumbnail-title {
+    color: var(--pst-color-text-base);
+    font-weight: 600;
+}
