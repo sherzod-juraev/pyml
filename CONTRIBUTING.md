@@ -291,7 +291,10 @@ Do not repeat in `TestValidateParams` what the registry already proves.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/): `feat`, `fix`,
   `perf`, `docs`, `test`, `build`, `refactor` and `chore`, with a body that explains what
   changed and why.
-- Work happens on `dev`. `main` receives a merge only when all checks pass.
+- Every change is made on its own short-lived branch cut from `main`, named after the work
+  (`feat/pca`, `fix/kmeans-identical-points`, `docs/branch-workflow`), and goes into `main`
+  through a pull request. `main` receives a merge only when all checks pass, and the branch is
+  deleted after the merge. There is no long-lived development branch.
 - `__version__` in `pyml/__init__.py` is the single source of truth, `pyproject.toml` and the
   docs read it. A new model family or a breaking change is a MINOR bump while the version is
   0.x, and a bug fix that changes behavior is a PATCH bump. Housekeeping commits, such as
@@ -305,7 +308,7 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
 `docs/source/changelog/index.rst` (newest first). The format follows
 [Keep a Changelog](https://keepachangelog.com/).
 
-- **Title:** `X.Y.Z` (`=` underline). While the release is developed on `dev`, the title is
+- **Title:** `X.Y.Z` (`=` underline). While the release is not merged yet, the title is
   `X.Y.Z (unreleased)`. No dates, because the page shows no years.
 - **Sections** (`-` underline), always in this order, and only the ones that have entries:
 
@@ -349,7 +352,12 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
 
 ## Releasing
 
-1. Run `uv run nox` on `dev`, and make sure the CI is green.
+A release is a pull request that carries the version bump, so there is no separate release
+branch. A change that does not bump the version (see
+[Commits and versions](#commits-and-versions)) is merged the same way, without steps 2 to 5 and
+7.
+
+1. Run `uv run nox` on the branch of the change, and make sure the CI is green.
 2. Bump `__version__` in `pyml/__init__.py`.
 3. Take the newest datasets for the examples: `uv lock --upgrade-package pyml-datasets` (its
    source is the `main` branch and `uv.lock` pins the commit), delete the generated folders in
@@ -359,9 +367,11 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
    that was added for this release must carry the new version (see
    [Docstrings](#docstrings)).
 5. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
-   toctree in `docs/source/changelog/index.rst`. While the release is developed on `dev`, its
-   title is `X.Y.Z (unreleased)`; remove the suffix in the release commit, before merging into
-   `main`.
-6. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
-7. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
+   toctree in `docs/source/changelog/index.rst`. While the pull request is open, its
+   title is `X.Y.Z (unreleased)`; remove the suffix in the last commit of the pull request,
+   before merging into `main`.
+6. Open a pull request from the branch into `main`, check that the CI is green, merge it and
+   delete the branch.
+7. Update the local `main`, create the tag `vX.Y.Z` on it and a GitHub release titled
+   `vX.Y.Z — <Model Family Name>`.
 8. Check that the Read the Docs build is green.
