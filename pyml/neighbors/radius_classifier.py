@@ -37,7 +37,7 @@ class RadiusNeighborsClassifier(Classifier):
         Radius within which training samples are considered neighbors.
         Must be positive and finite.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        Distance metric. See :doc:`/api-reference/core/distance-metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when voting. "uniform" gives every

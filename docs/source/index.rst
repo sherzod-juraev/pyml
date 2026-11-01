@@ -13,41 +13,81 @@ pyml
 .. toctree::
     :hidden:
 
-    philosophy
-    quick_start/index
-    api/pyml/index
-    known_limitations
+    getting-started
+    examples/index
+    api-reference/index
     changelog/index
+    about
 
 .. only:: html
 
-    .. grid:: 1 2 2 3
+    .. grid:: 1 2 2 2
         :gutter: 3
         :class-container: sd-mb-4
 
-        .. grid-item-card:: Philosophy
-            :link: philosophy
-            :link-type: doc
+        .. grid-item-card::
             :text-align: center
             :shadow: sm
 
+            Getting Started
+            ^^^^^^^^^^^^^^^
+            Install pyml and fit your first model.
+
+            +++
+            .. button-ref:: getting-started
+                :ref-type: doc
+                :color: primary
+                :expand:
+
+                Get started
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: sm
+
+            Examples
+            ^^^^^^^^
+            Worked examples with real datasets, one page
+            for every model.
+
+            +++
+            .. button-ref:: examples/index
+                :ref-type: doc
+                :color: primary
+                :expand:
+
+                Browse the examples
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: sm
+
+            API Reference
+            ^^^^^^^^^^^^^
+            Full documentation of every class, method, and parameter in
+            the pyml package.
+
+            +++
+            .. button-ref:: api-reference/index
+                :ref-type: doc
+                :color: primary
+                :expand:
+
+                Browse the API
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: sm
+
+            About
+            ^^^^^
             Why pyml exists, and what
             building it from scratch taught me.
 
-        .. grid-item-card:: Quick Start
-            :link: quick_start/index
-            :link-type: doc
-            :text-align: center
-            :shadow: sm
+            +++
+            .. button-ref:: about
+                :ref-type: doc
+                :color: primary
+                :expand:
 
-            Installation, the fit/predict philosophy, and worked examples
-            for every model.
-
-        .. grid-item-card:: API Reference
-            :link: api/pyml/index
-            :link-type: doc
-            :text-align: center
-            :shadow: sm
-
-            Full documentation of every class, method, and parameter in
-            the pyml package.
+                About the project

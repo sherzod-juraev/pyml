@@ -1631,6 +1631,7 @@ docs = [
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-copybutton" },
     { name = "sphinx-design" },
+    { name = "sphinx-gallery" },
     { name = "sphinx-lint" },
     { name = "sphinx-notfound-page" },
     { name = "sphinx-sitemap" },
@@ -1645,6 +1646,7 @@ docs-build = [
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-copybutton" },
     { name = "sphinx-design" },
+    { name = "sphinx-gallery" },
     { name = "sphinx-notfound-page" },
     { name = "sphinx-sitemap" },
     { name = "sphinxext-opengraph" },
@@ -1664,9 +1666,14 @@ docs-live = [
     { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-copybutton" },
     { name = "sphinx-design" },
+    { name = "sphinx-gallery" },
     { name = "sphinx-notfound-page" },
     { name = "sphinx-sitemap" },
     { name = "sphinxext-opengraph" },
+]
+examples = [
+    { name = "matplotlib" },
+    { name = "pyml-datasets" },
 ]
 nox = [
     { name = "nox" },
@@ -1704,12 +1711,13 @@ docs = [
     { name = "doc8", specifier = ">=1.0.0" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
-    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main" },
     { name = "rstcheck", specifier = ">=6.0.0" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
     { name = "sphinx-copybutton", specifier = ">=0.5.0" },
     { name = "sphinx-design", specifier = ">=0.5.0" },
+    { name = "sphinx-gallery", specifier = ">=0.22.1" },
     { name = "sphinx-lint", specifier = ">=1.0.0" },
     { name = "sphinx-notfound-page", specifier = ">=1.1.0" },
     { name = "sphinx-sitemap", specifier = ">=2.6.0" },
@@ -1719,11 +1727,12 @@ docs-build = [
     { name = "autodocsumm", specifier = ">=0.2.14" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
-    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
     { name = "sphinx-copybutton", specifier = ">=0.5.0" },
     { name = "sphinx-design", specifier = ">=0.5.0" },
+    { name = "sphinx-gallery", specifier = ">=0.22.1" },
     { name = "sphinx-notfound-page", specifier = ">=1.1.0" },
     { name = "sphinx-sitemap", specifier = ">=2.6.0" },
     { name = "sphinxext-opengraph", specifier = ">=0.13.0" },
@@ -1737,22 +1746,27 @@ docs-live = [
     { name = "autodocsumm", specifier = ">=0.2.14" },
     { name = "matplotlib", specifier = ">=3.9.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
-    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main" },
     { name = "sphinx", specifier = ">=7.0.0" },
     { name = "sphinx-autobuild", specifier = ">=2025.8.25" },
     { name = "sphinx-autodoc-typehints", specifier = ">=2.2.0" },
     { name = "sphinx-copybutton", specifier = ">=0.5.0" },
     { name = "sphinx-design", specifier = ">=0.5.0" },
+    { name = "sphinx-gallery", specifier = ">=0.22.1" },
     { name = "sphinx-notfound-page", specifier = ">=1.1.0" },
     { name = "sphinx-sitemap", specifier = ">=2.6.0" },
     { name = "sphinxext-opengraph", specifier = ">=0.13.0" },
+]
+examples = [
+    { name = "matplotlib", specifier = ">=3.9.0" },
+    { name = "pyml-datasets", git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main" },
 ]
 nox = [{ name = "nox", specifier = ">=2026.2.9" }]
 
 [[package]]
 name = "pyml-datasets"
-version = "0.8.0"
-source = { git = "https://github.com/sherzod-juraev/pyml-datasets.git?tag=v0.8.0#4a8dcf9da517f6272c43f32f9a832006a3217d7e" }
+version = "0.10.0"
+source = { git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main#759fecb401fbb4b11690463cb894a9b5eba6ecf3" }
 dependencies = [
     { name = "numpy" },
 ]
@@ -2236,6 +2250,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/13/7b/804f311da4663a4aecc6cf7abd83443f3d4ded970826d0c958edc77d4527/sphinx_design-0.7.0.tar.gz", hash = "sha256:d2a3f5b19c24b916adb52f97c5f00efab4009ca337812001109084a740ec9b7a", size = 2203582, upload-time = "2026-01-19T13:12:53.297Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/30/cf/45dd359f6ca0c3762ce0490f681da242f0530c49c81050c035c016bfdd3a/sphinx_design-0.7.0-py3-none-any.whl", hash = "sha256:f82bf179951d58f55dca78ab3706aeafa496b741a91b1911d371441127d64282", size = 2220350, upload-time = "2026-01-19T13:12:51.077Z" },
+]
+
+[[package]]
+name = "sphinx-gallery"
+version = "0.22.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+    { name = "sphinx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/73/64/5f1e9b7780d387c6804d0f9d6f2f2dd89ac70e3bee73f61ffbfcc38defde/sphinx_gallery-0.22.1.tar.gz", hash = "sha256:15560a4c2dc0b4a4924c64e3bcb8c6dba7ddad6dcb77c50e255615e645eb18aa", size = 509262, upload-time = "2026-09-18T19:38:54.518Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/fb/bbaef2395227fd4053184383a32fc43d6d42aa7c49097d9518103ffb6615/sphinx_gallery-0.22.1-py3-none-any.whl", hash = "sha256:5a5ef17bd1d1d127845b09f2cf33a4d4295033a0ef00e1f2623fabcc9365aff3", size = 487224, upload-time = "2026-09-18T19:38:52.964Z" },
 ]
 
 [[package]]

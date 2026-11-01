@@ -13,13 +13,13 @@ import nox
 PYTHON_VERSIONS = ["3.12", "3.13", "3.14"]
 DEFAULT_PYTHON = "3.13"
 
-_SOURCE_PATHS = ["pyml", "tests", "noxfile.py"]
+_SOURCE_PATHS = ["pyml", "tests", "examples", "noxfile.py"]
 _DOCS_SOURCE = "docs/source"
 _DOCS_HTML = "docs/build/html"
 _DOCS_LINKCHECK = "docs/build/linkcheck"
 
 _WHEEL_REQUIRED = ["pyml/py.typed", "pyml/__init__.py", "pyml/__init__.pyi"]
-_WHEEL_FORBIDDEN_PREFIXES = ("tests/", "docs/")
+_WHEEL_FORBIDDEN_PREFIXES = ("tests/", "docs/", "examples/")
 
 # Runs inside the session, from a folder outside the repository, against the installed wheel.
 _SMOKE_TEST = """
@@ -50,6 +50,26 @@ def sync(session: nox.Session, *flags: str) -> None:
         *flags,
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
         external=True,
+    )
+
+
+def _generated_gallery() -> list[Path]:
+    """Return the folders that sphinx-gallery writes into the documentation during a build.
+
+    There is one folder for every family of examples, and one for the back references. They are
+    not in git (see .gitignore), they stay on the disk after a build, and sphinx-gallery writes
+    them with the line endings of the operating system, so the style checks must not read them.
+    """
+    examples = Path(_DOCS_SOURCE, "examples")
+    return sorted(path for path in examples.iterdir() if path.is_dir()) if examples.is_dir() else []
+
+
+def _rst_files(generated: list[Path]) -> list[str]:
+    """Return the reStructuredText files of the documentation that people write by hand."""
+    return sorted(
+        str(path)
+        for path in Path(_DOCS_SOURCE).rglob("*.rst")
+        if not any(path.is_relative_to(folder) for folder in generated)
     )
 
 
@@ -101,9 +121,10 @@ def lint(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def types(session: nox.Session) -> None:
     """Check the types with mypy in strict mode."""
-    sync(session, "--group", "dev-types", "--group", "dev-test")
+    sync(session, "--group", "dev-types", "--group", "dev-test", "--group", "examples")
     session.run("mypy", "pyml")
     session.run("mypy", "tests")
+    session.run("mypy", "examples")
 
 
 @nox.session(python=DEFAULT_PYTHON)
@@ -140,9 +161,14 @@ def tests_min(session: nox.Session) -> None:
 def docs(session: nox.Session) -> None:
     """Check the style of the documentation and build it with warnings as errors."""
     sync(session, "--group", "docs")
-    session.run("sphinx-lint", _DOCS_SOURCE)
-    session.run("doc8", _DOCS_SOURCE)
-    session.run("rstcheck", "--recursive", _DOCS_SOURCE)
+    # None of the three tools can be told to skip a folder in the same way (sphinx-lint reads
+    # no configuration file, rstcheck has no setting for paths, and doc8 matches globs against
+    # "/" paths), so the generated folders are left out here, with the same path on every system.
+    generated = _generated_gallery()
+    ignore = [argument for folder in generated for argument in ("--ignore", str(folder))]
+    session.run("sphinx-lint", *ignore, str(Path(_DOCS_SOURCE)))
+    session.run("doc8", *_rst_files(generated))
+    session.run("rstcheck", *_rst_files(generated))
     session.run("sphinx-build", "-b", "html", "-W", "--keep-going", "-E", _DOCS_SOURCE, _DOCS_HTML)
 
 

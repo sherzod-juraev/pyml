@@ -1,0 +1,8 @@
+/* The author's photo on the About page. The size is set here and not with the width option of
+   the image directive: with a width, Sphinx wraps the image in a link to the full-size file,
+   and a click on the photo opens it. */
+.bd-content img.author-photo {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+}

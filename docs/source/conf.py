@@ -53,10 +53,14 @@ extensions = [
     "sphinxext.opengraph",
     "sphinx_sitemap",
     "autodocsumm",
+    "sphinx_gallery.gen_gallery",
     # custom extensions
     "pyml_hide_bases",
     "pyml_themed_plot",
     "pyml_empty_sidebar",
+    "pyml_dataset_info",
+    "pyml_gallery_scraper",
+    "pyml_gallery_groups",
 ]
 
 # --- Nitpicky --- #
@@ -194,14 +198,16 @@ html_static_path = [
     "_static",
 ]
 html_css_files = [
+    "css/fonts.css",
     "css/header.css",
     "css/cards.css",
     "css/left_sidebar.css",
     "css/right_sidebar.css",
     "css/breadcrumb.css",
     "css/footer_nav.css",
-    "pygments.css",
     "css/code_blocks.css",
+    "css/gallery.css",
+    "css/about.css",
 ]
 
 # --- LaTeX / PDF Output --- #
@@ -214,13 +220,9 @@ latex_elements = {
     "figure_align": "H",
     "fontpkg": "",
     "preamble": r"\newcommand{\pymltagline}{" + _HOME_DESCRIPTION + r"}" + r"\usepackage{pyml}",
-    # Keep \sphinxtableofcontents, otherwise the table of contents disappears.
     "tableofcontents": r"\setcounter{tocdepth}{2}\sphinxtableofcontents",
     "fncychap": "",
 }
-latex_additional_files = [
-    "_latex/pyml.sty",
-]
 latex_documents = [
     (
         "index",
@@ -230,12 +232,71 @@ latex_documents = [
         "manual",
     ),
 ]
-# The default "colorrows" style fails with "TeX capacity exceeded" on 2026 TeX
-# distributions (sphinx-doc/sphinx#14465). Remove once Sphinx fixes it.
-latex_table_style = ["booktabs"]
+latex_additional_files = [
+    "_latex/pyml.sty",
+]
+latex_show_urls = "no"
 latex_domain_indices = False
-# xindy is not available on Windows/MiKTeX; makeindex ships with every TeX system.
 latex_use_xindy = False
+latex_table_style = ["booktabs"]
 
 # --- Autodoc Base Filtering --- #
 pyml_hidden_bases = {"BaseEstimator", "DataValidatorMixin"}
+
+# --- Sphinx-gallery --- #
+# The example scripts live in <repo>/examples/<family>/ and are plain Python files. Every
+# family that has at least one script becomes a gallery in docs/source/examples/<family>/
+# (generated, ignored by git). A new family also needs its card and its toctree entry in
+# docs/source/examples/index.rst, otherwise the build warns.
+_EXAMPLES = Path(__file__).parents[2] / "examples"
+_FAMILIES = (
+    sorted(p.name for p in _EXAMPLES.iterdir() if any(p.glob("*.py")))
+    if _EXAMPLES.is_dir()
+    else []
+)
+# Groups of the example cards on the index page of a family, see _ext/pyml_gallery_groups.py.
+# (heading, one sentence, scripts in the order of the cards). A family without an entry keeps
+# one grid. Every script of a grouped family must be in a group, otherwise the build warns.
+pyml_gallery_groups = {
+    "linear-model": [
+        (
+            "Regression",
+            "Predict a number. Start with Linear Regression, then add a penalty on the weights.",
+            ["linear-regression", "ridge", "lasso", "elastic-net"],
+        ),
+        (
+            "Classification",
+            "Predict one of two classes. The same four models, with the sigmoid on top.",
+            [
+                "logistic-regression",
+                "ridge-classifier",
+                "lasso-classifier",
+                "elastic-net-classifier",
+            ],
+        ),
+    ],
+}
+
+sphinx_gallery_conf = {
+    # Order of the examples of a family, see EXAMPLE_ORDER in _ext/pyml_gallery_scraper.py.
+    "within_subsection_order": "pyml_gallery_scraper.ExampleOrder",
+    "examples_dirs": [f"../../examples/{name}" for name in _FAMILIES],
+    "gallery_dirs": [f"examples/{name}" for name in _FAMILIES],
+    # Every script runs, except the ones that start with an underscore (helpers).
+    # filename_pattern is matched against the full path, which has "\\" on Windows and "/"
+    # elsewhere, so both separators are allowed. ignore_pattern sees the bare file name.
+    "filename_pattern": r"[\\/][^_\\/][^\\/]*\.py$",
+    "ignore_pattern": r"^_",
+    "abort_on_example_error": True,
+    # Light and dark images, see _ext/pyml_gallery_scraper.py.
+    "image_scrapers": ("pyml_gallery_scraper.themed_scraper",),
+    "reset_modules": ("matplotlib", "pyml_gallery_scraper.reset_matplotlib"),
+    # Links from the API reference to the examples that use a class (.. minigallery::).
+    "doc_module": ("pyml",),
+    "backreferences_dir": "examples/backreferences",
+    "remove_config_comments": True,
+    "download_all_examples": False,
+    "show_signature": False,
+    "show_memory": False,
+    "write_computation_times": False,
+}

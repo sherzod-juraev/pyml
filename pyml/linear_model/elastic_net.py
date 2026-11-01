@@ -74,11 +74,29 @@ class ElasticNet(_LinearModelBase):
 
     .. note::
         Elastic Net combines Ridge's smooth shrinkage with Lasso's
-        ability to zero out coefficients entirely. It is particularly
+        ability to push coefficients toward zero. It is particularly
         useful when features are correlated: Lasso alone tends to
-        arbitrarily pick one feature from a correlated group and zero
-        out the rest, while Elastic Net's L2 component encourages
+        arbitrarily pick one feature from a correlated group and push
+        the rest toward zero, while Elastic Net's L2 component encourages
         correlated features to be shrunk together.
+
+    .. note::
+        The L1 term is handled with a subgradient, so a coefficient does
+        not land exactly on zero but moves back and forth around it, as
+        in :class:`~pyml.linear_model.Lasso`. Do not test for
+        ``coef_ == 0``. How close a coefficient that should be dropped
+        gets to zero depends mainly on ``max_iter``, so look at the
+        fitted values and pick a threshold for your data. The swing
+        around zero is of the order of ``learning_rate * alpha * l1_ratio``.
+
+    .. note::
+        The two ends of ``l1_ratio`` are other models of this package.
+        With ``l1_ratio=1`` the penalty is the one of
+        :class:`~pyml.linear_model.Lasso`, and with ``l1_ratio=0`` it is
+        ``alpha / 2 * sum(coef_ ** 2)``, which is the penalty of
+        :class:`~pyml.linear_model.Ridge` with ``alpha`` halved. With the
+        other parameters equal, ``ElasticNet(alpha=a, l1_ratio=0)`` fits
+        the same weights as ``Ridge(alpha=a / 2)``.
 
     .. note::
         As with all gradient-descent-based linear models here, features

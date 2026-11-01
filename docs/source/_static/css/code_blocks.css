@@ -16,33 +16,33 @@ div.highlight pre {
     background: transparent !important;
 }
 
-div.highlight::after {
-    content: attr(data-lang, "");
-    position: absolute;
-    top: 0.5rem;
-    right: 3.2rem;
-    font-family: var(--pst-font-family-monospace);
-    font-size: 0.7rem;
-    letter-spacing: 0.03em;
-    color: var(--pst-color-text-muted, #888);
-    text-transform: uppercase;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
 .copybtn {
     opacity: 0.45;
     border-radius: 6px !important;
     transition: opacity 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
 
-div.highlight:hover .copybtn {
+div.highlight:hover .copybtn,
+.copybtn:focus-visible {
     opacity: 1;
 }
 
-.copybtn:hover {
-    background-color: var(--pst-color-primary-bg) !important;
-    transform: scale(1.05);
+@media (hover: none) {
+    .copybtn {
+        opacity: 1;
+    }
+}
+
+@media (hover: hover) {
+    .copybtn:hover {
+        background-color: var(--pst-color-primary-bg) !important;
+        transform: scale(1.05);
+    }
+}
+
+.copybtn:focus-visible {
+    outline: 2px solid var(--pst-color-primary) !important;
+    outline-offset: 1px;
 }
 
 .copybtn:active {
@@ -54,11 +54,14 @@ div.highlight:hover .copybtn {
     color: var(--pst-color-success, #1a7f37) !important;
 }
 
-p code.literal,
-li code.literal,
-td code.literal {
+/* Inline code in the page body only (not in the sidebars, whose links would get a background).
+   The text uses the darker teal: the plain primary color on this tint is only
+   3.9:1 in the light theme. In the dark theme both colors are the same. */
+.bd-article p code.literal,
+.bd-article li code.literal,
+.bd-article td code.literal {
     background-color: var(--pst-color-primary-bg);
-    color: var(--pst-color-primary);
+    color: var(--pst-color-link-higher-contrast, var(--pst-color-primary));
     border: none;
     border-radius: 4px;
     padding: 0.15rem 0.4rem;
@@ -69,4 +72,10 @@ div.highlight-bash pre span.gp,
 div.highlight-console pre span.gp {
     color: var(--pst-color-text-muted, #999);
     user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .copybtn {
+        transition: none;
+    }
 }

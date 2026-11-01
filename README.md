@@ -27,7 +27,7 @@ mathematical documentation. No TensorFlow, no PyTorch — just the math.
   package with the classic datasets used in the examples
 
 Curious why this project exists, not just what it does? See
-[Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html).
+[About](https://pyml-edu.readthedocs.io/en/latest/about.html).
 
 ## Quick example
 
@@ -95,11 +95,11 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 
 ## Documentation
 
-- [Quick Start](https://pyml-edu.readthedocs.io/en/latest/quick_start/index.html)
-- [API Reference](https://pyml-edu.readthedocs.io/en/latest/api/pyml/index.html)
-- [Examples](https://pyml-edu.readthedocs.io/en/latest/quick_start/examples/index.html)
-- [Philosophy](https://pyml-edu.readthedocs.io/en/latest/philosophy.html)
+- [Getting Started](https://pyml-edu.readthedocs.io/en/latest/getting-started.html)
+- [Examples](https://pyml-edu.readthedocs.io/en/latest/examples/index.html)
+- [API Reference](https://pyml-edu.readthedocs.io/en/latest/api-reference/index.html)
 - [Changelog](https://pyml-edu.readthedocs.io/en/latest/changelog/index.html)
+- [About](https://pyml-edu.readthedocs.io/en/latest/about.html)
 
 ## Development
 

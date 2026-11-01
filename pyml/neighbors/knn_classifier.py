@@ -37,7 +37,7 @@ class KNNClassifier(Classifier):
         Number of nearest neighbors to use. Must be at least 1 and must
         not exceed the number of training samples.
     metric : {"euclidean", "chebyshev", "cityblock"}, optional
-        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        Distance metric. See :doc:`/api-reference/core/distance-metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
     weights : {"uniform", "distance"}, optional
         How neighbors are weighted when voting. "uniform" gives every
