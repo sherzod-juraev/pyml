@@ -54,7 +54,7 @@ class Lasso(_LinearModelBase):
         Whether to fit an intercept term b.
     alpha : float, optional
         Regularization strength. Larger values push more coefficients
-        exactly to zero. ``alpha=0`` recovers ordinary least squares.
+        toward zero. ``alpha=0`` recovers ordinary least squares.
 
     Attributes
     ----------
@@ -67,18 +67,26 @@ class Lasso(_LinearModelBase):
 
 
     .. note::
-        Unlike Ridge, Lasso can shrink coefficients exactly to zero,
-        since the L1 penalty applies a constant push regardless of a
-        coefficient's magnitude. This makes it useful for automatic
-        feature selection: features with a coefficient of exactly 0.0
-        contribute nothing to the prediction.
+        Unlike Ridge, Lasso pushes the coefficients of features that add
+        little to the prediction toward zero, since the L1 penalty applies
+        a constant push regardless of a coefficient's magnitude. This makes
+        it useful for feature selection. The coefficients do not land
+        exactly on zero, though: gradient descent with a subgradient moves
+        them back and forth around it, so do not test for ``coef_ == 0``.
+        How close a coefficient that should be dropped gets to zero
+        depends mainly on the number of iterations, so there is no fixed
+        threshold below which a coefficient is zero. Look at the fitted
+        values and pick a threshold for your data.
 
     .. note::
         Because the subgradient update takes a fixed-size step
-        (independent of the coefficient's magnitude), a learning rate
-        or alpha that is too large can cause small coefficients to
-        oscillate around zero instead of settling exactly on it. If
-        coefficients don't stabilize, try reducing learning_rate.
+        (independent of the coefficient's magnitude), a coefficient near
+        zero keeps swinging around it, by an amount of the order of
+        ``learning_rate * alpha``. A smaller learning_rate lowers the
+        swing but needs more iterations, so raise max_iter with it. The
+        number of coefficients that look dropped grows with max_iter: if
+        the coefficients of features that should be dropped stay large,
+        the loop may have stopped before they reached zero.
 
     .. note::
         As with all gradient-descent-based linear models here, features

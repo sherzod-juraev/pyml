@@ -57,7 +57,7 @@ class DBSCAN(Clusterer):
         point. Must be at least 1 and must not exceed the number of
         training samples.
     metric : {"euclidean", "cityblock", "chebyshev"}, optional
-        Distance metric. See :doc:`/api/pyml/core/distance_metrics` for
+        Distance metric. See :doc:`/api-reference/core/distance-metrics` for
         formulas. Passed directly to :func:`scipy.spatial.distance.cdist`.
 
     Attributes
