@@ -61,15 +61,20 @@ docs-lint = [
     "rstcheck>=6.0.0",
     "sphinx-lint>=1.0.0",
 ]
-docs-build = [
-    "autodocsumm>=0.2.14",
+# --- Examples: the scripts in examples/ and the docs that run them --- #
+examples = [
     "matplotlib>=3.9.0",
-    "pydata-sphinx-theme>=0.15.0",
     "pyml-datasets",
+]
+docs-build = [
+    {include-group = "examples"},
+    "autodocsumm>=0.2.14",
+    "pydata-sphinx-theme>=0.15.0",
     "sphinx>=7.0.0",
     "sphinx-autodoc-typehints>=2.2.0",
     "sphinx-copybutton>=0.5.0",
     "sphinx-design>=0.5.0",
+    "sphinx-gallery>=0.22.1",
     "sphinx-notfound-page>=1.1.0",
     "sphinxext-opengraph>=0.13.0",
     "sphinx-sitemap>=2.6.0",
@@ -86,7 +91,7 @@ nox = ["nox>=2026.2.9"]
 
 # --- Source of dependencies that are not on PyPi --- #
 [tool.uv.sources]
-pyml-datasets = { git = "https://github.com/sherzod-juraev/pyml-datasets.git", tag = "v0.8.0" }
+pyml-datasets = { git = "https://github.com/sherzod-juraev/pyml-datasets.git", branch = "main" }
 
 # --- Urls --- #
 [project.urls]
@@ -136,6 +141,7 @@ line-length = 100
 include = [
     "pyml/**/*.py",
     "tests/**/*.py",
+    "examples/**/*.py",
     "noxfile.py",
 ]
 exclude = [
@@ -167,6 +173,10 @@ convention = "numpy"
     "N802",
     "SIM",
 ]
+# The title of a gallery example is a reStructuredText heading, not a numpy-style summary line.
+"examples/**/*.py" = [
+    "D",
+]
 
 # --- Mypy --- #
 [tool.mypy]
@@ -187,6 +197,7 @@ whitelist-regex = []
 color = true
 exclude = [
     "docs",
+    "examples",
     "tests",
 ]
 ignore-init-method = false
@@ -200,13 +211,18 @@ ignore-nested-functions = false
 ignore-nested-classes = false
 
 # --- Docs quality tools --- #
+# The nox session "docs" decides which files these tools read: it leaves out the folders that
+# sphinx-gallery generates (see _generated_gallery in noxfile.py). sphinx-lint reads no
+# configuration file, so it has no table here.
 [tool.rstcheck]
 ignore_directives = [
     "autoclass", "autofunction",
     "button-link", "button-ref",
     "card",
+    "dataset-info",
     "dropdown",
     "grid", "grid-item-card",
+    "image-sg",
     "only",
     "plot",
     "tab-item", "tab-set",
@@ -227,20 +243,7 @@ ignore_rules = [
     "ref",
 ]
 report_level = "warning"
-ignore_paths = [
-    "docs/build/*",
-]
 
 [tool.doc8]
 max-line-length = 100
 ignore = ["D000",]
-ignore_paths = [
-    "docs/build",
-    "docs/source/_static",
-]
-
-[tool.sphinx-lint]
-max-line-length = 100
-exclude = [
-    "docs/build",
-]
