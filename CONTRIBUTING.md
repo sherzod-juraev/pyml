@@ -39,6 +39,7 @@ pyml/
 ├── .github/workflows/          # CI workflows
 ├── assets/                     # Branding
 ├── docs/                       # Sphinx documentation and changelog
+├── examples/                   # Example scripts, one folder per family (run by the docs build)
 ├── pyml/                       # Source code
 │   ├── cluster/                # Clustering
 │   ├── core/                   # Base classes, validation, exceptions, type aliases
@@ -83,8 +84,9 @@ runtime dependencies (NumPy and SciPy) stay in `[project].dependencies`.
 | `dev-types`     |                    mypy, scipy-stubs              |
 | `dev-docstring` |                    interrogate                    |
 | `dev`           |           All four `dev-*` groups above           |
+| `examples`      |    matplotlib and pyml-datasets (the example scripts) |
 | `docs-lint`     |          doc8, rstcheck, sphinx-lint              |
-| `docs-build`    |           Sphinx and its extensions               |
+| `docs-build`    | `examples`, Sphinx, sphinx-gallery and the other extensions |
 | `docs`          |           `docs-lint` and `docs-build`            |
 | `docs-live`     | `docs-build` and sphinx-autobuild (live preview)  |
 | `nox`           |       Nox, which runs all the quality checks      |
@@ -137,10 +139,10 @@ commands. This guarantees reproducibility across machines and Python versions.
 | Session      |      Python       |                             What it runs                              |
 |:-------------|:-----------------:|:---------------------------------------------------------------------:|
 | `lint`       |       3.13        |                  ruff check and ruff format --check                   |
-| `types`      |       3.13        |                  mypy (strict) on `pyml` and `tests`                  |
+| `types`      |       3.13        |                  mypy (strict) on `pyml`, `tests` and `examples`        |
 | `docstrings` |       3.13        |             interrogate, docstring coverage must be 100%              |
 | `tests`      | 3.12, 3.13, 3.14  |                                pytest                                 |
-| `docs`       |       3.13        |            sphinx-lint, doc8, rstcheck, `sphinx-build -W`             |
+| `docs`       |       3.13        |            sphinx-lint, doc8, rstcheck, `sphinx-build -W`, runs the examples |
 | `linkcheck`  |       3.13        |         Sphinx linkcheck, validity of every link in the docs          |
 | `tests-min`  |       3.12        |       pytest with the oldest NumPy and SciPy that pyml supports       |
 | `package`    |       3.13        |   builds the wheel, checks its contents, imports an installed copy    |
@@ -172,7 +174,10 @@ uv run sphinx-autobuild docs\source docs\build\html\ # Windows
 Then open http://127.0.0.1:8000 in your browser and stop the server with `Ctrl+C`.
 
 How the documentation is organized (layout, custom extensions, the PDF build and
-its pitfalls) is described in [docs/README.md](docs/README.md).
+its pitfalls) is described in [docs/README.md](docs/README.md), and how to add a page, an API
+entry or an example in [docs/AUTHORING.md](docs/AUTHORING.md). The first build runs every
+script in `examples/`, so it takes longer than the next ones: sphinx-gallery runs a script again
+only when the file changes.
 
 ## Conventions
 
@@ -228,7 +233,7 @@ def _validate_params(self) -> None:
   the method and the call is `cast(Any, super())._validate_params()`.
 - **Range, not type.** The hook does not check types, and parameters for which any value makes
   sense (`fit_intercept`) are not checked at all. See
-  [Known limitations](docs/source/known_limitations.rst).
+  [Known trade-offs](docs/README.md#known-trade-offs).
 - The hook has a full docstring (interrogate counts private members), and `Raises` lists
   `InvalidParameterError`.
 
@@ -335,21 +340,28 @@ Each release has its own page, `docs/source/changelog/X.Y.Z.rst`, listed in the 
    and its invalid parameter sets, and add a `TestValidateParams` class only for what the
    registry does not prove (messages, boundary values). A new package must be listed in
    `pyml.__all__`, which is how `tests/test_lazy_imports.py` finds it.
-6. Add the documentation: an API page in `docs/source/api/pyml/`, an example page in
-   `docs/source/quick_start/examples/<family>/`, and a row in the README table.
+6. Add the documentation: an API page in `docs/source/api-reference/<family>/` and an example
+   script in `examples/<family>/<model>.py`, both as described in
+   [docs/AUTHORING.md](docs/AUTHORING.md), and a row in the README table. A new family also
+   needs a card and a toctree entry in `docs/source/api-reference/index.rst` and in
+   `docs/source/examples/index.rst`.
 7. Run `uv run nox` until every session passes.
 
 ## Releasing
 
 1. Run `uv run nox` on `dev`, and make sure the CI is green.
 2. Bump `__version__` in `pyml/__init__.py`.
-3. Check the version markers: every `versionadded`, `versionchanged` and `deprecated` marker
+3. Take the newest datasets for the examples: `uv lock --upgrade-package pyml-datasets` (its
+   source is the `main` branch and `uv.lock` pins the commit), delete the generated folders in
+   `docs/source/examples/` and build the docs, so the examples show the current data. Commit
+   `uv.lock`.
+4. Check the version markers: every `versionadded`, `versionchanged` and `deprecated` marker
    that was added for this release must carry the new version (see
    [Docstrings](#docstrings)).
-4. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
+5. Add `docs/source/changelog/X.Y.Z.rst` (copy the previous page) and put it at the top of the
    toctree in `docs/source/changelog/index.rst`. While the release is developed on `dev`, its
    title is `X.Y.Z (unreleased)`; remove the suffix in the release commit, before merging into
    `main`.
-5. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
-6. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
-7. Check that the Read the Docs build is green.
+6. Open a pull request from `dev` into `main`, check that the CI is green, and merge it.
+7. Create the tag `vX.Y.Z` on `main` and a GitHub release titled `vX.Y.Z — <Model Family Name>`.
+8. Check that the Read the Docs build is green.
