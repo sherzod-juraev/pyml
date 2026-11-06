@@ -56,6 +56,9 @@ class LassoClassifier(_LogisticRegressionBase):
         Learned weight vector, of shape (n_features,).
     intercept_ : float
         Learned intercept term. Remains 0.0 if fit_intercept is False.
+    classes_ : ClassificationTarget
+        The two distinct class labels seen in fit, sorted ascending, of
+        shape (2,). ``classes_[1]`` is the positive class.
     n_iter_ : int
         Number of iterations actually run before stopping.
 
