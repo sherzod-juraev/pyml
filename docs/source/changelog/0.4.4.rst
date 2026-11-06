@@ -1,0 +1,49 @@
+0.4.4
+=====
+
+Added
+-----
+
+- ``DecisionTreeClassifier`` and ``DecisionTreeRegressor`` accept ``max_features`` and
+  ``random_state``. With ``max_features`` smaller than the number of features, each node draws
+  its own random subset of ``max_features`` candidate features, without replacement, and looks
+  for the best split among them only. This is the per-node feature sampling that random forests
+  use to decorrelate their trees. ``random_state`` seeds the draw, so a fixed integer gives the
+  same tree on every fit. The default, ``max_features=None``, uses every feature, and the tree
+  is exactly the one built by earlier versions. Both parameters come after the existing ones,
+  so positional calls keep working.
+- ``pyml.core.param_checks`` gained ``check_integer``, which accepts Python and NumPy integers
+  and rejects floats and ``bool``, with an optional lower bound.
+
+Changed
+-------
+
+- Integer hyper-parameters are now checked for type as well as range: ``max_depth``,
+  ``min_samples``, ``max_features`` and ``random_state`` of the trees, ``n_clusters``,
+  ``max_iter`` and ``random_state`` of ``KMeans``, ``min_samples`` of ``DBSCAN``, ``max_iter``
+  of the linear and logistic models and ``n_neighbors`` of ``KNNClassifier`` and
+  ``KNNRegressor``. A float raises ``InvalidParameterError``, including a whole-valued one, so
+  ``max_depth=3.0`` that used to fit now fails on ``fit``. Pass ``3`` instead.
+
+Fixed
+-----
+
+- ``predict_proba`` of ``LogisticRegression``, ``RidgeClassifier``, ``LassoClassifier`` and
+  ``ElasticNetClassifier`` validated nothing. Before ``fit`` it raised ``AttributeError``, input
+  with the wrong number of features failed inside NumPy, and input containing NaN returned NaN
+  probabilities without an error. It now runs the same checks as ``predict`` and raises
+  ``NotFittedError``, ``ShapeMismatchError`` or ``ValueError``.
+- A non-integer hyper-parameter could slip through validation. ``max_depth=2.5`` fitted a tree,
+  and ``KMeans(random_state=1.5)`` passed the checks and then failed inside NumPy. Both now
+  raise ``InvalidParameterError`` on ``fit``.
+
+Development
+-----------
+
+- The contract test has a ``predict_proba`` section that runs on every registered classifier
+  that has the method.
+- ``tests/registry.py`` lists float values among the invalid hyper-parameters of every estimator
+  with an integer parameter.
+- The decision-tree tests cover the feature sampling: ``max_features`` equal to the number of
+  features gives the default tree, a fixed seed gives the same tree, and each node draws its own
+  candidates.
