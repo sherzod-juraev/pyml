@@ -112,6 +112,36 @@ class TestInitialization:
 
         assert model.n_iter_ == 1
 
+    def test_identical_points_fit_with_a_warning(self):
+        X = np.ones((6, 2))
+
+        with pytest.warns(RuntimeWarning) as record:
+            model = KMeans(n_clusters=4, random_state=0).fit(X)
+
+        messages = [str(warning.message) for warning in record]
+        assert sum("only 1 distinct points" in message for message in messages) == 1
+        assert any("empty" in message for message in messages)
+        assert model.labels_.shape == (6,)
+        assert np.allclose(model.centroids_, 1.0)
+
+    def test_fewer_distinct_points_than_clusters_still_separates_them(self):
+        X = np.vstack([np.zeros((3, 2)), np.ones((3, 2))])
+
+        with pytest.warns(RuntimeWarning) as record:
+            model = KMeans(n_clusters=3, random_state=0).fit(X)
+
+        assert any("only 2 distinct points" in str(warning.message) for warning in record)
+        assert len(set(model.labels_[:3])) == 1
+        assert len(set(model.labels_[3:])) == 1
+        assert model.labels_[0] != model.labels_[3]
+
+    def test_nearly_identical_points_need_no_fallback(self):
+        X = np.ones((6, 2)) + np.arange(6)[:, None] * 1e-13
+
+        model = KMeans(n_clusters=2, random_state=0).fit(X)
+
+        assert len(np.unique(model.labels_)) == 2
+
 
 class TestEmptyCluster:
     def test_empty_cluster_is_reinitialized_with_warning(self, rng, monkeypatch):
