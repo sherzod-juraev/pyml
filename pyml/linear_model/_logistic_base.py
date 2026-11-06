@@ -36,6 +36,11 @@ class _LogisticRegressionBase(Classifier):
         \hat{y} = \begin{cases} 1 & \text{if } \hat{p} \geq 0.5 \\
         0 & \text{otherwise} \end{cases}
 
+    Labels need not be 0 and 1: ``fit`` takes the two distinct values in
+    ``y`` as ``classes_`` and encodes the larger one as 1 (the positive
+    class) and the smaller one as 0 before optimizing, and ``predict``
+    maps the thresholded probabilities back to the original labels.
+
     Fitting minimizes binary cross-entropy loss, optionally plus a
     regularization term:
 
@@ -81,6 +86,9 @@ class _LogisticRegressionBase(Classifier):
         Learned weight vector, of shape (n_features,).
     intercept_ : float
         Learned intercept term. Remains 0.0 if fit_intercept is False.
+    classes_ : ClassificationTarget
+        The two distinct class labels seen in fit, sorted ascending, of
+        shape (2,). ``classes_[1]`` is the positive class.
     n_iter_ : int
         Number of iterations actually run before stopping (either by
         convergence or by reaching max_iter).
@@ -130,15 +138,29 @@ class _LogisticRegressionBase(Classifier):
         X : FeatureMatrix
             Training data of shape (n_samples, n_features).
         y : ClassificationTarget
-            Binary class labels (0 or 1) of shape (n_samples,).
+            Class labels of shape (n_samples,) with exactly two distinct
+            values. The larger one is the positive class.
+
+        Raises
+        ------
+        ValueError
+            If y does not contain exactly two distinct classes.
         """
+        classes = np.unique(y)
+        if classes.shape[0] != 2:
+            raise ValueError(
+                f"{type(self).__name__} is a binary classifier and needs exactly 2 distinct "
+                f"classes in y, but found {classes.shape[0]}."
+            )
+        self.classes_ = classes
+        y_enc = (y == self.classes_[1]).astype(int)
         self.coef_ = np.zeros(X.shape[1])
         self.intercept_ = 0.0
         J_old: float = np.inf
         for i in range(self.max_iter):
             y_pred = self._predict_proba(X)
-            residuals = y_pred - y
-            J_new = self._compute_loss(y, y_pred)
+            residuals = y_pred - y_enc
+            J_new = self._compute_loss(y_enc, y_pred)
             grad_coef, grad_intercept = self._compute_gradient(X, residuals)
             self.coef_ -= self.learning_rate * grad_coef
             if self.fit_intercept:
@@ -244,16 +266,19 @@ class _LogisticRegressionBase(Classifier):
         Returns
         -------
         ClassificationTarget
-            Predicted labels (0 or 1) of shape (n_samples,), using a 0.5
-            threshold on predicted probabilities.
+            Predicted labels of shape (n_samples,), taken from ``classes_``:
+            ``classes_[1]`` where the predicted probability is at least 0.5
+            and ``classes_[0]`` otherwise.
         """
-        y_pred = self._predict_proba(X)
-        return np.where(y_pred >= 0.5, 1, 0)
+        pred = self._predict_proba(X)
+        y_pred: ClassificationTarget = self.classes_[(pred >= 0.5).astype(int)]
+        return y_pred
 
     def predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
         """Predict the probability of the positive class for each sample.
 
-        Validates the input, then delegates to ``_predict_proba``.
+        The positive class is ``classes_[1]``, the larger of the two labels
+        seen in fit. Validates the input, then delegates to ``_predict_proba``.
 
         Parameters
         ----------
