@@ -1,0 +1,11 @@
+0.4.5
+=====
+
+Fixed
+-----
+
+- ``KMeans`` crashed with ``ValueError: Probabilities do not sum to 1`` from NumPy when the data
+  had fewer distinct points than ``n_clusters``, for example identical points. Once every distinct
+  point was a centroid, the k-means++ weights were all zero. The remaining initial centroids are
+  now drawn uniformly, some of them coincide, and a ``RuntimeWarning`` says how many distinct
+  points there are. Results on other data are unchanged.
