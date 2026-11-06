@@ -16,7 +16,7 @@ import numpy.typing as npt
 
 from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix
-from ..core.param_checks import check_at_least, check_non_negative, check_positive
+from ..core.param_checks import check_integer, check_non_negative, check_positive
 
 _FloatArray = npt.NDArray[np.floating[Any]]
 
@@ -136,7 +136,7 @@ class _LogisticRegressionBase(Classifier):
         self.intercept_ = 0.0
         J_old: float = np.inf
         for i in range(self.max_iter):
-            y_pred = self.predict_proba(X)
+            y_pred = self._predict_proba(X)
             residuals = y_pred - y
             J_new = self._compute_loss(y, y_pred)
             grad_coef, grad_intercept = self._compute_gradient(X, residuals)
@@ -247,11 +247,47 @@ class _LogisticRegressionBase(Classifier):
             Predicted labels (0 or 1) of shape (n_samples,), using a 0.5
             threshold on predicted probabilities.
         """
-        y_pred = self.predict_proba(X)
+        y_pred = self._predict_proba(X)
         return np.where(y_pred >= 0.5, 1, 0)
 
     def predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
+        """Predict the probability of the positive class for each sample.
+
+        Validates the input, then delegates to ``_predict_proba``.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
+
+        Returns
+        -------
+        FloatArray
+            Predicted probabilities of the positive class, of shape
+            (n_samples,), in the open interval (0, 1).
+
+        Raises
+        ------
+        NotFittedError
+            If the model has not been fitted yet.
+        ValueError
+            If X is not 2D, or contains NaN or infinite values.
+        TypeError
+            If X's dtype is not floating-point.
+        ShapeMismatchError
+            If X has a different number of features than seen in fit.
+        """
+        self._check_is_fitted()
+        self._validate_X(X)
+        self._check_n_features(X)
+        return self._predict_proba(X)
+
+    def _predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
         r"""Compute the predicted probability of the positive class.
+
+        Does no input validation: it is called by ``predict_proba`` after the
+        checks, and directly by ``_fit`` and ``_predict`` on data that is
+        already validated.
 
         .. math::
             \hat{p} = \sigma(Xw + b) = \frac{1}{1 + e^{-(Xw + b)}}
@@ -284,9 +320,9 @@ class _LogisticRegressionBase(Classifier):
         ------
         InvalidParameterError
             If learning_rate is not a positive finite number, max_iter is
-            less than 1, or tol is negative or NaN.
+            not an integer of at least 1, or tol is negative or NaN.
         """
         super()._validate_params()
         check_positive("learning_rate", self.learning_rate, finite=True)
-        check_at_least("max_iter", self.max_iter, 1)
+        check_integer("max_iter", self.max_iter, minimum=1)
         check_non_negative("tol", self.tol)

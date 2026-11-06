@@ -62,6 +62,7 @@ _SOLVER_INVALID: tuple[dict[str, Any], ...] = (
     {"learning_rate": _INF},
     {"learning_rate": _NAN},
     {"max_iter": 0},
+    {"max_iter": 100.0},
     {"tol": -1e-9},
     {"tol": _NAN},
 )
@@ -77,11 +78,19 @@ _NEIGHBORS_INVALID: tuple[dict[str, Any], ...] = (
 )
 _TREE_INVALID: tuple[dict[str, Any], ...] = (
     {"max_depth": -1},
+    {"max_depth": 2.5},
     {"max_depth": _NAN},
     {"min_samples": 0},
+    {"min_samples": 2.0},
     {"min_samples": _NAN},
     {"min_impurity_decrease": -1.0},
     {"min_impurity_decrease": _NAN},
+    {"max_features": 0},
+    {"max_features": -1},
+    {"max_features": 1.5},
+    {"max_features": _NAN},
+    {"random_state": -1},
+    {"random_state": 1.5},
 )
 
 ENTRIES: tuple[Entry, ...] = (
@@ -103,6 +112,7 @@ ENTRIES: tuple[Entry, ...] = (
         invalid=(
             {"n_neighbors": 0},
             {"n_neighbors": -1},
+            {"n_neighbors": 3.0},
             {"n_neighbors": _NAN},
             *_NEIGHBORS_INVALID,
         ),
@@ -140,6 +150,7 @@ ENTRIES: tuple[Entry, ...] = (
         invalid=(
             {"n_neighbors": 0},
             {"n_neighbors": -1},
+            {"n_neighbors": 3.0},
             {"n_neighbors": _NAN},
             *_NEIGHBORS_INVALID,
         ),
@@ -173,11 +184,14 @@ ENTRIES: tuple[Entry, ...] = (
         invalid=(
             {"n_clusters": 0},
             {"n_clusters": -3},
+            {"n_clusters": 2.0},
             {"n_clusters": _NAN},
             {"max_iter": 0},
+            {"max_iter": 10.5},
             {"tol": -1e-9},
             {"tol": _NAN},
             {"random_state": -1},
+            {"random_state": 1.5},
         ),
         predictable=True,
     ),
@@ -190,6 +204,7 @@ ENTRIES: tuple[Entry, ...] = (
             {"eps": _NAN},
             {"eps": _INF},
             {"min_samples": 0},
+            {"min_samples": 3.0},
             {"metric": "euclidian"},
         ),
     ),

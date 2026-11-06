@@ -122,11 +122,13 @@ library needs to work around.
 - **API Reference is not alphabetical.** Pages under `api-reference/` go supervised, then unsupervised,
   then utilities (Core, Linear Model, Naive Bayes, Neighbors, Tree, Cluster, Preprocessing, Model
   Selection, Metrics). The `examples/` gallery uses the same order, for consistency.
-- **Hyper-parameters are checked for range, not for type.** `fit` rejects out-of-range values with
-  `InvalidParameterError` (a negative `alpha`, `n_clusters=0`), but `n_clusters=2.5` or
-  `max_iter="10"` has no dedicated error. Type checks on every constructor were left out to keep
-  the estimators small. `fit_intercept` and `outlier_label` are not validated at all, since any
-  value is meaningful for them.
+- **Only integer hyper-parameters are checked for type.** `fit` rejects out-of-range values with
+  `InvalidParameterError` (a negative `alpha`, `n_clusters=0`), and integer parameters are also
+  checked for type, so `n_clusters=2.5`, `max_iter="10"` and `max_depth=3.0` are rejected too.
+  Float and string parameters get no dedicated type check: `alpha="1"` fails with a plain
+  `TypeError` from the comparison. Type checks on every constructor were left out to keep the
+  estimators small. `fit_intercept` and `outlier_label` are not validated at all, since any value
+  is meaningful for them.
 - **`train_test_split` raises `ValueError`, not `InvalidParameterError`.** It is a function, not an
   estimator, so it does not use the `_validate_params` hook; it validates its own arguments and
   raises `ValueError` (and `TypeError`). `InvalidParameterError` is not a subclass of

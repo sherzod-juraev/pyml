@@ -10,6 +10,7 @@ from pyml.core.param_checks import (
     check_at_least,
     check_choice,
     check_in_range,
+    check_integer,
     check_non_negative,
     check_positive,
 )
@@ -108,6 +109,30 @@ class TestCheckChoice:
             check_choice("weights", "x", ("uniform", "distance"))
 
 
+class TestCheckInteger:
+    @pytest.mark.parametrize("value", [0, -4, 7, np.int32(3), np.int64(-2)])
+    def test_accepts_python_and_numpy_integers(self, value):
+        check_integer("p", value)
+
+    @pytest.mark.parametrize("value", [3.0, 2.5, NAN, INF, True, False, "3", None, np.float64(3)])
+    def test_rejects_everything_that_is_not_an_integer(self, value):
+        with pytest.raises(InvalidParameterError, match="must be an integer"):
+            check_integer("p", value)
+
+    @pytest.mark.parametrize(("value", "minimum"), [(1, 1), (5, 1), (0, 0), (np.int64(2), 2)])
+    def test_accepts_integers_at_or_above_the_minimum(self, value, minimum):
+        check_integer("p", value, minimum=minimum)
+
+    @pytest.mark.parametrize(("value", "minimum"), [(0, 1), (-1, 0), (np.int64(1), 2)])
+    def test_rejects_integers_below_the_minimum(self, value, minimum):
+        with pytest.raises(InvalidParameterError, match="at least"):
+            check_integer("p", value, minimum=minimum)
+
+    def test_message_names_the_parameter_and_the_value(self):
+        with pytest.raises(InvalidParameterError, match=r"max_depth.*2\.5"):
+            check_integer("max_depth", 2.5)
+
+
 class TestExceptionType:
     @pytest.mark.parametrize(
         "call",
@@ -117,8 +142,9 @@ class TestExceptionType:
             lambda: check_at_least("p", 0, 1),
             lambda: check_in_range("p", 2, 0, 1),
             lambda: check_choice("p", "x", ("a",)),
+            lambda: check_integer("p", 1.5),
         ],
-        ids=["positive", "non_negative", "at_least", "in_range", "choice"],
+        ids=["positive", "non_negative", "at_least", "in_range", "choice", "integer"],
     )
     def test_every_check_raises_invalid_parameter_error(self, call):
         with pytest.raises(InvalidParameterError) as error:

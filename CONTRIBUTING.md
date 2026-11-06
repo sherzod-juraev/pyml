@@ -219,7 +219,7 @@ def _validate_params(self) -> None:
 
 - **Where a check comes from.** A check that several models can use lives in
   `pyml/core/param_checks.py`: `check_positive`, `check_non_negative`, `check_at_least`,
-  `check_in_range`, `check_choice` and the `DISTANCE_METRICS` tuple. Import them with
+  `check_in_range`, `check_choice`, `check_integer` and the `DISTANCE_METRICS` tuple. Import them with
   `from ..core.param_checks import ...`. A check that only one model needs is written directly
   in that model's hook, with `raise InvalidParameterError(...)`. If a second model needs the
   same check, move it to `param_checks.py` together with its tests.
@@ -231,8 +231,11 @@ def _validate_params(self) -> None:
   or its checks are silently skipped. `_DecisionTreeBase` is the one exception to the plain
   `super()` call: it is a plain `ABC` in front of the family base in the MRO, so mypy cannot see
   the method and the call is `cast(Any, super())._validate_params()`.
-- **Range, not type.** The hook does not check types, and parameters for which any value makes
-  sense (`fit_intercept`) are not checked at all. See
+- **Integers are checked for type, other parameters for range.** A parameter that counts
+  something (`max_depth`, `n_clusters`, `max_iter`, `n_neighbors`, `random_state`, ...) is checked
+  with `check_integer(name, value, minimum=...)`, which rejects floats such as `3.0` and `bool`.
+  Float and string parameters are checked for range or choice only, and parameters for which any
+  value makes sense (`fit_intercept`) are not checked at all. See
   [Known trade-offs](docs/README.md#known-trade-offs).
 - The hook has a full docstring (interrogate counts private members), and `Raises` lists
   `InvalidParameterError`.
