@@ -1,2 +1,5 @@
 * text=auto eol=lf
 *.bat text eol=crlf
+
+# GitHub language statistics: count docs/ (CSS, LaTeX, batch, Sphinx Python) as project code.
+docs/** linguist-documentation=false
