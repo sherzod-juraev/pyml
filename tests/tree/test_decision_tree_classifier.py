@@ -5,6 +5,13 @@ import pytest
 
 from pyml.core.exceptions import InvalidParameterError
 from pyml.tree import DecisionTreeClassifier
+from pyml.tree._base import _Node
+
+
+def _split_features(node: _Node | None) -> set[int | None]:
+    if node is None or node.is_leaf:
+        return set()
+    return {node.feature_idx} | _split_features(node.left) | _split_features(node.right)
 
 
 class TestFit:
@@ -58,6 +65,55 @@ class TestFit:
         assert model.tree_.threshold == pytest.approx(0.5)
         assert np.array_equal(model.predict(X), y)
 
+    def test_all_features_as_max_features_matches_the_default_tree(self, rng):
+        X = rng.uniform(0, 10, size=(60, 4))
+        y = rng.integers(0, 2, size=60)
+
+        default = DecisionTreeClassifier(max_depth=4).fit(X, y)
+        all_features = DecisionTreeClassifier(max_depth=4, max_features=4, random_state=7).fit(X, y)
+
+        assert np.array_equal(all_features.predict(X), default.predict(X))
+        assert all_features.tree_.feature_idx == default.tree_.feature_idx
+        assert all_features.tree_.threshold == default.tree_.threshold
+
+    def test_same_random_state_gives_the_same_tree(self, rng):
+        X = rng.uniform(0, 10, size=(60, 6))
+        y = rng.integers(0, 2, size=60)
+
+        first = DecisionTreeClassifier(max_depth=4, max_features=2, random_state=3).fit(X, y)
+        second = DecisionTreeClassifier(max_depth=4, max_features=2, random_state=3).fit(X, y)
+
+        assert np.array_equal(first.predict(X), second.predict(X))
+
+    def test_max_features_restricts_the_split_candidates(self, rng):
+        X = rng.uniform(0, 10, size=(60, 4))
+        y = (X[:, 0] > 5).astype(int)
+
+        roots = {
+            DecisionTreeClassifier(max_depth=1, max_features=1, random_state=seed)
+            .fit(X, y)
+            .tree_.feature_idx
+            for seed in range(20)
+        }
+        full = DecisionTreeClassifier(max_depth=1).fit(X, y)
+
+        assert full.tree_.feature_idx == 0
+        assert roots - {0}
+
+    def test_each_node_draws_its_own_candidates(self, rng):
+        X = rng.uniform(0, 10, size=(200, 4))
+        y = (X.sum(axis=1) > 20).astype(int)
+
+        model = DecisionTreeClassifier(max_depth=4, max_features=1, random_state=0).fit(X, y)
+
+        assert len(_split_features(model.tree_)) > 1
+
+    def test_max_features_above_the_feature_count_is_rejected(self, two_blobs):
+        X, y = two_blobs(n_per_class=20)
+
+        with pytest.raises(InvalidParameterError, match="max_features"):
+            DecisionTreeClassifier(max_depth=3, max_features=X.shape[1] + 1).fit(X, y)
+
 
 class TestPredict:
     def test_separates_linearly_separable_classes(self, rng):
@@ -92,7 +148,14 @@ class TestPredict:
 class TestValidateParams:
     @pytest.mark.parametrize(
         ("name", "value"),
-        [("max_depth", -1), ("min_samples", 0), ("min_impurity_decrease", -1.0)],
+        [
+            ("max_depth", -1),
+            ("max_depth", 2.5),
+            ("min_samples", 0),
+            ("min_impurity_decrease", -1.0),
+            ("max_features", 0),
+            ("random_state", -1),
+        ],
     )
     def test_error_message_names_the_parameter(self, two_blobs, name, value):
         X, y = two_blobs(n_per_class=20)
@@ -107,7 +170,17 @@ class TestValidateParams:
 
         assert model.tree_.is_leaf
 
-    @pytest.mark.parametrize("params", [{"min_samples": 1}, {"min_impurity_decrease": 0.0}])
+    @pytest.mark.parametrize(
+        "params",
+        [
+            {"min_samples": 1},
+            {"min_impurity_decrease": 0.0},
+            {"max_features": 1},
+            {"max_features": 2},
+            {"random_state": 0},
+            {"max_depth": np.int64(3)},
+        ],
+    )
     def test_accepts_boundary_values(self, two_blobs, params):
         X, y = two_blobs(n_per_class=20)
 

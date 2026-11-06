@@ -21,6 +21,7 @@ from pyml.core.exceptions import InvalidParameterError, NotFittedError, ShapeMis
 from tests.registry import ENTRIES, Entry, by_family, ids
 
 CLASSIFIERS = by_family("classifier")
+PROBA_CLASSIFIERS = [entry for entry in CLASSIFIERS if hasattr(entry.cls, "predict_proba")]
 REGRESSORS = by_family("regressor")
 TRANSFORMERS = by_family("transformer")
 ALL_CLUSTERERS = by_family("clusterer")
@@ -174,6 +175,38 @@ class TestSupervisedContract:
         first = entry.build().fit(X, y_reg).predict(X)
         second = entry.build().fit(X, y_reg).predict(X)
         assert np.array_equal(first, second)
+
+
+class TestPredictProbaContract:
+    @pytest.mark.parametrize("entry", PROBA_CLASSIFIERS, ids=ids(PROBA_CLASSIFIERS))
+    def test_predict_proba_before_fit_raises(self, entry, X):
+        with pytest.raises(NotFittedError):
+            entry.build().predict_proba(X)
+
+    @pytest.mark.parametrize("entry", PROBA_CLASSIFIERS, ids=ids(PROBA_CLASSIFIERS))
+    def test_predict_proba_rejects_wrong_feature_count(self, entry, X, y_class):
+        model = entry.build().fit(X, y_class)
+
+        with pytest.raises(ShapeMismatchError):
+            model.predict_proba(X[:, :2])
+
+    @pytest.mark.parametrize("entry", PROBA_CLASSIFIERS, ids=ids(PROBA_CLASSIFIERS))
+    def test_predict_proba_rejects_non_finite_input(self, entry, X, y_class):
+        model = entry.build().fit(X, y_class)
+        X_bad = X.copy()
+        X_bad[0, 0] = np.nan
+
+        with pytest.raises(ValueError, match="NaN"):
+            model.predict_proba(X_bad)
+
+    @pytest.mark.parametrize("entry", PROBA_CLASSIFIERS, ids=ids(PROBA_CLASSIFIERS))
+    def test_predict_proba_does_not_modify_input(self, entry, X, y_class):
+        model = entry.build().fit(X, y_class)
+        X_before = X.copy()
+
+        model.predict_proba(X)
+
+        assert np.array_equal(X, X_before)
 
 
 class TestTransformerContract:
