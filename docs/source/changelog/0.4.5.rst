@@ -9,3 +9,10 @@ Fixed
   point was a centroid, the k-means++ weights were all zero. The remaining initial centroids are
   now drawn uniformly, some of them coincide, and a ``RuntimeWarning`` says how many distinct
   points there are. Results on other data are unchanged.
+- ``LogisticRegression``, ``RidgeClassifier``, ``LassoClassifier`` and ``ElasticNetClassifier``
+  silently trained on a meaningless loss when the labels were not ``0`` and ``1`` (for example
+  ``{1, 2}``, ``{-1, 1}`` or three classes), because the cross-entropy assumed 0/1 targets. They
+  now take the two distinct values in ``y`` as ``classes_``, treat the larger one as the positive
+  class, and ``predict`` returns the original labels. ``predict_proba`` is the probability of
+  ``classes_[1]``. A ``y`` with fewer or more than two classes raises ``ValueError``. Results for
+  ``{0, 1}`` labels are unchanged.
