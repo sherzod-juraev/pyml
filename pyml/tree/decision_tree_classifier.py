@@ -36,6 +36,17 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
         Minimum impurity gain required to accept a split. A candidate
         split whose gain falls below this becomes a leaf instead. Must
         be non-negative. Defaults to 1e-7.
+    max_features : int or None, optional
+        Number of features drawn at random, without replacement, as split
+        candidates at each node; must be at least 1 and at most the number
+        of features seen in fit. None, or the number of features itself,
+        uses every feature and makes the tree deterministic. Defaults to
+        None.
+    random_state : int or None, optional
+        Seed for the generator that draws the candidate features; must be
+        non-negative. Only used when max_features is smaller than the
+        number of features. None draws a fresh seed on every fit. Defaults
+        to None.
 
     Attributes
     ----------
@@ -44,10 +55,11 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
 
 
     .. note::
-        Splitting is exhaustive: every unique value of every feature is
-        tried as a candidate threshold. This scales as
-        O(n_features x n_samples^2) per tree, so very large datasets or
-        deep trees can be slow to fit.
+        Splitting is exhaustive: every unique value of every candidate
+        feature is tried as a threshold. This scales as
+        O(n_candidates x n_samples^2) per node, so very large datasets or
+        deep trees can be slow to fit. A smaller max_features makes each
+        node proportionally cheaper.
 
     .. plot::
 

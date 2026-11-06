@@ -16,7 +16,8 @@ import numpy as np
 import numpy.typing as npt
 
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
-from ..core.param_checks import check_at_least, check_non_negative
+from ..core.exceptions import InvalidParameterError
+from ..core.param_checks import check_integer, check_non_negative
 
 _FloatArray = npt.NDArray[np.floating[Any]]
 
@@ -56,8 +57,8 @@ class _DecisionTreeBase(ABC):
     r"""Abstract base class for binary decision trees fit via recursive splitting.
 
     All decision tree models share the same greedy, top-down
-    construction: at each node, every feature is scanned for the
-    threshold that best separates the samples, splitting is applied
+    construction: at each node, the candidate features are scanned for
+    the threshold that best separates the samples, splitting is applied
     where it reduces impurity the most, and the process repeats on each
     child until a stopping condition is met.
 
@@ -80,6 +81,13 @@ class _DecisionTreeBase(ABC):
     which lets them add new splitting criteria without duplicating the
     tree-construction loop.
 
+    By default every feature is a candidate at every node and the tree is
+    fully deterministic. With ``max_features`` smaller than the number of
+    features, each node draws its own random subset of ``max_features``
+    candidates, without replacement, from a generator seeded by
+    ``random_state``. This is the per-node feature sampling used by
+    random forests to decorrelate their trees.
+
     Attributes
     ----------
     tree_ : _Node
@@ -87,14 +95,19 @@ class _DecisionTreeBase(ABC):
 
 
     .. note::
-        Splitting is exhaustive: every unique value of every feature is
-        tried as a candidate threshold. This is simple and exact, but
-        scales as O(n_features x n_samples^2) per tree, since each
+        Splitting is exhaustive: every unique value of every candidate
+        feature is tried as a threshold. This is simple and exact, but
+        scales as O(n_candidates x n_samples^2) per node, since each
         candidate split recomputes impurity over its full subset.
     """
 
     def __init__(
-        self, max_depth: int, min_samples: int = 2, min_impurity_decrease: float = 1e-7
+        self,
+        max_depth: int,
+        min_samples: int = 2,
+        min_impurity_decrease: float = 1e-7,
+        max_features: int | None = None,
+        random_state: int | None = None,
     ) -> None:
         """Initialize tree-growth stopping criteria.
 
@@ -112,27 +125,47 @@ class _DecisionTreeBase(ABC):
             Minimum impurity gain required to accept a split. A candidate
             split whose gain falls below this becomes a leaf instead; must
             be non-negative. Defaults to 1e-7.
+        max_features : int or None, optional
+            Number of features drawn at random, without replacement, as
+            split candidates at each node; must be at least 1 and at most
+            the number of features seen in fit. None, or the number of
+            features itself, uses every feature and makes the tree
+            deterministic. Defaults to None.
+        random_state : int or None, optional
+            Seed for the generator that draws the candidate features; must
+            be non-negative. Only used when max_features is smaller than
+            the number of features. None draws a fresh seed on every fit.
+            Defaults to None.
         """
         super().__init__()
         self.max_depth: int = max_depth
         self.min_samples: int = min_samples
         self.min_impurity_decrease: float = min_impurity_decrease
+        self.max_features: int | None = max_features
+        self.random_state: int | None = random_state
 
     def _validate_params(self) -> None:
-        """Validate the tree-growth stopping criteria.
+        """Validate the tree-growth and feature-sampling parameters.
 
         Raises
         ------
         InvalidParameterError
-            If max_depth is negative, min_samples is less than 1, or
-            min_impurity_decrease is negative or NaN.
+            If max_depth is not an integer or is negative, min_samples is
+            not an integer or is less than 1, min_impurity_decrease is
+            negative or NaN, max_features is not None and is not an
+            integer of at least 1, or random_state is not None and is not
+            a non-negative integer.
         """
         # This class sits in front of the family base in the MRO, so super() reaches
         # DataValidatorMixin; mypy cannot see that from a plain ABC base.
         cast(Any, super())._validate_params()
-        check_at_least("max_depth", self.max_depth, 0)
-        check_at_least("min_samples", self.min_samples, 1)
+        check_integer("max_depth", self.max_depth, minimum=0)
+        check_integer("min_samples", self.min_samples, minimum=1)
         check_non_negative("min_impurity_decrease", self.min_impurity_decrease)
+        if self.max_features is not None:
+            check_integer("max_features", self.max_features, minimum=1)
+        if self.random_state is not None:
+            check_integer("random_state", self.random_state, minimum=0)
 
     def _fit(self, X: FeatureMatrix, y: ClassificationTarget | RegressionTarget, /) -> None:
         """Grow the tree recursively from the root.
@@ -143,8 +176,19 @@ class _DecisionTreeBase(ABC):
             Training data of shape (n_samples, n_features).
         y : ClassificationTarget or RegressionTarget
             Target values of shape (n_samples,).
+
+        Raises
+        ------
+        InvalidParameterError
+            If max_features exceeds the number of features in X.
         """
-        self.tree_ = self._build_tree(X, y, 0)
+        if self.max_features is not None and self.max_features > X.shape[1]:
+            raise InvalidParameterError(
+                f"max_features={self.max_features} cannot exceed the number of "
+                f"features ({X.shape[1]})."
+            )
+        rng = np.random.default_rng(self.random_state)
+        self.tree_ = self._build_tree(X, y, 0, rng)
 
     def _predict(self, X: FeatureMatrix, /) -> ClassificationTarget | RegressionTarget:
         """Predict by traversing the fitted tree for each sample.
@@ -166,7 +210,12 @@ class _DecisionTreeBase(ABC):
         )
 
     def _build_tree(
-        self, X: FeatureMatrix, y: ClassificationTarget | RegressionTarget, depth: int, /
+        self,
+        X: FeatureMatrix,
+        y: ClassificationTarget | RegressionTarget,
+        depth: int,
+        rng: np.random.Generator,
+        /,
     ) -> _Node:
         """Recursively build a subtree for the given samples.
 
@@ -184,6 +233,9 @@ class _DecisionTreeBase(ABC):
             Targets at this node, of shape (n_samples,).
         depth : int
             Current depth of this node, with the root at depth 0.
+        rng : numpy.random.Generator
+            Generator shared by the whole tree, used to draw the candidate
+            features at each node.
 
         Returns
         -------
@@ -193,7 +245,7 @@ class _DecisionTreeBase(ABC):
         n = X.shape[0]
         if depth >= self.max_depth or n < self.min_samples or (np.all(y == y[0])):
             return _Node(is_leaf=True, value=self._leaf_node(y))
-        split_result = self._best_split(X, y)
+        split_result = self._best_split(X, y, rng)
         if split_result is None:
             return _Node(is_leaf=True, value=self._leaf_node(y))
         feature_idx, threshold, quality_gain = split_result
@@ -201,8 +253,8 @@ class _DecisionTreeBase(ABC):
             return _Node(is_leaf=True, value=self._leaf_node(y))
         left_mask = X[:, feature_idx] <= threshold
         right_mask = ~left_mask
-        left_child = self._build_tree(X[left_mask], y[left_mask], depth + 1)
-        right_child = self._build_tree(X[right_mask], y[right_mask], depth + 1)
+        left_child = self._build_tree(X[left_mask], y[left_mask], depth + 1, rng)
+        right_child = self._build_tree(X[right_mask], y[right_mask], depth + 1, rng)
 
         return _Node(
             is_leaf=False,
@@ -214,13 +266,21 @@ class _DecisionTreeBase(ABC):
         )
 
     def _best_split(
-        self, X: FeatureMatrix, y: ClassificationTarget | RegressionTarget, /
+        self,
+        X: FeatureMatrix,
+        y: ClassificationTarget | RegressionTarget,
+        rng: np.random.Generator,
+        /,
     ) -> tuple[int, float, float] | None:
-        """Search every feature and threshold for the split with the highest gain.
+        """Search the candidate features and thresholds for the highest-gain split.
 
-        For each feature, samples are sorted by that feature's value, and
-        every point between two distinct consecutive values is tried as a
-        candidate threshold, using the midpoint between them.
+        The candidates are every feature when max_features is None or equal
+        to the number of features, and otherwise a fresh random subset of
+        max_features features drawn from rng. For each candidate, samples
+        are sorted by that feature's value, and every point between two
+        distinct consecutive values is tried as a threshold, using the
+        midpoint between them. Ties in gain go to the candidate examined
+        first.
 
         Parameters
         ----------
@@ -228,21 +288,28 @@ class _DecisionTreeBase(ABC):
             Samples at this node, of shape (n_samples, n_features).
         y : ClassificationTarget or RegressionTarget
             Targets at this node, of shape (n_samples,).
+        rng : numpy.random.Generator
+            Generator used to draw the candidate features. Not used when
+            every feature is a candidate.
 
         Returns
         -------
         tuple[int, float, float] or None
             The best (feature_idx, threshold, gain) found, or None if no
-            valid split exists (e.g. every feature is constant).
+            valid split exists (e.g. every candidate feature is constant).
         """
         best_gain: float = -1.0
         best_feature: int | None = None
         best_threshold: float | None = None
 
-        n_samples, n_features = X.shape
+        n_samples = X.shape[0]
+        if self.max_features is None or self.max_features == X.shape[1]:
+            features = np.arange(X.shape[1])
+        else:
+            features = rng.choice(X.shape[1], self.max_features, replace=False)
         current_impurity = self._split_quality(y)
 
-        for feature_id in range(n_features):
+        for feature_id in features:
             feature_col = X[:, feature_id]
             sort_idx = np.argsort(feature_col)
             X_sorted = feature_col[sort_idx]
@@ -265,7 +332,7 @@ class _DecisionTreeBase(ABC):
 
                 if gain > best_gain:
                     best_gain = gain
-                    best_feature = feature_id
+                    best_feature = int(feature_id)
                     best_threshold = float(X_sorted[i - 1] + X_sorted[i]) / 2.0
 
         if best_feature is None or best_threshold is None:
