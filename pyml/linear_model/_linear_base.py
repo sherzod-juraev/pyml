@@ -14,7 +14,7 @@ import numpy.typing as npt
 
 from ..core.base import Regressor
 from ..core.dtypes import FeatureMatrix, RegressionTarget
-from ..core.param_checks import check_at_least, check_non_negative, check_positive
+from ..core.param_checks import check_integer, check_non_negative, check_positive
 from ..metrics import mean_squared_error
 
 _FloatArray = npt.NDArray[np.floating[Any]]
@@ -227,9 +227,9 @@ class _LinearModelBase(Regressor):
         ------
         InvalidParameterError
             If learning_rate is not a positive finite number, max_iter is
-            less than 1, or tol is negative or NaN.
+            not an integer of at least 1, or tol is negative or NaN.
         """
         super()._validate_params()
         check_positive("learning_rate", self.learning_rate, finite=True)
-        check_at_least("max_iter", self.max_iter, 1)
+        check_integer("max_iter", self.max_iter, minimum=1)
         check_non_negative("tol", self.tol)

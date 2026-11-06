@@ -8,7 +8,7 @@ from scipy.spatial.distance import cdist
 from ..core.base import Regressor
 from ..core.dtypes import FeatureMatrix, RegressionTarget
 from ..core.exceptions import InvalidParameterError
-from ..core.param_checks import DISTANCE_METRICS, check_at_least, check_choice
+from ..core.param_checks import DISTANCE_METRICS, check_choice, check_integer
 
 _MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
@@ -116,11 +116,11 @@ class KNNRegressor(Regressor):
         Raises
         ------
         InvalidParameterError
-            If n_neighbors is less than 1, or metric or weights is not
-            one of the supported values.
+            If n_neighbors is not an integer of at least 1, or metric or
+            weights is not one of the supported values.
         """
         super()._validate_params()
-        check_at_least("n_neighbors", self.n_neighbors, 1)
+        check_integer("n_neighbors", self.n_neighbors, minimum=1)
         check_choice("metric", self.metric, DISTANCE_METRICS)
         check_choice("weights", self.weights, ("uniform", "distance"))
 

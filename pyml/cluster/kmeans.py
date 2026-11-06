@@ -8,7 +8,7 @@ from scipy.spatial.distance import cdist
 from ..core.base import PredictableClusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
-from ..core.param_checks import check_at_least, check_non_negative
+from ..core.param_checks import check_integer, check_non_negative
 
 _CHUNK_SIZE = 4096
 
@@ -136,15 +136,16 @@ class KMeans(PredictableClusterer):
         Raises
         ------
         InvalidParameterError
-            If n_clusters or max_iter is less than 1, tol is negative or
-            NaN, or random_state is negative.
+            If n_clusters or max_iter is not an integer of at least 1, tol
+            is negative or NaN, or random_state is not None and is not a
+            non-negative integer.
         """
         super()._validate_params()
-        check_at_least("n_clusters", self.n_clusters, 1)
-        check_at_least("max_iter", self.max_iter, 1)
+        check_integer("n_clusters", self.n_clusters, minimum=1)
+        check_integer("max_iter", self.max_iter, minimum=1)
         check_non_negative("tol", self.tol)
         if self.random_state is not None:
-            check_non_negative("random_state", self.random_state)
+            check_integer("random_state", self.random_state, minimum=0)
 
     def _initialize_centroids(self, X: FeatureMatrix, /) -> None:
         """Choose initial centroids using the k-means++ strategy.

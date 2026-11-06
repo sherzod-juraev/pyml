@@ -9,7 +9,7 @@ from scipy.spatial.distance import cdist
 from ..core.base import Clusterer
 from ..core.dtypes import ClusterLabels, FeatureMatrix
 from ..core.exceptions import InvalidParameterError
-from ..core.param_checks import DISTANCE_METRICS, check_at_least, check_choice, check_positive
+from ..core.param_checks import DISTANCE_METRICS, check_choice, check_integer, check_positive
 
 _MAX_BLOCK_ELEMENTS = 1 << 22  # distances computed at once: about 32 MB of float64
 
@@ -133,12 +133,13 @@ class DBSCAN(Clusterer):
         Raises
         ------
         InvalidParameterError
-            If eps is not a positive finite number, min_samples is less
-            than 1, or metric is not one of the supported metrics.
+            If eps is not a positive finite number, min_samples is not an
+            integer of at least 1, or metric is not one of the supported
+            metrics.
         """
         super()._validate_params()
         check_positive("eps", self.eps, finite=True)
-        check_at_least("min_samples", self.min_samples, 1)
+        check_integer("min_samples", self.min_samples, minimum=1)
         check_choice("metric", self.metric, DISTANCE_METRICS)
 
     def _eps_neighborhoods(
