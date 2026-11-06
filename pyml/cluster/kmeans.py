@@ -34,6 +34,13 @@ class KMeans(PredictableClusterer):
     the chance of converging to a poor local minimum compared to fully
     random initialization.
 
+    When X has fewer distinct points than ``n_clusters``, the squared
+    distances of all samples become zero once every distinct point is a
+    centroid, and they no longer define a probability distribution. The
+    remaining centroids are then drawn uniformly from the samples, so
+    some of them coincide, and a RuntimeWarning is raised. This
+    fallback is not part of the original k-means++ algorithm.
+
     Parameters
     ----------
     n_clusters : int
@@ -150,19 +157,46 @@ class KMeans(PredictableClusterer):
     def _initialize_centroids(self, X: FeatureMatrix, /) -> None:
         """Choose initial centroids using the k-means++ strategy.
 
+        Each centroid after the first is drawn with probability proportional
+        to the squared distance from the nearest centroid chosen so far. If
+        all those distances are zero, every distinct point is already a
+        centroid and the remaining ones are drawn uniformly instead, with a
+        single RuntimeWarning per fit.
+
         Parameters
         ----------
         X : FeatureMatrix
             Training data of shape (n_samples, n_features).
+
+        Warns
+        -----
+        RuntimeWarning
+            If X has fewer distinct points than n_clusters.
         """
         rng = np.random.default_rng(self.random_state)
         self.centroids_ = np.zeros(shape=(self.n_clusters, X.shape[1]), dtype=X.dtype)
         first_idx = rng.integers(X.shape[0])
         self.centroids_[0] = X[first_idx].copy()
         min_dists = cdist(self.centroids_[:1], X, "sqeuclidean")[0]
+        warned = False
         for i in range(1, self.n_clusters):
-            prob = min_dists / (np.sum(min_dists) + 1e-10)
-            idx = rng.choice(X.shape[0], p=prob)
+            total = np.sum(min_dists)
+            if total > 0:
+                idx = rng.choice(X.shape[0], p=min_dists / total)
+            else:
+                # Every distinct point is already a centroid, so the D^2 weights are all
+                # zero and do not define a distribution: fall back to a uniform draw.
+                if not warned:
+                    n_distinct = np.unique(X, axis=0).shape[0]
+                    warnings.warn(
+                        f"X has only {n_distinct} distinct points for n_clusters="
+                        f"{self.n_clusters}. The remaining initial centroids are drawn "
+                        "uniformly and some of them coincide.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                    warned = True
+                idx = int(rng.integers(X.shape[0]))
             self.centroids_[i] = X[idx].copy()
             new_dists = cdist(self.centroids_[i : i + 1], X, "sqeuclidean")[0]
             min_dists = np.minimum(min_dists, new_dists)
