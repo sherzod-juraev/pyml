@@ -9,6 +9,8 @@ with NaN is false and would otherwise slip through silently.
 import math
 from collections.abc import Collection
 
+import numpy as np
+
 from .exceptions import InvalidParameterError
 
 DISTANCE_METRICS: tuple[str, ...] = ("euclidean", "cityblock", "chebyshev")
@@ -103,6 +105,34 @@ def check_in_range(name: str, value: float, low: float, high: float, /) -> None:
     """
     if not low <= value <= high:
         raise InvalidParameterError(f"{name} must be in [{low}, {high}], got {value!r}.")
+
+
+def check_integer(name: str, value: object, /, *, minimum: int | None = None) -> None:
+    """Check that a parameter is an integer, optionally with a lower bound.
+
+    Python ``int`` and NumPy integer scalars are accepted. ``bool`` is
+    rejected even though it is a subclass of ``int``, and so is every
+    float, including whole-valued ones such as ``3.0`` and NaN.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name, used in the error message.
+    value : object
+        Parameter value to check.
+    minimum : int or None, optional
+        Smallest accepted value. If None, any integer is accepted.
+        Defaults to None.
+
+    Raises
+    ------
+    InvalidParameterError
+        If ``value`` is not an integer, or is smaller than ``minimum``.
+    """
+    if isinstance(value, bool) or not isinstance(value, int | np.integer):
+        raise InvalidParameterError(f"{name} must be an integer, got {value!r}.")
+    if minimum is not None:
+        check_at_least(name, int(value), minimum)
 
 
 def check_choice(name: str, value: object, choices: Collection[object], /) -> None:
