@@ -54,6 +54,7 @@ pyml/
 ├── .editorconfig               # Editor settings (LF line endings)
 ├── .gitattributes              # Git line ending rules
 ├── .gitignore                  # Git ignore rules
+├── .python-version             # Default Python for uv (3.13, as in the CI lint and docs)
 ├── .readthedocs.yaml           # Read the Docs config
 ├── CONTRIBUTING.md             # This file
 ├── LICENSE                     # MIT License
@@ -70,6 +71,9 @@ pyml/
 - [uv](https://docs.astral.sh/uv/getting-started/installation/).
 - Python 3.12, 3.13 and 3.14. Install all three to run the whole Nox matrix, or run a single
   version, for example `nox -s tests-3.13`.
+  The `.python-version` file sets Python 3.13 as the default for `uv`, the same version the CI
+  uses for lint and docs; `uv` downloads it if it is missing. It does not limit the supported
+  versions (`requires-python` in `pyproject.toml`).
 
 ### Dependency groups
 
