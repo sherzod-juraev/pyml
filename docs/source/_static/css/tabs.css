@@ -1,0 +1,37 @@
+.sd-tab-set > label {
+    border-radius: 8px 8px 0 0;
+    font-weight: 500;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+/* sphinx-design also tints the border on hover; the underline is the only hover cue here.
+   The text uses the darker teal: the plain primary color is too light for text in the light
+   theme. In the dark theme both colors are the same. */
+@media (hover: hover) {
+    .sd-tab-set > input:not(:checked) + label:hover {
+        color: var(--pst-color-link-higher-contrast, var(--pst-color-primary)) !important;
+        border-color: transparent !important;
+        text-decoration: underline !important;
+        text-underline-offset: 4px;
+    }
+}
+
+/* The weight stays the same as in the other tabs, so selecting a tab does not move its
+   neighbours. The color and the line below the label show which tab is active. */
+.sd-tab-set > input:checked + label {
+    color: var(--pst-color-link-higher-contrast, var(--pst-color-primary)) !important;
+    border-color: var(--pst-color-primary) !important;
+    text-decoration: none !important;
+}
+
+.sd-tab-set > input:focus-visible + label {
+    outline: 2px solid var(--pst-color-primary) !important;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sd-tab-set > label {
+        transition: none;
+    }
+}

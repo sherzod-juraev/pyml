@@ -36,7 +36,7 @@ Metrics
 
             Regression Metrics
             ^^^^^^^^^^^^^^^^^^
-            Mean squared error and R^2 for evaluating regression models.
+            Mean squared error and :math:`R^2` for evaluating regression models.
 
             +++
             .. button-ref:: regression

@@ -24,6 +24,14 @@ CONTRIBUTING.md.
 | `_static/`                | `css/` (site styling), `fonts/` (self-hosted Inter and JetBrains Mono, OFL licenses), `branding/` (logos, social image, author monogram). |
 | `_extra/`                 | Files copied to the site root as they are (`html_extra_path`).            |
 
+### Cleaning
+
+`make clean` (`make.bat clean` on Windows, run in `docs/`) removes `build/` and also the folders
+that sphinx-gallery generated in `source/examples/`, and keeps `examples/index.rst`. sphinx-gallery
+skips a script that did not change, so after a change to the gallery code (a scraper, a style)
+the old pages stay as they were until these folders are gone. The next build runs every example
+again, so it takes longer.
+
 ## Custom extensions (`_ext/`)
 
 Each module has a docstring that explains its usage and limits. In short:
@@ -62,13 +70,12 @@ Locally (any TeX distribution with `xelatex`; tested with MiKTeX on Windows):
 python -m sphinx -b latex -E docs/source docs/build/latex
 cd docs/build/latex
 xelatex -interaction=nonstopmode pyml.tex
-makeindex -s python.ist -o pyml.ind pyml.idx
 xelatex -interaction=nonstopmode pyml.tex
 xelatex -interaction=nonstopmode pyml.tex
 ```
 
 The result is `docs/build/latex/pyml.pdf`. Delete `docs/build/latex` first if an earlier build
-failed. Three `xelatex` runs are needed so that the table of contents, the index and the
+failed. Three `xelatex` runs are needed so that the table of contents and the
 cross-references settle. MiKTeX may ask to install missing packages on the first run. `latexmk`
 works too, but needs Perl.
 
@@ -82,13 +89,17 @@ works too, but needs Perl.
 - **Fonts** (`_latex/pyml.sty`, `"fontpkg": ""` in `conf.py`): only fonts that ship with every TeX
   distribution (TeX Gyre, Latin Modern), so MiKTeX, TeX Live and Read the Docs give the same
   result. Sphinx's default FreeSerif OTF files depend on the system.
-- **`latex_use_xindy = False`**: `xindy` is not available on Windows/MiKTeX. `makeindex` ships with
-  every distribution.
-- **`latex_table_style = ["booktabs"]`**: the default `colorrows` style fails with
-  `TeX capacity exceeded` on TeX distributions from 2026 (new `colortbl`), see
-  [sphinx-doc/sphinx#14465](https://github.com/sphinx-doc/sphinx/issues/14465). The price is the
-  missing grey row shading in tables. When Sphinx fixes it, remove the line and test a PDF build
-  on MiKTeX.
+- **`latex_use_index = False`**: the PDF has no index. It has a table of contents and can be
+  searched, and a generated index would list the methods of every class one by one (`fit`,
+  `predict`, ...), which helps little. A printed copy would miss it. To bring it back, set
+  `latex_use_index = True` and `latex_use_xindy = False` (`xindy` is not available on
+  Windows/MiKTeX) and run `makeindex -s python.ist -o pyml.ind pyml.idx` between the first and
+  the second `xelatex` run.
+- **`latex_table_style = ["booktabs", "colorrows"]`**: tables have no lines between rows
+  (`booktabs`), so the grey row shading (`colorrows`) is what separates them. With Sphinx before
+  9.1.1, `colorrows` fails with `TeX capacity exceeded` on TeX distributions from 2026 (new
+  `colortbl`), see [sphinx-doc/sphinx#14465](https://github.com/sphinx-doc/sphinx/issues/14465).
+  This is fixed in Sphinx 9.1.1, which is the lower bound in `pyproject.toml`.
 - **`"tableofcontents"`** must keep `\sphinxtableofcontents`. Replacing it with only
   `\setcounter{tocdepth}{2}` removes the table of contents.
 - **`figure_align: "H"`**: a figure stays right after its code. Without it LaTeX moves figures

@@ -15,6 +15,8 @@
 \definecolor{pymlBorder}{HTML}{D1D5DA}      % --pst-color-border
 \definecolor{pymlMuted}{HTML}{48566B}       % --pst-color-text-muted
 \definecolor{pymlCodeBg}{HTML}{F6F8FA}
+\definecolor{pymlInfo}{HTML}{276BE9}    % --pst-color-info (note bar and title)
+\definecolor{pymlInfoBg}{HTML}{DCE7FC}  % --pst-color-info-bg (note title background)
 
 % --- Fonts --- %
 \setmainfont{texgyrepagella}[
@@ -48,25 +50,30 @@
   OuterLinkColor=pymlPrimaryDark,
   VerbatimColor=pymlCodeBg,
   VerbatimBorderColor=pymlBorder,
-  noteBorderColor=pymlPrimary,
-  noteBgColor=pymlPrimaryBg,
+  % Note box as in the HTML: a blue bar on the left, a light blue title, a white body.
+  div.note_border-width=0pt,
+  div.note_border-left-width=3pt,
+  div.note_border-TeXcolor=pymlInfo,
+  div.note_background-TeXcolor=white,
+  div.note_border-radius=4pt,
+  div.note_title-background-TeXcolor=pymlInfoBg,
+  div.note_title-foreground-TeXcolor=pymlInfo,
+  % A long code line wraps. Sphinx marks that with a red arrow and a red visible space;
+  % both are removed: the space is a plain space and the arrow is empty.
+  verbatimvisiblespace={\space},
+  verbatimcontinued={},
 }
 
 % --- Page --- %
-% Sarlavha balandligi: fancyhdr "headheight is too small" ogohlantirishi uchun.
 \setlength{\headheight}{14pt}
-% Qator uzunligi bo'yicha overfull qutilarni kamaytiradi.
 \setlength{\emergencystretch}{3em}
 
 % --- Chapter headings --- %
-% Katta raqam va qalin sarlavha, ostida ingichka chiziq. Sphinx'ning
-% fncychap'i conf.py da o'chirilgan ("fncychap": ""), shuning uchun
-% bu yerda titlesec ishlatiladi.
-\titleformat{\chapter}[display]
-  {\sffamily\bfseries}
-  {\fontsize{54}{58}\selectfont\color{pymlPrimary}\thechapter}
-  {0.1em}
-  {\Huge\color{pymlPrimaryDark}}
+\titleformat{\chapter}[hang]
+  {\sffamily\bfseries\Huge\color{pymlPrimaryDark}}
+  {\color{pymlPrimary}\thechapter}
+  {0.6em}
+  {}
   [\vspace{0.5em}{\color{pymlBorder}\titlerule[1pt]}]
 \titleformat{name=\chapter,numberless}[display]
   {\sffamily\bfseries}
@@ -75,6 +82,24 @@
   {\Huge\color{pymlPrimaryDark}}
   [\vspace{0.5em}{\color{pymlBorder}\titlerule[1pt]}]
 \titlespacing*{\chapter}{0pt}{0pt}{2em}
+
+% --- Tables --- %
+% Everything is set at the begin of the document: booktabs sets its own rule widths when it
+% is loaded, and the Sphinx table macros must exist before they are extended.
+\makeatletter
+\AtBeginDocument{%
+  \setlength{\heavyrulewidth}{0.6pt}  % top and bottom rule
+  \setlength{\lightrulewidth}{0.4pt}  % rule under a table header
+  \setlength{\tabcolsep}{9pt}         % space left and right of the text
+  \setlength{\extrarowheight}{3pt}    % space above the text in a row
+  \arrayrulecolor{pymlBorder}         % soft grey rules, as in the HTML tables
+  \newcolumntype{T}{L}                % Sphinx's default column is justified; make it ragged
+  % No hyphenation inside tables: a short description should not break "para-meters". The
+  % penalties stay local to the table, because Sphinx opens these macros inside a group.
+  \g@addto@macro\sphinxattablestart{\hyphenpenalty=10000 \exhyphenpenalty=10000 }%
+  \g@addto@macro\sphinxatlongtablestart{\hyphenpenalty=10000 \exhyphenpenalty=10000 }%
+}
+\makeatother
 
 % --- Title page --- %
 \makeatletter

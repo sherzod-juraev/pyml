@@ -168,7 +168,7 @@ then unsupervised, then utilities. The same order is used in
 
             Metrics
             ^^^^^^^
-            Regression and classification evaluation metrics: MSE, R^2,
+            Regression and classification evaluation metrics: MSE, :math:`R^2`,
             accuracy, precision, recall, F1.
 
             +++

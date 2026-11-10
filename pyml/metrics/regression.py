@@ -123,7 +123,7 @@ def mean_absolute_error(y_true: RegressionTarget, y_pred: RegressionTarget, /) -
 
 
 def r2_score(y_true: RegressionTarget, y_pred: RegressionTarget, /) -> float:
-    r"""Compute the coefficient of determination (R^2).
+    r"""Compute the coefficient of determination (:math:`R^2`).
 
     .. math::
         R^2 = 1 - \frac{SS_{res}}{SS_{tot}}
@@ -142,7 +142,7 @@ def r2_score(y_true: RegressionTarget, y_pred: RegressionTarget, /) -> float:
     Returns
     -------
     float
-        R^2 score. 1.0 indicates a perfect fit; can be negative for
+        :math:`R^2` score. 1.0 indicates a perfect fit; can be negative for
         predictions worse than always predicting the mean. Falls back to
         1.0 or 0.0 when y_true has zero variance, since the ratio is
         undefined in that case.

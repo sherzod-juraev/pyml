@@ -201,6 +201,7 @@ html_css_files = [
     "css/fonts.css",
     "css/header.css",
     "css/cards.css",
+    "css/tabs.css",
     "css/left_sidebar.css",
     "css/right_sidebar.css",
     "css/breadcrumb.css",
@@ -237,8 +238,8 @@ latex_additional_files = [
 ]
 latex_show_urls = "no"
 latex_domain_indices = False
-latex_use_xindy = False
-latex_table_style = ["booktabs"]
+latex_use_index = False
+latex_table_style = ["booktabs", "colorrows"]
 
 # --- Autodoc Base Filtering --- #
 pyml_hidden_bases = {"BaseEstimator", "DataValidatorMixin"}
