@@ -117,7 +117,7 @@ class Regressor(ABC, BaseEstimator, DataValidatorMixin):
         return self._predict(X)
 
     def score(self, X: FeatureMatrix, y: RegressionTarget, /) -> float:
-        r"""Compute the R^2 score of predictions on the given data.
+        r"""Compute the :math:`R^2` score of predictions on the given data.
 
         Equivalent to calling predict(X) and comparing the result against y
         using r2_score.
@@ -132,7 +132,7 @@ class Regressor(ABC, BaseEstimator, DataValidatorMixin):
         Returns
         -------
         float
-            R^2 score. 1.0 indicates a perfect fit; can be negative for
+            :math:`R^2` score. 1.0 indicates a perfect fit; can be negative for
             predictions worse than always predicting the mean.
 
         Raises
