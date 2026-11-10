@@ -21,8 +21,13 @@ The top-level pages, in the order of the header: Getting Started (`getting-start
 Examples (`examples/`), API Reference (`api-reference/`), Changelog (`changelog/`) and About
 (`about.rst`). The order is the order of the `toctree` in `docs/source/index.rst`.
 
-All folder and file names in `docs/source/` use hyphens (`linear-model`, `elastic-net`), because
-they become the URLs. Python names (`pyml.linear_model`) keep their underscores.
+The Python scripts in `examples/` and the `.rst` pages in `docs/source/` are named with hyphens,
+and so are the folders that hold them (`examples/linear-model/linear-regression.py`,
+`docs/source/api-reference/linear-model/`). This is the author's preferred style, not a technical
+requirement. It applies to these two kinds of files only. Every other file keeps the usual name of
+its kind: Python code that is imported and the tests that mirror it use underscores
+(`pyml.linear_model`, `tests/linear_model/`), and so do the CSS files and the extensions in
+`_ext/` (`left_sidebar.css`, `pyml_gallery_scraper.py`).
 
 ## API reference
 
@@ -100,7 +105,10 @@ Rules:
 - Read `get_info(name).categorical` before choosing a dataset for a distance-based model: a
   categorical feature is stored as integer codes, and the model would treat the codes as numbers.
   `auto_mpg` and `penguins` contain `NaN`; pyml does not impute, so drop or avoid them.
-- Files that start with an underscore (`_helpers.py`) are not run as examples.
+- Name the folder and the script with hyphens (`linear-regression.py`), see "Where things go".
+  A script is run, never imported, so the hyphens do no harm: ruff and mypy accept them.
+- Files that start with an underscore (`_helpers.py`) are not run as examples. A helper that the
+  examples import is a module, so its name needs underscores, not hyphens.
 - **Bar charts with text labels** are drawn at numeric positions and named with
   `ax.set_yticks(positions, labels)`, not with `ax.barh(["a", "b"], ...)`. Python 3.14 cannot
   pickle a figure with a categorical axis, so the dark copy of such a figure is not made and the
@@ -204,6 +212,7 @@ One CSS file per part of the site, all listed in `html_css_files` in `conf.py`:
 | `breadcrumb.css`    | The breadcrumb above the title.                                               |
 | `footer_nav.css`    | The previous / next links at the bottom of a page.                            |
 | `cards.css`         | The grid cards of `sphinx-design`.                                            |
+| `tabs.css`          | The tab sets of `sphinx-design`; the active tab keeps its underline.          |
 | `code_blocks.css`   | Code blocks and the copy button (colors of the syntax are in `pygments.css`). |
 | `gallery.css`       | The pages made by sphinx-gallery: images, thumbnails, download buttons.       |
 | `about.css`         | The author's photo on the About page.                                         |

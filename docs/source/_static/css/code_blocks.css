@@ -55,17 +55,20 @@ div.highlight:hover .copybtn,
 }
 
 /* Inline code in the page body only (not in the sidebars, whose links would get a background).
-   The text uses the darker teal: the plain primary color on this tint is only
-   3.9:1 in the light theme. In the dark theme both colors are the same. */
+   A neutral surface with a thin border, from the theme variables, so it sits well on any
+   background (also in a note) and follows the light and dark theme. box-decoration-break keeps
+   the padding and the rounded corners on both parts when the code wraps onto a new line. */
 .bd-article p code.literal,
 .bd-article li code.literal,
 .bd-article td code.literal {
-    background-color: var(--pst-color-primary-bg);
-    color: var(--pst-color-link-higher-contrast, var(--pst-color-primary));
-    border: none;
+    background-color: var(--pst-color-surface);
+    color: var(--pst-color-text-base);
+    border: 1px solid var(--pst-color-border);
     border-radius: 4px;
-    padding: 0.15rem 0.4rem;
+    padding: 0.1rem 0.35rem;
     font-size: 0.85em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
 
 div.highlight-bash pre span.gp,

@@ -24,8 +24,18 @@ if errorlevel 9009 (
 )
 
 if "%1" == "" goto help
+if "%1" == "clean" goto clean
 
 %SPHINXBUILD% -M %1 %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+goto end
+
+REM "clean" also removes the folders that sphinx-gallery generates in source\examples,
+REM one per family of examples. They are not in git. The files there (index.rst) are kept.
+:clean
+%SPHINXBUILD% -M clean %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
+if exist %SOURCEDIR%\examples (
+	for /d %%D in (%SOURCEDIR%\examples\*) do rmdir /s /q "%%D"
+)
 goto end
 
 :help

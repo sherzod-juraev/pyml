@@ -31,7 +31,9 @@ Limitations:
 
 * A text with its own colour (``ax.text(..., color="red")``) is recoloured in the dark copy.
 * Images for high-resolution screens (``image_srcset``) are not made for the dark copy.
-* Builders other than HTML (LaTeX) get the light image only.
+* Builders other than HTML (LaTeX) get the light image only. The dark images are inside
+  ``.. only:: html``, so this also holds when a LaTeX build reads pages that an HTML build
+  wrote (sphinx-gallery does not write the page of an unchanged script again).
 * A figure that cannot be pickled is not given a dark copy (the light image is used) and the
   build warns. Python 3.14 cannot pickle a figure with a categorical axis, such as
   ``ax.barh(["a", "b"], ...)``; draw such a chart at numeric positions and name the ticks with
@@ -240,7 +242,11 @@ def themed_scraper(
         fig.savefig(path, **kwargs)
         paths.append(path)
     dark_rst = figure_rst(paths, gallery_conf["src_dir"])
-    return f"{_wrap(light_rst, 'only-light')}\n\n{_wrap(dark_rst, 'only-dark')}\n"
+    # The page is written once, but another builder may read it later (Read the Docs builds
+    # HTML first and then the PDF from the same pages), so the dark images are marked HTML-only
+    # in the page itself instead of relying on the builder that ran the example.
+    dark = f".. only:: html\n\n{indent(_wrap(dark_rst, 'only-dark'), '   ')}"
+    return f"{_wrap(light_rst, 'only-light')}\n\n{dark}\n"
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
