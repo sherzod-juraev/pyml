@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a wrong result, a crash or an unexpected behavior of pyml
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please do not report a security problem here: use the
+        [private reporting](https://github.com/sherzod-juraev/pyml/security/advisories/new)
+        described in the Security Policy.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: Describe the problem in a few sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: reproducer
+    attributes:
+      label: Minimal reproducible example
+      description: The shortest code that shows the problem, with a fixed `random_state` where there is randomness.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What you expected to happen, and why.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead. Paste the full traceback if there is one.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Versions
+      description: |
+        The output of this command:
+
+        ```
+        python -c "import sys, numpy, scipy, pyml; print(sys.version); print('numpy', numpy.__version__); print('scipy', scipy.__version__); print('pyml', pyml.__version__)"
+        ```
+      render: text
+    validations:
+      required: true
