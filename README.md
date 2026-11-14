@@ -6,16 +6,12 @@
   </picture>
 </p>
 
-[![Release](https://img.shields.io/github/v/release/sherzod-juraev/pyml)](https://github.com/sherzod-juraev/pyml/releases)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Pyml](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml)
-[![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml)
-[![Docs](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml)
-[![Ruff](https://img.shields.io/badge/Ruff-enabled-brightgreen)](https://docs.astral.sh/ruff/)
-[![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy.readthedocs.io/)
-[![Interrogate](https://img.shields.io/badge/Interrogate-100%25-brightgreen)](https://interrogate.readthedocs.io/)
-[![Nox](https://img.shields.io/badge/nox-sessions-blue)](https://nox.thea.codes/)
+| Project | Badges |
+|:--------|:-------|
+| **Package** | [![Release](https://img.shields.io/github/v/release/sherzod-juraev/pyml)](https://github.com/sherzod-juraev/pyml/releases) [![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/) [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) |
+| **CI** | [![Pyml](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/pyml.yml) [![Tests](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/tests.yml) [![Docs](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml/badge.svg)](https://github.com/sherzod-juraev/pyml/actions/workflows/docs.yml) |
+| **Docs** | [![Documentation](https://readthedocs.org/projects/pyml-edu/badge/?version=latest)](https://pyml-edu.readthedocs.io) |
+| **Quality** | [![Ruff](https://img.shields.io/badge/Ruff-enabled-brightgreen)](https://docs.astral.sh/ruff/) [![mypy: strict](https://img.shields.io/badge/mypy-strict-blue.svg)](https://mypy.readthedocs.io/) [![Interrogate](https://img.shields.io/badge/Interrogate-100%25-brightgreen)](https://interrogate.readthedocs.io/) [![Coverage: 99%+](https://img.shields.io/badge/coverage-99%25%2B-brightgreen)](https://pytest-cov.readthedocs.io/) [![Nox](https://img.shields.io/badge/nox-sessions-blue)](https://nox.thea.codes/) |
 
 A from-scratch machine learning library built on NumPy and SciPy, with
 a shared estimator architecture, manual gradient derivations, and full
