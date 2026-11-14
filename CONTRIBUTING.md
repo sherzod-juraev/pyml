@@ -40,7 +40,10 @@ environments, the same way as the CI.
 
 ```text
 pyml/
-├── .github/workflows/          # CI workflows
+├── .github/
+│   ├── ISSUE_TEMPLATE/         # Issue forms and contact links
+│   ├── workflows/              # CI workflows
+│   └── PULL_REQUEST_TEMPLATE.md  # Pull request template
 ├── assets/                     # Branding
 ├── docs/                       # Sphinx documentation and changelog
 ├── examples/                   # Example scripts, one folder per family (run by the docs build)

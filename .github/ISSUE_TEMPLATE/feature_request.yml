@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a new model, parameter or public function
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        pyml is a personal, educational project, so a proposal may be slow to get an answer or
+        may be declined. A clear proposal still helps to discuss the idea.
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this solve, and why is it a good fit for pyml?
+    validations:
+      required: true
+  - type: textarea
+    id: api
+    attributes:
+      label: Proposed API
+      description: How would the feature be used? Show the class or function signature and a short example.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: math
+    attributes:
+      label: Math and references
+      description: The algorithm or formula, and links to the paper or the book (a DOI is best).
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other ways to solve the problem, and why they are not enough.
