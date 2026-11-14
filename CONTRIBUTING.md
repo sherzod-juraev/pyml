@@ -151,10 +151,10 @@ commands. This guarantees reproducibility across machines and Python versions.
 | `lint`       |       3.13        |                  ruff check and ruff format --check                   |
 | `types`      |       3.13        |                  mypy (strict) on `pyml`, `tests` and `examples`        |
 | `docstrings` |       3.13        |             interrogate, docstring coverage must be 100%              |
-| `tests`      | 3.12, 3.13, 3.14  |                                pytest                                 |
+| `tests`      | 3.12, 3.13, 3.14  |                   pytest and the coverage of `pyml`                   |
 | `docs`       |       3.13        |            sphinx-lint, doc8, rstcheck, `sphinx-build -W`, runs the examples |
 | `linkcheck`  |       3.13        |         Sphinx linkcheck, validity of every link in the docs          |
-| `tests-min`  |       3.12        |       pytest with the oldest NumPy and SciPy that pyml supports       |
+| `tests-min`  |       3.12        |     as `tests`, with the oldest NumPy and SciPy that pyml supports    |
 | `package`    |       3.13        |   builds the wheel, checks its contents, imports an installed copy    |
 
 `nox` without arguments runs every session except `linkcheck`, which needs the network and is
@@ -164,7 +164,7 @@ slow. A session stops at its first failing command, so fix it and run the sessio
 uv run nox -l                   # list all sessions
 uv run nox -s lint              # run one session
 uv run nox -s tests-3.13        # run one session on one Python version
-uv run nox -s tests -- -k tree  # arguments after -- are passed to pytest
+uv run nox -s tests -- -k tree  # arguments after -- are passed to pytest, no coverage then
 uv run nox -R                   # reuse the existing virtual environments
 ```
 
@@ -286,6 +286,12 @@ def _validate_params(self) -> None:
   `get_params`/`set_params` round trip, copy and pickle, and the hyper-parameter validation
   (an invalid value is rejected on `fit`, before the data is checked, and a failed refit keeps
   the previous fit). A test fails when a public estimator is missing from the registry.
+- The `tests` and `tests-min` sessions measure the coverage of `pyml` with `pytest-cov`,
+  branches included, and fail below `fail_under` in `pyproject.toml`. The output lists the lines
+  that no test reaches. The coverage is measured only when no arguments follow `--`, because a
+  single test cannot reach the threshold of the whole package. To measure it by hand, run
+  `uv run pytest --cov`. The coverage badge in `README.md` shows this threshold, not a measured
+  value, so change it together with `fail_under`.
 
 Where the tests for validation go:
 
