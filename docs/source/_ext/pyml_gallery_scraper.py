@@ -79,6 +79,8 @@ EXAMPLE_ORDER = (
     "radius-neighbors-regressor",
     "decision-tree-classifier",
     "decision-tree-regressor",
+    "random-forest-classifier",
+    "random-forest-regressor",
     "kmeans",
     "dbscan",
     "min-max-scaler",

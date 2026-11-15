@@ -13,6 +13,7 @@ are always in agreement.
     naive-bayes/index
     neighbors/index
     tree/index
+    ensemble/index
     cluster/index
     preprocessing/index
 
@@ -85,6 +86,22 @@ are always in agreement.
                 :expand:
 
                 Open Tree
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            Ensemble
+            ^^^^^^^^
+            Predict with the vote or the average of many decision trees.
+
+            +++
+            .. button-ref:: ensemble/index
+                :ref-type: doc
+                :color: primary
+                :expand:
+
+                Open Ensemble
 
         .. grid-item-card::
             :text-align: center
