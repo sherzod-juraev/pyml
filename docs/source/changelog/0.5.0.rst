@@ -1,0 +1,23 @@
+0.5.0
+=====
+
+Added
+-----
+
+- ``RandomForestClassifier`` and ``RandomForestRegressor``, in the new ``pyml.ensemble`` package.
+  A forest grows ``n_estimators`` decision trees, each on a bootstrap sample of the rows, and
+  each node of a tree looks for its split among ``max_features`` randomly drawn features
+  (``"sqrt"`` of the number of features by default). The classifier averages the class
+  probabilities of the trees, so ``predict_proba`` gives the soft vote and ``predict`` the class
+  with the largest one. The regressor averages the predictions of the trees. ``bootstrap=False``
+  grows every tree on all the rows, and a fixed ``random_state`` gives the same forest on every
+  fit. (#24)
+- ``pyml.core.param_checks`` gained ``check_bool``, which accepts Python and NumPy booleans and
+  rejects integers such as ``0`` and ``1``. (#24)
+
+Development
+-----------
+
+- ``tests/registry.py`` lists both forests, so the contract tests run on them, and
+  ``tests/ensemble/`` covers the vote, the bootstrap, the seeds of the trees and the comparison
+  with a single ``DecisionTree*``. (#24)
