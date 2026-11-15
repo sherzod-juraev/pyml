@@ -8,6 +8,7 @@ from pyml.core.exceptions import InvalidParameterError, ValidationError
 from pyml.core.param_checks import (
     DISTANCE_METRICS,
     check_at_least,
+    check_bool,
     check_choice,
     check_in_range,
     check_integer,
@@ -109,6 +110,23 @@ class TestCheckChoice:
             check_choice("weights", "x", ("uniform", "distance"))
 
 
+class TestCheckBool:
+    @pytest.mark.parametrize("value", [True, False, np.True_, np.False_])
+    def test_accepts_python_and_numpy_booleans(self, value):
+        check_bool("p", value)
+
+    @pytest.mark.parametrize(
+        "value", [0, 1, 0.0, 1.0, NAN, "True", "yes", None, [True], np.int64(1)]
+    )
+    def test_rejects_everything_that_is_not_a_boolean(self, value):
+        with pytest.raises(InvalidParameterError, match="must be a bool"):
+            check_bool("p", value)
+
+    def test_message_names_the_parameter_and_the_value(self):
+        with pytest.raises(InvalidParameterError, match=r"bootstrap.*'yes'"):
+            check_bool("bootstrap", "yes")
+
+
 class TestCheckInteger:
     @pytest.mark.parametrize("value", [0, -4, 7, np.int32(3), np.int64(-2)])
     def test_accepts_python_and_numpy_integers(self, value):
@@ -143,8 +161,9 @@ class TestExceptionType:
             lambda: check_in_range("p", 2, 0, 1),
             lambda: check_choice("p", "x", ("a",)),
             lambda: check_integer("p", 1.5),
+            lambda: check_bool("p", 1),
         ],
-        ids=["positive", "non_negative", "at_least", "in_range", "choice", "integer"],
+        ids=["positive", "non_negative", "at_least", "in_range", "choice", "integer", "bool"],
     )
     def test_every_check_raises_invalid_parameter_error(self, call):
         with pytest.raises(InvalidParameterError) as error:
