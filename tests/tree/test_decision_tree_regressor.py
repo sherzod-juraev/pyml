@@ -106,6 +106,16 @@ class TestFit:
         with pytest.raises(InvalidParameterError, match="max_features"):
             DecisionTreeRegressor(max_depth=3, max_features=X.shape[1] + 1).fit(X, y)
 
+    def test_leaves_keep_no_class_counts(self, rng):
+        X = rng.uniform(0, 10, size=(30, 2))
+        y = rng.uniform(0, 10, size=30)
+
+        model = DecisionTreeRegressor(max_depth=1).fit(X, y)
+
+        assert model.tree_.left.is_leaf  # type: ignore[union-attr]
+        assert model.tree_.left.counts is None  # type: ignore[union-attr]
+        assert model.tree_.right.counts is None  # type: ignore[union-attr]
+
 
 class TestPredict:
     def test_fits_step_function_closely(self, rng):

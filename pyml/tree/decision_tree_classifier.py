@@ -6,11 +6,14 @@ import numpy as np
 
 from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
-from ._base import _DecisionTreeBase
+from ._base import _DecisionTreeBase, _FloatArray, _Node
 
 
 class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
     r"""Decision tree classifier fit via recursive splitting.
+
+    .. versionchanged:: 0.4.6
+        Added ``classes_`` and ``predict_proba``.
 
     At each node, the split that most reduces Gini impurity is chosen.
     For a node with class proportions :math:`p_1, \dots, p_k`:
@@ -20,7 +23,9 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
 
     Gini is 0 when a node is pure (all samples share one class) and
     approaches 1 as classes become more evenly mixed. Each leaf predicts
-    the majority class among the samples that reach it.
+    the majority class among the samples that reach it, and
+    ``predict_proba`` returns the share of each class among those
+    samples.
 
     Parameters
     ----------
@@ -52,6 +57,9 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
     ----------
     tree_ : _Node
         Root node of the fitted tree.
+    classes_ : ClassificationTarget
+        Sorted class labels seen in fit, of shape (n_classes,). The columns
+        of ``predict_proba`` follow this order.
 
 
     .. note::
@@ -127,6 +135,36 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
         vals, counts = np.unique(y, return_counts=True)
         return int(vals[np.argmax(counts)])
 
+    def _before_build(self, y: ClassificationTarget | RegressionTarget, /) -> None:
+        """Set ``classes_``, the order in which the leaves count the classes.
+
+        Parameters
+        ----------
+        y : ClassificationTarget or RegressionTarget
+            Class labels of shape (n_samples,).
+        """
+        self.classes_ = np.unique(y)
+
+    def _make_leaf(self, y: ClassificationTarget | RegressionTarget, /) -> _Node:
+        """Create a leaf that also counts the samples of each class.
+
+        Parameters
+        ----------
+        y : ClassificationTarget or RegressionTarget
+            Class labels at this leaf, of shape (n_samples,).
+
+        Returns
+        -------
+        _Node
+            A leaf holding the majority class and, in ``counts``, the number
+            of samples of each class of ``classes_``.
+        """
+        leaf = super()._make_leaf(y)
+        leaf.counts = np.bincount(
+            np.searchsorted(self.classes_, y), minlength=self.classes_.shape[0]
+        )
+        return leaf
+
     def _predict(self, X: FeatureMatrix, /) -> ClassificationTarget:
         """Predict class labels by traversing the fitted tree.
 
@@ -141,3 +179,61 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
             Predicted class label for each sample, of shape (n_samples,).
         """
         return cast(ClassificationTarget, super()._predict(X))
+
+    def predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
+        """Predict the class probabilities for each sample.
+
+        The probabilities of a sample are the shares of the classes among the
+        training samples in the leaf it reaches, so a pure leaf gives 0 and 1.
+        The class with the largest share is the one ``predict`` returns, and
+        on a tie both give the smallest label. Validates the input, then
+        delegates to ``_predict_proba``.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
+
+        Returns
+        -------
+        FloatArray
+            Class probabilities of shape (n_samples, n_classes). The columns
+            follow ``classes_`` and every row sums to 1.
+
+        Raises
+        ------
+        NotFittedError
+            If the model has not been fitted yet.
+        ValueError
+            If X is not 2D, or contains NaN or infinite values.
+        TypeError
+            If X's dtype is not floating-point.
+        ShapeMismatchError
+            If X has a different number of features than seen in fit.
+        """
+        self._check_is_fitted()
+        self._validate_X(X)
+        self._check_n_features(X)
+        return self._predict_proba(X)
+
+    def _predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
+        """Compute the class probabilities of each sample from its leaf.
+
+        Does no input validation: it is called by ``predict_proba`` after the
+        checks.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
+
+        Returns
+        -------
+        FloatArray
+            Class probabilities of shape (n_samples, n_classes).
+        """
+        counts = np.array(
+            [self._find_leaf(x, self.tree_).counts for x in X], dtype=np.float64
+        ).reshape(X.shape[0], self.classes_.shape[0])
+        probabilities: _FloatArray = counts / counts.sum(axis=1, keepdims=True)
+        return probabilities
