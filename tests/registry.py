@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from pyml.cluster import DBSCAN, KMeans
 from pyml.core.base.estimator import BaseEstimator
+from pyml.ensemble import RandomForestClassifier, RandomForestRegressor
 from pyml.linear_model import (
     ElasticNet,
     ElasticNetClassifier,
@@ -92,6 +93,18 @@ _TREE_INVALID: tuple[dict[str, Any], ...] = (
     {"random_state": -1},
     {"random_state": 1.5},
 )
+_FOREST_INVALID: tuple[dict[str, Any], ...] = (
+    *_TREE_INVALID,
+    {"n_estimators": 0},
+    {"n_estimators": -1},
+    {"n_estimators": 2.0},
+    {"n_estimators": True},
+    {"n_estimators": _NAN},
+    {"bootstrap": 1},
+    {"bootstrap": "yes"},
+    {"bootstrap": None},
+    {"max_features": "log2"},
+)
 
 ENTRIES: tuple[Entry, ...] = (
     # --- classifiers ---
@@ -134,6 +147,12 @@ ENTRIES: tuple[Entry, ...] = (
         defaults={"max_depth": 3},
         invalid=_TREE_INVALID,
     ),
+    Entry(
+        RandomForestClassifier,
+        "classifier",
+        defaults={"max_depth": 3, "n_estimators": 5, "random_state": 42},
+        invalid=_FOREST_INVALID,
+    ),
     # --- regressors ---
     Entry(LinearRegression, "regressor", invalid=_SOLVER_INVALID),
     Entry(Ridge, "regressor", invalid=(*_SOLVER_INVALID, *_ALPHA_INVALID)),
@@ -171,6 +190,12 @@ ENTRIES: tuple[Entry, ...] = (
         "regressor",
         defaults={"max_depth": 3},
         invalid=_TREE_INVALID,
+    ),
+    Entry(
+        RandomForestRegressor,
+        "regressor",
+        defaults={"max_depth": 3, "n_estimators": 5, "random_state": 42},
+        invalid=_FOREST_INVALID,
     ),
     # --- transformers ---
     Entry(MinMaxScaler, "transformer"),

@@ -17,6 +17,7 @@ from typing import Any
 __all__ = [
     "cluster",
     "core",
+    "ensemble",
     "linear_model",
     "metrics",
     "model_selection",
