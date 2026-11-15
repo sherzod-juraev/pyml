@@ -9,7 +9,7 @@ machinery.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Self, cast
 
 import numpy as np
@@ -43,6 +43,12 @@ class _Node:
         Left child, containing samples where feature_idx <= threshold.
     right : _Node or None, optional
         Right child, containing samples where feature_idx > threshold.
+    counts : numpy.ndarray or None, optional
+        Number of training samples of each class that reached this leaf,
+        of shape (n_classes,), in the order of the classes of the model.
+        Only the leaves of a classification tree have it; it is None for
+        internal nodes and for the leaves of a regression tree. It is left
+        out of the equality of nodes.
     """
 
     is_leaf: bool
@@ -51,6 +57,7 @@ class _Node:
     threshold: float | None = None
     left: Self | None = None
     right: Self | None = None
+    counts: npt.NDArray[np.intp] | None = field(default=None, compare=False)
 
 
 class _DecisionTreeBase(ABC):
@@ -187,8 +194,24 @@ class _DecisionTreeBase(ABC):
                 f"max_features={self.max_features} cannot exceed the number of "
                 f"features ({X.shape[1]})."
             )
+        self._before_build(y)
         rng = np.random.default_rng(self.random_state)
         self.tree_ = self._build_tree(X, y, 0, rng)
+
+    def _before_build(self, y: ClassificationTarget | RegressionTarget, /) -> None:  # noqa: B027
+        """Prepare the model for growing the tree.
+
+        Called once per fit, after the checks that need the data and before
+        the first node is built, so what a subclass sets here is not changed
+        by a fit that those checks reject. A subclass overrides it to set
+        what its leaves need, such as the classes of a classifier. The
+        default does nothing on purpose, so it is not abstract.
+
+        Parameters
+        ----------
+        y : ClassificationTarget or RegressionTarget
+            Target values of shape (n_samples,).
+        """
 
     def _predict(self, X: FeatureMatrix, /) -> ClassificationTarget | RegressionTarget:
         """Predict by traversing the fitted tree for each sample.
@@ -206,7 +229,7 @@ class _DecisionTreeBase(ABC):
         """
         return cast(
             ClassificationTarget | RegressionTarget,
-            np.array([self._traverse(x, self.tree_) for x in X]),
+            np.array([self._find_leaf(x, self.tree_).value for x in X]),
         )
 
     def _build_tree(
@@ -244,13 +267,13 @@ class _DecisionTreeBase(ABC):
         """
         n = X.shape[0]
         if depth >= self.max_depth or n < self.min_samples or (np.all(y == y[0])):
-            return _Node(is_leaf=True, value=self._leaf_node(y))
+            return self._make_leaf(y)
         split_result = self._best_split(X, y, rng)
         if split_result is None:
-            return _Node(is_leaf=True, value=self._leaf_node(y))
+            return self._make_leaf(y)
         feature_idx, threshold, quality_gain = split_result
         if quality_gain < self.min_impurity_decrease:
-            return _Node(is_leaf=True, value=self._leaf_node(y))
+            return self._make_leaf(y)
         left_mask = X[:, feature_idx] <= threshold
         right_mask = ~left_mask
         left_child = self._build_tree(X[left_mask], y[left_mask], depth + 1, rng)
@@ -264,6 +287,25 @@ class _DecisionTreeBase(ABC):
             right=right_child,
             value=None,
         )
+
+    def _make_leaf(self, y: ClassificationTarget | RegressionTarget, /) -> _Node:
+        """Create the leaf for the samples that reach a node that stops growing.
+
+        The leaf stores the value from ``_leaf_node``. A subclass extends it
+        when its leaves keep more than one number, as the class counts of a
+        classifier.
+
+        Parameters
+        ----------
+        y : ClassificationTarget or RegressionTarget
+            Targets at this leaf, of shape (n_samples,).
+
+        Returns
+        -------
+        _Node
+            A leaf node holding the value of the targets `y`.
+        """
+        return _Node(is_leaf=True, value=self._leaf_node(y))
 
     def _best_split(
         self,
@@ -340,8 +382,8 @@ class _DecisionTreeBase(ABC):
 
         return int(best_feature), float(best_threshold), best_gain
 
-    def _traverse(self, x: _FloatArray, node: _Node, /) -> int | float:
-        """Follow a single sample down the tree to its leaf value.
+    def _find_leaf(self, x: _FloatArray, node: _Node, /) -> _Node:
+        """Follow a single sample down the tree to its leaf.
 
         Parameters
         ----------
@@ -352,17 +394,17 @@ class _DecisionTreeBase(ABC):
 
         Returns
         -------
-        int or float
-            The value stored at the leaf reached by this sample.
+        _Node
+            The leaf reached by this sample.
         """
         if node.is_leaf:
-            return cast(int | float, node.value)
+            return node
         feature_idx = cast(int, node.feature_idx)
         threshold = cast(float, node.threshold)
         left, right = cast(_Node, node.left), cast(_Node, node.right)
         if x[feature_idx] <= threshold:
-            return self._traverse(x, left)
-        return self._traverse(x, right)
+            return self._find_leaf(x, left)
+        return self._find_leaf(x, right)
 
     @abstractmethod
     def _split_quality(self, y: ClassificationTarget | RegressionTarget, /) -> float:
