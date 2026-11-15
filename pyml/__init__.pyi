@@ -3,6 +3,7 @@ __author__: str
 
 from . import cluster as cluster
 from . import core as core
+from . import ensemble as ensemble
 from . import linear_model as linear_model
 from . import metrics as metrics
 from . import model_selection as model_selection

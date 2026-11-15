@@ -15,6 +15,7 @@ then unsupervised, then utilities. The same order is used in
     naive-bayes/index
     neighbors/index
     tree/index
+    ensemble/index
     cluster/index
     preprocessing/index
     model-selection/index
@@ -110,6 +111,23 @@ then unsupervised, then utilities. The same order is used in
                 :expand:
 
                 Open Tree
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            Ensemble
+            ^^^^^^^^
+            Random forest regression and classification: averaged decision
+            trees grown on bootstrap samples with random feature subsets.
+
+            +++
+            .. button-ref:: ensemble/index
+                :ref-type: doc
+                :color: primary
+                :expand:
+
+                Open Ensemble
 
         .. grid-item-card::
             :text-align: center

@@ -16,6 +16,7 @@ the `GitHub Releases <https://github.com/sherzod-juraev/pyml/releases>`_ page.
 .. toctree::
     :maxdepth: 1
 
+    0.5.0
     0.4.6
     0.4.5
     0.4.4

@@ -50,6 +50,7 @@ pyml/
 ├── pyml/                       # Source code
 │   ├── cluster/                # Clustering
 │   ├── core/                   # Base classes, validation, exceptions, type aliases
+│   ├── ensemble/               # Random forests
 │   ├── linear_model/           # Linear models
 │   ├── metrics/                # Metrics
 │   ├── model_selection/        # Train/test split

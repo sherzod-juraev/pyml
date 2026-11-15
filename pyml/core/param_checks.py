@@ -135,6 +135,29 @@ def check_integer(name: str, value: object, /, *, minimum: int | None = None) ->
         check_at_least(name, int(value), minimum)
 
 
+def check_bool(name: str, value: object, /) -> None:
+    """Check that a parameter is a boolean.
+
+    Python ``bool`` and NumPy ``bool_`` are accepted. Integers such as
+    ``0`` and ``1`` are rejected even though ``1 == True``, and so is
+    every other type.
+
+    Parameters
+    ----------
+    name : str
+        Parameter name, used in the error message.
+    value : object
+        Parameter value to check.
+
+    Raises
+    ------
+    InvalidParameterError
+        If ``value`` is not a boolean.
+    """
+    if not isinstance(value, bool | np.bool_):
+        raise InvalidParameterError(f"{name} must be a bool, got {value!r}.")
+
+
 def check_choice(name: str, value: object, choices: Collection[object], /) -> None:
     """Check that a parameter is one of the allowed values.
 

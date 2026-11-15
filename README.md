@@ -85,6 +85,7 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 | Naive Bayes           |                            GaussianNB, MultinomialNB                            |
 | Nearest neighbors     |       KNN Classifier, KNN Regressor, Radius Classifier, Radius Regressor        |
 | Decision tree         |                Decision Tree Classifier, Decision Tree Regressor                |
+| Ensemble              |                Random Forest Classifier, Random Forest Regressor                |
 | Clustering            |                                 KMeans, DBSCAN                                  |
 | Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                  |
 | Model selection       |                                Train/test split                                 |

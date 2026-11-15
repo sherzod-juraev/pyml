@@ -131,8 +131,8 @@ library needs to work around.
   resolved, so one shared location is not possible. Keep the two copies in sync by hand when the
   logo changes.
 - **API Reference is not alphabetical.** Pages under `api-reference/` go supervised, then unsupervised,
-  then utilities (Core, Linear Model, Naive Bayes, Neighbors, Tree, Cluster, Preprocessing, Model
-  Selection, Metrics). The `examples/` gallery uses the same order, for consistency.
+  then utilities (Core, Linear Model, Naive Bayes, Neighbors, Tree, Ensemble, Cluster, Preprocessing,
+  Model Selection, Metrics). The `examples/` gallery uses the same order, for consistency.
 - **Only integer hyper-parameters are checked for type.** `fit` rejects out-of-range values with
   `InvalidParameterError` (a negative `alpha`, `n_clusters=0`), and integer parameters are also
   checked for type, so `n_clusters=2.5`, `max_iter="10"` and `max_depth=3.0` are rejected too.
