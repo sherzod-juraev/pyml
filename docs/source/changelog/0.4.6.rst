@@ -1,0 +1,9 @@
+0.4.6
+=====
+
+Added
+-----
+
+- ``DecisionTreeClassifier`` has ``predict_proba``, which returns the share of each class among
+  the training samples of the leaf that a sample reaches, and the ``classes_`` attribute, which
+  gives the order of its columns. ``predict`` is unchanged. (#36)
