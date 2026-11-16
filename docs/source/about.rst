@@ -19,24 +19,30 @@ About
             :text-align: center
             :shadow: sm
 
-            NumPy and SciPy only
-            ^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                NumPy and SciPy only
+
             No TensorFlow, no PyTorch, just the math.
 
         .. grid-item-card::
             :text-align: center
             :shadow: sm
 
-            Derived by hand
-            ^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Derived by hand
+
             Every model starts on paper, then in code.
 
         .. grid-item-card::
             :text-align: center
             :shadow: sm
 
-            Strictly checked
-            ^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Strictly checked
+
             Strict typing, linting and a full test suite.
 
 Why pyml exists

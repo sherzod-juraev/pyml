@@ -17,33 +17,39 @@ Naive Bayes
             :text-align: center
             :shadow: md
 
-            GaussianNB
-            ^^^^^^^^^^
+            .. card-header::
+
+                GaussianNB
+
             Classification assuming each feature is normally
             distributed within each class.
 
-            +++
-            .. button-ref:: gaussian-nb
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open GaussianNB
+                .. button-ref:: gaussian-nb
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open GaussianNB
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            MultinomialNB
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                MultinomialNB
+
             Classification assuming each feature is a count (e.g.
             word frequencies), estimated via relative frequency with
             Laplace smoothing.
 
-            +++
-            .. button-ref:: multinomial-nb
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open MultinomialNB
+                .. button-ref:: multinomial-nb
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open MultinomialNB

@@ -18,47 +18,56 @@ Preprocessing
             :text-align: center
             :shadow: md
 
-            Min Max Scaler
-            ^^^^^^^^^^^^^^
+            .. card-header::
+
+                Min Max Scaler
+
             Scales each feature to a fixed [0, 1] range.
 
-            +++
-            .. button-ref:: min-max-scaler
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Min Max Scaler
+                .. button-ref:: min-max-scaler
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Min Max Scaler
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Robust Scaler
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                Robust Scaler
+
             Scales using the median and interquartile range — resistant
             to outliers.
 
-            +++
-            .. button-ref:: robust-scaler
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Robust Scaler
+                .. button-ref:: robust-scaler
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Robust Scaler
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Standard Scaler
-            ^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Standard Scaler
+
             Standardizes each feature to zero mean and unit variance.
 
-            +++
-            .. button-ref:: standard-scaler
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Standard Scaler
+                .. button-ref:: standard-scaler
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Standard Scaler

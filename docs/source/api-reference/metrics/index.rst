@@ -17,31 +17,37 @@ Metrics
             :text-align: center
             :shadow: md
 
-            Classification Metrics
-            ^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Classification Metrics
+
             Accuracy, precision, recall, and F1 score for evaluating
             classifiers.
 
-            +++
-            .. button-ref:: classification
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Classification Metrics
+                .. button-ref:: classification
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Classification Metrics
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Regression Metrics
-            ^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Regression Metrics
+
             Mean squared error and :math:`R^2` for evaluating regression models.
 
-            +++
-            .. button-ref:: regression
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Regression Metrics
+                .. button-ref:: regression
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Regression Metrics

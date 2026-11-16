@@ -81,15 +81,15 @@ def _card(link: re.Match[str], block: str) -> str | None:
         "    :shadow: md\n"
         f"    :img-top: {image.group('path')}\n"
         "    :img-alt:\n\n"
-        f"    {_escape(name)}\n"
-        f"    {'^' * len(name)}\n"
+        "    .. card-header::\n\n"
+        f"        {_escape(name)}\n\n"
         f"    {sentence}\n\n"
-        "    +++\n"
-        f"    .. button-ref:: {link.group('path')}\n"
-        "        :ref-type: doc\n"
-        "        :color: primary\n"
-        "        :expand:\n\n"
-        "        Open example\n"
+        "    .. card-footer::\n\n"
+        f"        .. button-ref:: {link.group('path')}\n"
+        "            :ref-type: doc\n"
+        "            :color: primary\n"
+        "            :expand:\n\n"
+        "            Open example\n"
     )
 
 

@@ -17,32 +17,38 @@ Ensemble
             :text-align: center
             :shadow: md
 
-            Random Forest Classifier
-            ^^^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Random Forest Classifier
+
             Classifies by averaging the class probabilities of decision
             trees grown on bootstrap samples with random feature subsets.
 
-            +++
-            .. button-ref:: random-forest-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Random Forest Classifier
+                .. button-ref:: random-forest-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Random Forest Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Random Forest Regressor
-            ^^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Random Forest Regressor
+
             Predicts a continuous target by averaging decision trees
             grown on bootstrap samples with random feature subsets.
 
-            +++
-            .. button-ref:: random-forest-regressor
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Random Forest Regressor
+                .. button-ref:: random-forest-regressor
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Random Forest Regressor

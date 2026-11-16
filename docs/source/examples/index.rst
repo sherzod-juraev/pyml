@@ -27,110 +27,131 @@ are always in agreement.
             :text-align: center
             :shadow: md
 
-            Linear Model
-            ^^^^^^^^^^^^
+            .. card-header::
+
+                Linear Model
+
             Predict a number or a class from a weighted sum of the features.
 
-            +++
-            .. button-ref:: linear-model/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Linear Model
+                .. button-ref:: linear-model/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Linear Model
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Naive Bayes
-            ^^^^^^^^^^^
+            .. card-header::
+
+                Naive Bayes
+
             Classify with Bayes' rule: Gaussian features and counts.
 
-            +++
-            .. button-ref:: naive-bayes/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Naive Bayes
+                .. button-ref:: naive-bayes/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Naive Bayes
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Neighbors
-            ^^^^^^^^^
+            .. card-header::
+
+                Neighbors
+
             Predict from the training samples that are closest to the new one.
 
-            +++
-            .. button-ref:: neighbors/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Neighbors
+                .. button-ref:: neighbors/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Neighbors
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Tree
-            ^^^^
+            .. card-header::
+
+                Tree
+
             Predict by asking yes/no questions about the features.
 
-            +++
-            .. button-ref:: tree/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Tree
+                .. button-ref:: tree/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Tree
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Ensemble
-            ^^^^^^^^
+            .. card-header::
+
+                Ensemble
+
             Predict with the vote or the average of many decision trees.
 
-            +++
-            .. button-ref:: ensemble/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Ensemble
+                .. button-ref:: ensemble/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Ensemble
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Cluster
-            ^^^^^^^
+            .. card-header::
+
+                Cluster
+
             Group samples without labels: K Means and DBSCAN.
 
-            +++
-            .. button-ref:: cluster/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Cluster
+                .. button-ref:: cluster/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Cluster
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Preprocessing
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                Preprocessing
+
             Put the features on a common scale before a model sees them.
 
-            +++
-            .. button-ref:: preprocessing/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Preprocessing
+                .. button-ref:: preprocessing/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Preprocessing
