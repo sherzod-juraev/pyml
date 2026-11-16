@@ -1,0 +1,29 @@
+name: Documentation
+description: Report a wrong, unclear or missing explanation in the docs, a docstring or an example
+title: "docs: "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. Please do not report a wrong result or a crash here: use the
+        bug report for that.
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The URL of the docs page, or the docstring and its module path, for example `pyml.linear_model.Ridge`.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing
+      description: Describe the problem in a few sentences, for example a typo, an unclear paragraph, a wrong formula or an example that does not run.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: How the text could read instead, if you have an idea.
