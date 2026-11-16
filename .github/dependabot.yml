@@ -3,14 +3,16 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+    labels: ["dependencies"]
     groups:
       github-actions:
         patterns: ["*"]
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+    labels: ["dependencies"]
     groups:
       python-dependencies:
         patterns: ["*"]
