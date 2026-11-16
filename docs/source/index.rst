@@ -29,65 +29,77 @@ pyml
             :text-align: center
             :shadow: sm
 
-            Getting Started
-            ^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Getting Started
+
             Install pyml and fit your first model.
 
-            +++
-            .. button-ref:: getting-started
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Get started
+                .. button-ref:: getting-started
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Get started
 
         .. grid-item-card::
             :text-align: center
             :shadow: sm
 
-            Examples
-            ^^^^^^^^
+            .. card-header::
+
+                Examples
+
             Worked examples with real datasets, one page
             for every model.
 
-            +++
-            .. button-ref:: examples/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Browse the examples
+                .. button-ref:: examples/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Browse the examples
 
         .. grid-item-card::
             :text-align: center
             :shadow: sm
 
-            API Reference
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                API Reference
+
             Full documentation of every class, method, and parameter in
             the pyml package.
 
-            +++
-            .. button-ref:: api-reference/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Browse the API
+                .. button-ref:: api-reference/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Browse the API
 
         .. grid-item-card::
             :text-align: center
             :shadow: sm
 
-            About
-            ^^^^^
+            .. card-header::
+
+                About
+
             Why pyml exists, and what
             building it from scratch taught me.
 
-            +++
-            .. button-ref:: about
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                About the project
+                .. button-ref:: about
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    About the project

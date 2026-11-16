@@ -47,18 +47,24 @@ class. Copy a page of the same family and change the class name, so that the hea
       :text-align: center
       :shadow: md
 
-      Title
-      ^^^^^
+      .. card-header::
+
+          Title
+
       One sentence about what is inside.
 
-      +++
-      .. button-ref:: link
-          :ref-type: doc
-          :color: primary
-          :expand:
+      .. card-footer::
 
-          Open Title
+          .. button-ref:: link
+              :ref-type: doc
+              :color: primary
+              :expand:
+
+              Open Title
   ```
+
+  The header and the footer are the `card-header` and `card-footer` directives. The older
+  `^^^` and `+++` separators are deprecated since sphinx-design 0.8.0 and fail the build (`-W`).
 
   The grid is `1 2 2 2` columns (`1 2 2 3` when a page has three or more cards), with
   `:gutter: 3` and `:padding: 0`.

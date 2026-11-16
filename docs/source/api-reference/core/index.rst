@@ -18,31 +18,37 @@ Core
             :text-align: center
             :shadow: md
 
-            Base
-            ^^^^
+            .. card-header::
+
+                Base
+
             Base estimator classes (Regressor, Classifier, Transformer,
             Clusterer) that concrete models inherit from.
 
-            +++
-            .. button-ref:: base/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Base
+                .. button-ref:: base/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Base
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Exceptions
-            ^^^^^^^^^^
+            .. card-header::
+
+                Exceptions
+
             The pyml exception hierarchy, rooted at PymlError.
 
-            +++
-            .. button-ref:: exceptions/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Exceptions
+                .. button-ref:: exceptions/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Exceptions

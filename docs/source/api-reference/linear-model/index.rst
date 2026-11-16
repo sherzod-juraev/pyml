@@ -23,127 +23,151 @@ Linear Models
             :text-align: center
             :shadow: md
 
-            Linear Regression
-            ^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Linear Regression
+
             Ordinary least squares — no regularization.
 
-            +++
-            .. button-ref:: linear-regression
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Linear Regression
+                .. button-ref:: linear-regression
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Linear Regression
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Ridge
-            ^^^^^
+            .. card-header::
+
+                Ridge
+
             Linear regression with L2 regularization.
 
-            +++
-            .. button-ref:: ridge
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Ridge
+                .. button-ref:: ridge
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Ridge
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Lasso
-            ^^^^^
+            .. card-header::
+
+                Lasso
+
             Linear regression with L1 regularization; can zero out
             coefficients entirely.
 
-            +++
-            .. button-ref:: lasso
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Lasso
+                .. button-ref:: lasso
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Lasso
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Elastic Net
-            ^^^^^^^^^^^
+            .. card-header::
+
+                Elastic Net
+
             Linear regression combining L1 and L2 regularization.
 
-            +++
-            .. button-ref:: elastic-net
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Elastic Net
+                .. button-ref:: elastic-net
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Elastic Net
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Logistic Regression
-            ^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Logistic Regression
+
             Binary classification via a sigmoid — no regularization.
 
-            +++
-            .. button-ref:: logistic-regression
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Logistic Regression
+                .. button-ref:: logistic-regression
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Logistic Regression
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Ridge Classifier
-            ^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Ridge Classifier
+
             Logistic regression with L2 regularization.
 
-            +++
-            .. button-ref:: ridge-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Ridge Classifier
+                .. button-ref:: ridge-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Ridge Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Lasso Classifier
-            ^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Lasso Classifier
+
             Logistic regression with L1 regularization.
 
-            +++
-            .. button-ref:: lasso-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Lasso Classifier
+                .. button-ref:: lasso-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Lasso Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Elastic Net Classifier
-            ^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Elastic Net Classifier
+
             Logistic regression combining L1 and L2 regularization.
 
-            +++
-            .. button-ref:: elastic-net-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Elastic Net Classifier
+                .. button-ref:: elastic-net-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Elastic Net Classifier

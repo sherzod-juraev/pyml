@@ -19,66 +19,78 @@ Nearest Neighbors
             :text-align: center
             :shadow: md
 
-            KNN Classifier
-            ^^^^^^^^^^^^^^
+            .. card-header::
+
+                KNN Classifier
+
             Classification by vote among the k nearest training points,
             with uniform or distance-based weighting.
 
-            +++
-            .. button-ref:: knn-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open KNN Classifier
+                .. button-ref:: knn-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open KNN Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            KNN Regressor
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                KNN Regressor
+
             Regression by averaging the targets of the k nearest training
             points, with uniform or distance-based weighting.
 
-            +++
-            .. button-ref:: knn-regressor
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open KNN Regressor
+                .. button-ref:: knn-regressor
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open KNN Regressor
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Radius Classifier
-            ^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Radius Classifier
+
             Classification by vote among training points within a fixed
             radius, with uniform or distance-based weighting.
 
-            +++
-            .. button-ref:: radius-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Radius Classifier
+                .. button-ref:: radius-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Radius Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Radius Regressor
-            ^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Radius Regressor
+
             Regression by averaging the targets of training points within
             a fixed radius, with uniform or distance-based weighting.
 
-            +++
-            .. button-ref:: radius-regressor
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Radius Regressor
+                .. button-ref:: radius-regressor
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Radius Regressor

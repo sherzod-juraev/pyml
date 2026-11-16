@@ -31,168 +31,198 @@ then unsupervised, then utilities. The same order is used in
             :text-align: center
             :shadow: md
 
-            Core
-            ^^^^
+            .. card-header::
+
+                Core
+
             Shared base classes, exceptions, and type aliases used
             across all pyml estimators.
 
-            +++
-            .. button-ref:: core/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Core
+                .. button-ref:: core/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Core
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Linear & Logistic Regression
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Linear & Logistic Regression
+
             Gradient-descent-based regression and classification: OLS,
             Ridge, Lasso, Elastic Net, and their logistic counterparts.
 
-            +++
-            .. button-ref:: linear-model/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Linear Models
+                .. button-ref:: linear-model/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Linear Models
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Naive Bayes
-            ^^^^^^^^^^^
+            .. card-header::
+
+                Naive Bayes
+
             Probabilistic classification via Bayes' theorem: GaussianNB
             for continuous features, MultinomialNB for count data.
 
-            +++
-            .. button-ref:: naive-bayes/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Naive Bayes
+                .. button-ref:: naive-bayes/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Naive Bayes
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Nearest Neighbors
-            ^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Nearest Neighbors
+
             Distance-based regression and classification: KNN and
             Radius Neighbors.
 
-            +++
-            .. button-ref:: neighbors/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Nearest Neighbors
+                .. button-ref:: neighbors/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Nearest Neighbors
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Tree
-            ^^^^
+            .. card-header::
+
+                Tree
+
             Decision tree regression and classification via recursive,
             impurity-reducing splits.
 
-            +++
-            .. button-ref:: tree/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Tree
+                .. button-ref:: tree/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Tree
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Ensemble
-            ^^^^^^^^
+            .. card-header::
+
+                Ensemble
+
             Random forest regression and classification: averaged decision
             trees grown on bootstrap samples with random feature subsets.
 
-            +++
-            .. button-ref:: ensemble/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Ensemble
+                .. button-ref:: ensemble/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Ensemble
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Cluster
-            ^^^^^^^
+            .. card-header::
+
+                Cluster
+
             Unsupervised clustering algorithms: KMeans (with k-means++
             initialization) and DBSCAN.
 
-            +++
-            .. button-ref:: cluster/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Cluster
+                .. button-ref:: cluster/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Cluster
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Preprocessing
-            ^^^^^^^^^^^^^
+            .. card-header::
+
+                Preprocessing
+
             Feature scaling transformers: StandardScaler, MinMaxScaler, and
             RobustScaler.
 
-            +++
-            .. button-ref:: preprocessing/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Preprocessing
+                .. button-ref:: preprocessing/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Preprocessing
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Model Selection
-            ^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Model Selection
+
             Splitting feature matrices and target arrays into train and
             test subsets for model evaluation.
 
-            +++
-            .. button-ref:: model-selection/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Model Selection
+                .. button-ref:: model-selection/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Model Selection
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Metrics
-            ^^^^^^^
+            .. card-header::
+
+                Metrics
+
             Regression and classification evaluation metrics: MSE, :math:`R^2`,
             accuracy, precision, recall, F1.
 
-            +++
-            .. button-ref:: metrics/index
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Metrics
+                .. button-ref:: metrics/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Metrics

@@ -73,7 +73,7 @@ docs-build = [
     "sphinx>=9.1.1",
     "sphinx-autodoc-typehints>=3.17.4",
     "sphinx-copybutton>=0.5.0",
-    "sphinx-design>=0.5.0",
+    "sphinx-design>=0.8.0",
     "sphinx-gallery>=0.22.1",
     "sphinx-notfound-page>=1.1.0",
     "sphinxext-opengraph>=0.13.0",
@@ -218,7 +218,7 @@ ignore-nested-classes = false
 ignore_directives = [
     "autoclass", "autofunction",
     "button-link", "button-ref",
-    "card",
+    "card", "card-header", "card-footer",
     "dataset-info",
     "dropdown",
     "grid", "grid-item-card",

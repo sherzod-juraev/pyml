@@ -17,32 +17,38 @@ Tree
             :text-align: center
             :shadow: md
 
-            Decision Tree Classifier
-            ^^^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Decision Tree Classifier
+
             Classifies by recursively splitting on the feature that
             most reduces Gini impurity.
 
-            +++
-            .. button-ref:: decision-tree-classifier
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Decision Tree Classifier
+                .. button-ref:: decision-tree-classifier
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Decision Tree Classifier
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Decision Tree Regressor
-            ^^^^^^^^^^^^^^^^^^^^^^^
+            .. card-header::
+
+                Decision Tree Regressor
+
             Predicts a continuous target by recursively splitting on
             the feature that most reduces variance.
 
-            +++
-            .. button-ref:: decision-tree-regressor
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Decision Tree Regressor
+                .. button-ref:: decision-tree-regressor
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Decision Tree Regressor

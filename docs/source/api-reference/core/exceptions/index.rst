@@ -18,49 +18,58 @@ Exceptions
             :text-align: center
             :shadow: md
 
-            Base
-            ^^^^
+            .. card-header::
+
+                Base
+
             The root exception, PymlError, from which all other pyml
             exceptions derive.
 
-            +++
-            .. button-ref:: base
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Base
+                .. button-ref:: base
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Base
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Fitting
-            ^^^^^^^
+            .. card-header::
+
+                Fitting
+
             Errors related to the fit/predict lifecycle, such as calling
             predict before fit.
 
-            +++
-            .. button-ref:: fitting
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Fitting
+                .. button-ref:: fitting
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Fitting
 
         .. grid-item-card::
             :text-align: center
             :shadow: md
 
-            Validation
-            ^^^^^^^^^^
+            .. card-header::
+
+                Validation
+
             Errors related to invalid input, parameters, or shape
             mismatches.
 
-            +++
-            .. button-ref:: validation
-                :ref-type: doc
-                :color: primary
-                :expand:
+            .. card-footer::
 
-                Open Validation
+                .. button-ref:: validation
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Validation
