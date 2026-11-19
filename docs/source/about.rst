@@ -138,7 +138,7 @@ About the author
 
 .. only:: html
 
-    .. image:: _static/branding/author-sj.jpg
+    .. image:: ../../assets/branding/author-sj.jpg
         :alt: SJ, the monogram of Sherzod Juraev
         :align: left
         :class: author-photo sd-rounded-circle sd-mr-3

@@ -21,7 +21,7 @@ CONTRIBUTING.md.
 | `_ext/`                   | Custom Sphinx extensions (below).                                         |
 | `_plot_styles/`           | `light.mplstyle` and `dark.mplstyle`: colors of the plots.                |
 | `_latex/pyml.sty`         | Style of the PDF: fonts, colors, cover page, chapter headings.            |
-| `_static/`                | `css/` (site styling), `fonts/` (self-hosted Inter and JetBrains Mono, OFL licenses), `branding/` (logos, social image, author monogram). |
+| `_static/`                | `css/` (site styling), `fonts/` (self-hosted Inter and JetBrains Mono, OFL licenses). Brand images are not here: they live in `assets/branding/` (`html_static_path` publishes them). |
 | `_extra/`                 | Files copied to the site root as they are (`html_extra_path`).            |
 
 ### Cleaning
@@ -124,12 +124,6 @@ Decisions where the obvious fix was not taken, and why. They are written for the
 public site has no "known limitations" page because none of these is something a user of the
 library needs to work around.
 
-- **Branding files are duplicated, not shared.** `logo.svg` and `logo-dark.svg` exist in
-  `assets/branding/` (used by the GitHub README's light/dark `<picture>` switch) and in
-  `docs/source/_static/branding/` (used by Sphinx). pydata-sphinx-theme checks that the logo file
-  exists directly under Sphinx's own `_static/` before the extra `html_static_path` entries are
-  resolved, so one shared location is not possible. Keep the two copies in sync by hand when the
-  logo changes.
 - **API Reference is not alphabetical.** Pages under `api-reference/` go supervised, then unsupervised,
   then utilities (Core, Linear Model, Naive Bayes, Neighbors, Tree, Ensemble, Cluster, Preprocessing,
   Model Selection, Metrics). The `examples/` gallery uses the same order, for consistency.
