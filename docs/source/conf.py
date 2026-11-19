@@ -143,7 +143,7 @@ plot_rcparams = {
 
 # --- OpenGraph --- #
 ogp_site_url = _CANONICAL_URL
-ogp_image = "_static/branding/og-image.png"
+ogp_image = "_static/og-image.png"
 ogp_description_length = 200
 ogp_type = "website"
 ogp_custom_meta_tags = [
@@ -181,8 +181,8 @@ html_copy_source = False
 # --- Theme Customizations --- #
 html_theme_options = {
     "logo": {
-        "image_light": "_static/branding/logo.svg",
-        "image_dark": "_static/branding/logo-dark.svg",
+        "image_light": "../../assets/branding/logo.svg",
+        "image_dark": "../../assets/branding/logo-dark.svg",
         "text": "",
     },
     "github_url": "https://github.com/sherzod-juraev/pyml",
@@ -196,6 +196,7 @@ html_theme_options = {
 # --- CSS Files --- #
 html_static_path = [
     "_static",
+    "../../assets/branding",
 ]
 html_css_files = [
     "css/fonts.css",
