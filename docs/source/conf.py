@@ -19,9 +19,6 @@ author = pyml.__author__
 copyright = f"{year_str}, {author}"
 release = pyml.__version__
 version = release
-source_suffix = {
-    ".rst": "restructuredtext",
-}
 
 # --- RST Substitutions --- #
 _HOME_DESCRIPTION = (
@@ -78,16 +75,12 @@ autodoc_default_options = {
     "inherited-members": "object",
     "autosummary": True,
 }
-autodoc_typehints_format = "short"
 autodoc_class_signature = "separated"
 autosummary_generate = False
 
 # --- Napoleon --- #
-napoleon_numpy_docstring = True
 napoleon_google_docstring = False
-napoleon_include_init_with_doc = False
 napoleon_use_rtype = False
-napoleon_use_ivar = False
 napoleon_custom_sections = [
     ("Attributes", "params_style"),
 ]
@@ -99,7 +92,6 @@ default_role = "literal"
 add_module_names = False
 
 # --- Sphinx Autodoc Typehints --- #
-typehints_fully_qualified = False
 typehints_use_signature = True
 typehints_use_signature_return = True
 typehints_defaults = "comma"
@@ -114,7 +106,6 @@ intersphinx_mapping = {
 # --- CopyButton --- #
 copybutton_prompt_text = r">>> |\$ "
 copybutton_prompt_is_regexp = True
-copybutton_only_copy_prompt_lines = True
 
 # --- Matplotlib --- #
 plot_include_source = True
@@ -144,12 +135,6 @@ plot_rcparams = {
 # --- OpenGraph --- #
 ogp_site_url = _CANONICAL_URL
 ogp_image = "_static/og-image.png"
-ogp_description_length = 200
-ogp_type = "website"
-ogp_custom_meta_tags = [
-    '<meta property="og:image:width" content="1200" />',
-    '<meta property="og:image:height" content="630" />',
-]
 
 # --- Sphinx Sitemap --- #
 html_baseurl = _CANONICAL_URL
@@ -166,7 +151,6 @@ templates_path = [
 html_extra_path = [
     "_extra",
 ]
-exclude_patterns = []
 
 # --- Theme & Branding --- #
 html_theme = "pydata_sphinx_theme"
@@ -237,9 +221,7 @@ latex_documents = [
 latex_additional_files = [
     "_latex/pyml.sty",
 ]
-latex_show_urls = "no"
 latex_domain_indices = False
-latex_use_index = False
 latex_table_style = ["booktabs", "colorrows"]
 
 # --- Autodoc Base Filtering --- #
@@ -299,6 +281,5 @@ sphinx_gallery_conf = {
     "remove_config_comments": True,
     "download_all_examples": False,
     "show_signature": False,
-    "show_memory": False,
     "write_computation_times": False,
 }
