@@ -8,9 +8,9 @@ Only the latest release of pyml gets security fixes.
 
 Please do **not** open a public issue for a security problem.
 
-Use the private reporting of GitHub: open the **Security and quality** tab of this repository
-and choose **Report a vulnerability**. Describe what you found, the version it affects and, if
-you can, how to reproduce it.
+Use the private reporting of GitHub:
+[report a vulnerability](https://github.com/sherzod-juraev/pyml/security/advisories/new).
+Describe what you found, the version it affects and, if you can, how to reproduce it.
 
 This is a personal project run by one maintainer, so I may be slow, but I will read every
 report and answer it as soon as I can.
