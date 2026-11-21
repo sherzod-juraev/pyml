@@ -211,9 +211,9 @@ ignore-nested-functions = false
 ignore-nested-classes = false
 
 # --- Docs quality tools --- #
-# The nox session "docs" decides which files these tools read: it leaves out the folders that
-# sphinx-gallery generates (see _generated_gallery in noxfile.py). sphinx-lint reads no
-# configuration file, so it has no table here.
+# The nox session "docs" runs these tools on the whole folder docs/source, after it has deleted
+# the folders that sphinx-gallery generates in it (see _clean_docs in noxfile.py). sphinx-lint
+# reads no configuration file, so it has no table here.
 [tool.rstcheck]
 ignore_directives = [
     "autoclass", "autofunction",

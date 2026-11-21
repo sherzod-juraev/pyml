@@ -196,9 +196,13 @@ Remove-Item -Recurse -Force docs\source\examples\cluster
 rm -rf docs/source/examples/cluster
 ```
 
+`uv run nox -s docs` needs no such step: it deletes all the generated folders and the old build
+itself, so it runs every example each time.
+
 To take a newer pyml-datasets, update the lock first, `uv lock --upgrade-package pyml-datasets`
-(the source is the `main` branch, `uv.lock` pins the commit), then delete the generated folders.
-Do this before every release, so the examples show the current data and notes.
+(the source is the `main` branch, `uv.lock` pins the commit), then build with
+`uv run nox -s docs`, which deletes the generated folders. Do this before every release, so the
+examples show the current data and notes.
 
 ## Plots outside the gallery
 
@@ -248,7 +252,7 @@ and `content: none` for the theme's pseudo-elements; do not remove them when tid
 ## Checks
 
 ```bash
-uv run nox -s docs      # sphinx-lint, doc8, rstcheck and the build with warnings as errors
+uv run nox -s docs      # deletes the old build, then sphinx-lint, doc8, rstcheck and the build
 uv run nox -s lint      # ruff, includes the example scripts
 uv run nox -s types     # mypy strict, includes the example scripts
 ```

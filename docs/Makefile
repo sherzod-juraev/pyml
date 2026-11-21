@@ -15,7 +15,8 @@ help:
 .PHONY: help clean Makefile
 
 # "clean" also removes the folders that sphinx-gallery generates in source/examples, one per
-# family of examples. They are not in git. The files there (index.rst) are kept.
+# family of examples. They are not in git. The files there (index.rst) are kept. The same rule
+# is in make.bat and in the nox session "docs" (_clean_docs in noxfile.py).
 clean:
 	@$(SPHINXBUILD) -M clean "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 	@if [ -d "$(SOURCEDIR)/examples" ]; then find "$(SOURCEDIR)/examples" -mindepth 1 -maxdepth 1 -type d -exec rm -rf {} +; fi

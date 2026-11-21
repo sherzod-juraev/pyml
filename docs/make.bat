@@ -31,6 +31,7 @@ goto end
 
 REM "clean" also removes the folders that sphinx-gallery generates in source\examples,
 REM one per family of examples. They are not in git. The files there (index.rst) are kept.
+REM The same rule is in the Makefile and in the nox session "docs" (_clean_docs in noxfile.py).
 :clean
 %SPHINXBUILD% -M clean %SOURCEDIR% %BUILDDIR% %SPHINXOPTS% %O%
 if exist %SOURCEDIR%\examples (
