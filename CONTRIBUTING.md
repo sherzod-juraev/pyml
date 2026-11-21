@@ -320,11 +320,26 @@ Do not repeat in `TestValidateParams` what the registry already proves.
   deleted after the merge. There is no long-lived development branch.
 - `__version__` in `pyml/__init__.py` is the single source of truth, `pyproject.toml` and the
   docs read it. A new model family or a breaking change is a MINOR bump while the version is
-  0.x. A bug fix that changes behavior, or a performance change that users notice (for
-  example a lower time complexity), is a PATCH bump. Other housekeeping commits, such as
-  tooling, small optimizations and documentation changes, do not change it.
+  0.x. A bug fix that changes behavior, a performance change that users notice (for example a
+  lower time complexity), and a new parameter or method on an existing model whose default
+  keeps the old behavior are PATCH bumps. Other housekeeping commits, such as tooling, small
+  optimizations and documentation changes, do not change it.
 - Versions before 0.4.2 predate these rules, see the
   [changelog](docs/source/changelog/index.rst).
+
+The kind of change decides the bump and the section of the changelog page:
+
+| Change                                             | Version | Section                        |
+|:---------------------------------------------------|:--------|:-------------------------------|
+| A new model or family                              | MINOR   | `Added`                        |
+| A new parameter or method on an existing model     | PATCH   | `Added`                        |
+| A bug fix that changes behavior                    | PATCH   | `Fixed`                        |
+| A performance change that users notice             | PATCH   | `Performance`                  |
+| A breaking change                                  | MINOR   | `Changed`, `**Breaking:**`     |
+| Tests, tooling, documentation, small optimizations | none    | `Development`, `Documentation` |
+
+A change that does not bump the version has no release of its own. Its entry goes to the page
+of the next release.
 
 ### Changelog
 
@@ -396,6 +411,30 @@ branch. A change that does not bump the version (see
    before merging into `main`.
 6. Open a pull request from the branch into `main`, check that the CI is green, merge it and
    delete the branch.
-7. Update the local `main`, create the tag `vX.Y.Z` on it and a GitHub release titled
-   `vX.Y.Z — <Model Family Name>`.
+7. Update the local `main`, create the signed tag `vX.Y.Z` on it and a GitHub release titled
+   `vX.Y.Z — <short name>`, both as described in [Release notes](#release-notes).
 8. Check that the Read the Docs build is green.
+
+### Release notes
+
+The GitHub release of `vX.Y.Z` is written by hand from the changelog page `X.Y.Z.rst`.
+
+- **Title:** `vX.Y.Z — <short name>`. A release with a new model family is named after the
+  family (`v0.5.0 — Random Forests`), any other release after its main topic
+  (`v0.4.6 — Decision tree class probabilities`).
+- **Tag:** annotated and signed, with the `v` in front: `git tag -s vX.Y.Z -m "pyml vX.Y.Z"`.
+- **Text:** one sentence that says what the release is about, then the sections of the
+  changelog page in the same order, as `##` headings, only the ones that have entries.
+  `Development` is left out. Each bullet is the one of the changelog page, with the
+  reStructuredText double backticks turned into single ones and the `(#N)` references left
+  out. `**Breaking:**` marks stay. The last line links to the full page of the changelog.
+
+```markdown
+<One sentence about the release.>
+
+## Fixed
+
+- `Class` does this now. It used to do that.
+
+**Full changelog:** https://pyml-edu.readthedocs.io/en/latest/changelog/X.Y.Z.html
+```
