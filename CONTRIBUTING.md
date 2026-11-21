@@ -45,6 +45,7 @@ pyml/
 │   ├── workflows/              # CI workflows
 │   └── PULL_REQUEST_TEMPLATE.md  # Pull request template
 ├── assets/                     # Branding
+├── benchmarks/                 # Profiling tools for the maintainers (not part of the package)
 ├── docs/                       # Sphinx documentation and changelog
 ├── examples/                   # Example scripts, one folder per family (run by the docs build)
 ├── pyml/                       # Source code

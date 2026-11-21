@@ -13,13 +13,13 @@ import nox
 PYTHON_VERSIONS = ["3.12", "3.13", "3.14"]
 DEFAULT_PYTHON = "3.13"
 
-_SOURCE_PATHS = ["pyml", "tests", "examples", "noxfile.py"]
+_SOURCE_PATHS = ["pyml", "tests", "examples", "benchmarks", "noxfile.py"]
 _DOCS_SOURCE = "docs/source"
 _DOCS_HTML = "docs/build/html"
 _DOCS_LINKCHECK = "docs/build/linkcheck"
 
 _WHEEL_REQUIRED = ["pyml/py.typed", "pyml/__init__.py", "pyml/__init__.pyi"]
-_WHEEL_FORBIDDEN_PREFIXES = ("tests/", "docs/", "examples/")
+_WHEEL_FORBIDDEN_PREFIXES = ("tests/", "docs/", "examples/", "benchmarks/")
 
 # Runs inside the session, from a folder outside the repository, against the installed wheel.
 _SMOKE_TEST = """
@@ -148,10 +148,21 @@ def lint(session: nox.Session) -> None:
 @nox.session(python=DEFAULT_PYTHON)
 def types(session: nox.Session) -> None:
     """Check the types with mypy in strict mode."""
-    sync(session, "--group", "dev-types", "--group", "dev-test", "--group", "examples")
+    sync(
+        session,
+        "--group",
+        "dev-types",
+        "--group",
+        "dev-test",
+        "--group",
+        "dev-profile",
+        "--group",
+        "examples",
+    )
     session.run("mypy", "pyml")
     session.run("mypy", "tests")
     session.run("mypy", "examples")
+    session.run("mypy", "benchmarks")
 
 
 @nox.session(python=DEFAULT_PYTHON)
