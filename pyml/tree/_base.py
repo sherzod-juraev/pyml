@@ -322,7 +322,9 @@ class _DecisionTreeBase(ABC):
         are sorted by that feature's value, and every point between two
         distinct consecutive values is tried as a threshold, using the
         midpoint between them. Ties in gain go to the candidate examined
-        first.
+        first. The impurity of every threshold of one feature is computed
+        at once by ``_weighted_child_impurity``, so the search has no Python
+        loop over the samples.
 
         Parameters
         ----------
@@ -340,42 +342,42 @@ class _DecisionTreeBase(ABC):
             The best (feature_idx, threshold, gain) found, or None if no
             valid split exists (e.g. every candidate feature is constant).
         """
-        best_gain: float = -1.0
-        best_feature: int | None = None
-        best_threshold: float | None = None
-
         n_samples = X.shape[0]
         if self.max_features is None or self.max_features == X.shape[1]:
             features = np.arange(X.shape[1])
         else:
             features = rng.choice(X.shape[1], self.max_features, replace=False)
+
         current_impurity = self._split_quality(y)
+        n_left = np.arange(1, n_samples)
+        n_right = n_samples - n_left
+        w_left = n_left / n_samples
+        w_right = n_right / n_samples
+
+        best_gain: float = -1.0
+        best_feature: int | None = None
+        best_threshold: float | None = None
 
         for feature_id in features:
             feature_col = X[:, feature_id]
-            sort_idx = np.argsort(feature_col)
+            sort_idx = np.argsort(feature_col, kind="stable")
             X_sorted = feature_col[sort_idx]
             y_sorted = y[sort_idx]
 
-            for i in range(1, n_samples):
-                if X_sorted[i - 1] == X_sorted[i]:
-                    continue
+            distinct = X_sorted[1:] != X_sorted[:-1]
+            if not np.any(distinct):
+                continue
+            child_impurity = self._weighted_child_impurity(y_sorted, w_left, w_right)
 
-                y_left = y_sorted[:i]
-                y_right = y_sorted[i:]
+            gains = current_impurity - child_impurity
+            gains = np.where(distinct, gains, -np.inf)
 
-                n_left, n_right = len(y_left), len(y_right)
-                impurity_left = self._split_quality(y_left)
-                impurity_right = self._split_quality(y_right)
-
-                gain = current_impurity - (
-                    (n_left / n_samples) * impurity_left + (n_right / n_samples) * impurity_right
-                )
-
-                if gain > best_gain:
-                    best_gain = gain
-                    best_feature = int(feature_id)
-                    best_threshold = float(X_sorted[i - 1] + X_sorted[i]) / 2.0
+            local_idx = int(np.argmax(gains))
+            local_gain = float(gains[local_idx])
+            if local_gain > best_gain:
+                best_gain = local_gain
+                best_feature = int(feature_id)
+                best_threshold = float(X_sorted[local_idx] + X_sorted[local_idx + 1]) / 2.0
 
         if best_feature is None or best_threshold is None:
             return None
@@ -442,4 +444,40 @@ class _DecisionTreeBase(ABC):
         -------
         int or float
             The value to predict for samples reaching this leaf.
+        """
+
+    @abstractmethod
+    def _weighted_child_impurity(
+        self,
+        y_sorted: ClassificationTarget | RegressionTarget,
+        w_left: _FloatArray,
+        w_right: _FloatArray,
+        /,
+    ) -> _FloatArray:
+        """Compute the weighted child impurity of every split of one feature.
+
+        The targets are ordered by the value of one feature. Split ``i``
+        (``i = 1, ..., n_samples - 1``) sends the first ``i`` targets to the
+        left child and the rest to the right child. Subclasses implement
+        this with cumulative sums over the sorted targets, so the targets of
+        each split are not visited again.
+
+        Parameters
+        ----------
+        y_sorted : ClassificationTarget or RegressionTarget
+            Targets ordered by the feature's value, of shape (n_samples,).
+        w_left : FloatArray
+            Share of the samples that go left in each split, ``i / n_samples``,
+            of shape (n_samples - 1,).
+        w_right : FloatArray
+            Share of the samples that go right in each split,
+            ``(n_samples - i) / n_samples``, of shape (n_samples - 1,).
+
+        Returns
+        -------
+        FloatArray
+            For each split, the impurity of the left child times `w_left`
+            plus the impurity of the right child times `w_right`, of shape
+            (n_samples - 1,). The gain of a split is the impurity of the
+            node minus this value.
         """

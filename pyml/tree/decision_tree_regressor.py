@@ -6,7 +6,7 @@ import numpy as np
 
 from ..core.base import Regressor
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
-from ._base import _DecisionTreeBase
+from ._base import _DecisionTreeBase, _FloatArray
 
 
 class DecisionTreeRegressor(_DecisionTreeBase, Regressor):
@@ -132,3 +132,53 @@ class DecisionTreeRegressor(_DecisionTreeBase, Regressor):
             Predicted value for each sample, of shape (n_samples,).
         """
         return cast(RegressionTarget, super()._predict(X))
+
+    def _weighted_child_impurity(
+        self,
+        y_sorted: ClassificationTarget | RegressionTarget,
+        w_left: _FloatArray,
+        w_right: _FloatArray,
+        /,
+    ) -> _FloatArray:
+        """Compute the weighted variance of every split of one feature.
+
+        The variance of a child is the mean of the squared targets minus the
+        squared mean, taken from cumulative sums. The targets are first
+        centred on their overall mean. Variance does not change under a
+        shift, and centring keeps the two terms small, so the difference does
+        not lose its digits when the targets are large compared with their
+        spread.
+
+        Parameters
+        ----------
+        y_sorted : ClassificationTarget or RegressionTarget
+            Targets ordered by the feature's value, of shape (n_samples,).
+        w_left : FloatArray
+            Share of the samples that go left in each split, of shape
+            (n_samples - 1,).
+        w_right : FloatArray
+            Share of the samples that go right in each split, of shape
+            (n_samples - 1,).
+
+        Returns
+        -------
+        FloatArray
+            The weighted sum of the two child variances of each split, of
+            shape (n_samples - 1,).
+        """
+        yc = y_sorted - y_sorted.mean()
+
+        cum_sum = np.cumsum(yc)[:-1]
+        cum_sq = np.cumsum(yc**2)[:-1]
+
+        n_left = np.arange(1, y_sorted.shape[0], dtype=np.float64)
+        n_right = y_sorted.shape[0] - n_left
+
+        total_sum = yc.sum()
+        total_sq = (yc**2).sum()
+
+        var_left = cum_sq / n_left - (cum_sum / n_left) ** 2
+        var_right = (total_sq - cum_sq) / n_right - ((total_sum - cum_sum) / n_right) ** 2
+
+        impurity: _FloatArray = w_left * var_left + w_right * var_right
+        return impurity

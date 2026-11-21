@@ -117,6 +117,99 @@ class TestFit:
         assert model.tree_.right.counts is None  # type: ignore[union-attr]
 
 
+class TestBestSplit:
+    @pytest.mark.parametrize("shift", [0.0, 1e6, 1e8], ids=["no-shift", "shift-1e6", "shift-1e8"])
+    def test_weighted_child_variance_matches_the_variance_of_each_part(self, rng, shift):
+        y = rng.normal(size=40) + shift
+        model = DecisionTreeRegressor(max_depth=3)
+        n = y.shape[0]
+        n_left = np.arange(1, n)
+
+        result = model._weighted_child_impurity(y, n_left / n, (n - n_left) / n)
+
+        expected = [(i / n) * np.var(y[:i]) + ((n - i) / n) * np.var(y[i:]) for i in range(1, n)]
+        assert np.allclose(result, expected, rtol=0, atol=1e-9)
+
+    @pytest.mark.parametrize("shift", [0.0, 1e6], ids=["no-shift", "shift-1e6"])
+    def test_matches_the_exhaustive_search(self, rng, exhaustive_best_split, split_gain, shift):
+        X = rng.normal(size=(60, 3))
+        y = X[:, 0] * 2 + rng.normal(scale=0.5, size=60) + shift
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, rng)
+
+        _, _, best_gain = exhaustive_best_split(model, X, y)
+        assert result is not None
+        feature, threshold, gain = result
+        assert gain == pytest.approx(best_gain, abs=1e-9)
+        assert split_gain(model, X, y, feature, threshold) == pytest.approx(best_gain, abs=1e-9)
+
+    def test_matches_the_exhaustive_search_with_repeated_values(
+        self, rng, exhaustive_best_split, split_gain
+    ):
+        X = np.round(rng.normal(size=(80, 3)) * 2) / 2
+        y = X[:, 1] + rng.normal(scale=0.5, size=80)
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, rng)
+
+        _, _, best_gain = exhaustive_best_split(model, X, y)
+        assert result is not None
+        feature, threshold, gain = result
+        assert gain == pytest.approx(best_gain, abs=1e-9)
+        assert split_gain(model, X, y, feature, threshold) == pytest.approx(best_gain, abs=1e-9)
+
+    def test_integer_targets_give_the_same_split_as_float_targets(self, rng):
+        X = rng.normal(size=(50, 3))
+        y = rng.integers(0, 10, size=50)
+        model = DecisionTreeRegressor(max_depth=3)
+
+        with_integers = model._best_split(X, y, rng)
+        with_floats = model._best_split(X, y.astype(np.float64), rng)
+
+        assert with_integers == with_floats
+
+    def test_equal_gains_go_to_the_first_threshold(self):
+        X = np.array([[0.0], [1.0], [2.0], [3.0]])
+        y = np.array([0.0, 1.0, 1.0, 0.0])
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[1] == pytest.approx(0.5)
+
+    def test_equal_gains_go_to_the_first_feature(self):
+        X = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+        y = np.array([0.0, 0.0, 5.0, 5.0])
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[0] == 0
+
+    def test_a_constant_feature_is_never_chosen(self):
+        X = np.array([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0], [1.0, 3.0]])
+        y = np.array([0.0, 0.0, 5.0, 5.0])
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[0] == 1
+        assert result[1] == pytest.approx(1.5)
+
+    def test_returns_none_when_every_feature_is_constant(self):
+        X = np.ones((4, 2))
+        y = np.array([1.0, 2.0, 3.0, 4.0])
+        model = DecisionTreeRegressor(max_depth=3)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is None
+
+
 class TestPredict:
     def test_fits_step_function_closely(self, rng):
         X = np.sort(rng.uniform(0, 10, size=(60, 1)), axis=0)
