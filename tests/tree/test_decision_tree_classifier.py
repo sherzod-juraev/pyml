@@ -142,6 +142,102 @@ class TestFit:
         assert np.array_equal(model.classes_, [0, 1])
 
 
+class TestBestSplit:
+    @pytest.mark.parametrize(
+        "labels",
+        [(0, 1), (0, 1, 2, 3), (-3, 0, 7, 12), (5,)],
+        ids=["two-classes", "four-classes", "labels-with-gaps", "single-class"],
+    )
+    def test_weighted_child_impurity_matches_the_impurity_of_each_part(self, rng, labels):
+        y = rng.choice(labels, size=40)
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+        n = y.shape[0]
+        n_left = np.arange(1, n)
+
+        result = model._weighted_child_impurity(y, n_left / n, (n - n_left) / n)
+
+        expected = [
+            (i / n) * model._split_quality(y[:i]) + ((n - i) / n) * model._split_quality(y[i:])
+            for i in range(1, n)
+        ]
+        assert np.allclose(result, expected)
+
+    def test_matches_the_exhaustive_search(self, rng, exhaustive_best_split, split_gain):
+        X = rng.normal(size=(60, 3))
+        y = rng.integers(0, 3, size=60)
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, rng)
+
+        _, _, best_gain = exhaustive_best_split(model, X, y)
+        assert result is not None
+        feature, threshold, gain = result
+        assert gain == pytest.approx(best_gain)
+        assert split_gain(model, X, y, feature, threshold) == pytest.approx(best_gain)
+
+    def test_matches_the_exhaustive_search_with_repeated_values(
+        self, rng, exhaustive_best_split, split_gain
+    ):
+        X = np.round(rng.normal(size=(80, 3)) * 2) / 2
+        y = rng.integers(0, 4, size=80)
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, rng)
+
+        _, _, best_gain = exhaustive_best_split(model, X, y)
+        assert result is not None
+        feature, threshold, gain = result
+        assert gain == pytest.approx(best_gain)
+        assert split_gain(model, X, y, feature, threshold) == pytest.approx(best_gain)
+
+    def test_equal_gains_go_to_the_first_threshold(self):
+        X = np.array([[0.0], [1.0], [2.0], [3.0]])
+        y = np.array([0, 1, 1, 0])
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[1] == pytest.approx(0.5)
+
+    def test_equal_gains_go_to_the_first_feature(self):
+        X = np.array([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]])
+        y = np.array([0, 0, 1, 1])
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[0] == 0
+
+    def test_a_constant_feature_is_never_chosen(self):
+        X = np.array([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0], [1.0, 3.0]])
+        y = np.array([0, 0, 1, 1])
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is not None
+        assert result[0] == 1
+        assert result[1] == pytest.approx(1.5)
+
+    def test_returns_none_when_every_feature_is_constant(self):
+        X = np.ones((4, 2))
+        y = np.array([0, 1, 0, 1])
+        model = DecisionTreeClassifier(max_depth=3)
+        model._before_build(y)
+
+        result = model._best_split(X, y, np.random.default_rng(0))
+
+        assert result is None
+
+
 class TestPredict:
     def test_separates_linearly_separable_classes(self, rng):
         X0 = rng.normal(loc=(-3, -3), scale=0.5, size=(50, 2))

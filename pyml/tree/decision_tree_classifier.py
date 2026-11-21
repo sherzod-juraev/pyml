@@ -1,8 +1,9 @@
 """Decision tree classifier fit via recursive Gini-impurity splitting."""
 
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
+import numpy.typing as npt
 
 from ..core.base import Classifier
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
@@ -237,3 +238,71 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
         ).reshape(X.shape[0], self.classes_.shape[0])
         probabilities: _FloatArray = counts / counts.sum(axis=1, keepdims=True)
         return probabilities
+
+    def _impurity_from_counts(
+        self, counts: _FloatArray, n: npt.NDArray[np.integer[Any]], /
+    ) -> _FloatArray:
+        r"""Compute the Gini impurity of several nodes from their class counts.
+
+        .. math::
+            Gini = 1 - \sum_{i=1}^{k} p_i^2, \qquad p_i = \frac{counts_i}{n}
+
+        Parameters
+        ----------
+        counts : FloatArray
+            Number of samples of each class in each node, of shape
+            (n_nodes, n_classes).
+        n : numpy.ndarray of int
+            Number of samples in each node, of shape (n_nodes, 1).
+
+        Returns
+        -------
+        FloatArray
+            The Gini impurity of each node, of shape (n_nodes,).
+        """
+        p = counts / n
+        return 1.0 - np.sum(p**2, axis=-1)
+
+    def _weighted_child_impurity(
+        self,
+        y_sorted: ClassificationTarget | RegressionTarget,
+        w_left: _FloatArray,
+        w_right: _FloatArray,
+        /,
+    ) -> _FloatArray:
+        """Compute the weighted Gini impurity of every split of one feature.
+
+        A cumulative sum of the one-hot class indicators gives the class
+        counts of the left child for every split at once. The counts of the
+        right child are the totals minus the left counts. A class that does
+        not occur at the node has a count of 0 and does not change the
+        impurity. ``classes_`` must already be set.
+
+        Parameters
+        ----------
+        y_sorted : ClassificationTarget or RegressionTarget
+            Class labels ordered by the feature's value, of shape
+            (n_samples,).
+        w_left : FloatArray
+            Share of the samples that go left in each split, of shape
+            (n_samples - 1,).
+        w_right : FloatArray
+            Share of the samples that go right in each split, of shape
+            (n_samples - 1,).
+
+        Returns
+        -------
+        FloatArray
+            The weighted sum of the two child Gini impurities of each split,
+            of shape (n_samples - 1,).
+        """
+        onehot = y_sorted[:, None] == self.classes_
+        cum = np.cumsum(onehot, axis=0).astype(np.float64)
+        total = cum[-1]
+        left = cum[:-1]
+        right = total - left
+        n_left = np.arange(1, y_sorted.shape[0])[:, None]
+        n_right = y_sorted.shape[0] - n_left
+        g_left = self._impurity_from_counts(left, n_left)
+        g_right = self._impurity_from_counts(right, n_right)
+        return w_left * g_left + w_right * g_right
