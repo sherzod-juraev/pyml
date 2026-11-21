@@ -156,7 +156,7 @@ commands. This guarantees reproducibility across machines and Python versions.
 | `types`      |       3.13        |                  mypy (strict) on `pyml`, `tests` and `examples`        |
 | `docstrings` |       3.13        |             interrogate, docstring coverage must be 100%              |
 | `tests`      | 3.12, 3.13, 3.14  |                   pytest and the coverage of `pyml`                   |
-| `docs`       |       3.13        |            sphinx-lint, doc8, rstcheck, `sphinx-build -W`, runs the examples |
+| `docs`       |       3.13        |  deletes the old build; sphinx-lint, doc8, rstcheck, `sphinx-build -W`; runs every example |
 | `linkcheck`  |       3.13        |         Sphinx linkcheck, validity of every link in the docs          |
 | `tests-min`  |       3.12        |     as `tests`, with the oldest NumPy and SciPy that pyml supports    |
 | `package`    |       3.13        |   builds the wheel, checks its contents, imports an installed copy    |
@@ -191,7 +191,8 @@ How the documentation is organized (layout, custom extensions, the PDF build and
 its pitfalls) is described in [docs/README.md](docs/README.md), and how to add a page, an API
 entry or an example in [docs/AUTHORING.md](docs/AUTHORING.md). The first build runs every
 script in `examples/`, so it takes longer than the next ones: sphinx-gallery runs a script again
-only when the file changes.
+only when the file changes. `uv run nox -s docs` is the exception: it deletes the old build
+first, so it runs every script each time.
 
 ## Conventions
 
@@ -399,9 +400,9 @@ branch. A change that does not bump the version (see
 1. Run `uv run nox` on the branch of the change, and make sure the CI is green.
 2. Bump `__version__` in `pyml/__init__.py`.
 3. Take the newest datasets for the examples: `uv lock --upgrade-package pyml-datasets` (its
-   source is the `main` branch and `uv.lock` pins the commit), delete the generated folders in
-   `docs/source/examples/` and build the docs, so the examples show the current data. Commit
-   `uv.lock`.
+   source is the `main` branch and `uv.lock` pins the commit) and build the docs with
+   `uv run nox -s docs`, which deletes the generated folders in `docs/source/examples/` first,
+   so the examples show the current data. Commit `uv.lock`.
 4. Check the version markers: every `versionadded`, `versionchanged` and `deprecated` marker
    that was added for this release must carry the new version (see
    [Docstrings](#docstrings)).

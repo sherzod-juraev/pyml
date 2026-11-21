@@ -30,7 +30,8 @@ CONTRIBUTING.md.
 that sphinx-gallery generated in `source/examples/`, and keeps `examples/index.rst`. sphinx-gallery
 skips a script that did not change, so after a change to the gallery code (a scraper, a style)
 the old pages stay as they were until these folders are gone. The next build runs every example
-again, so it takes longer.
+again, so it takes longer. The nox session `docs` does the same on its own at its start and
+deletes `build/html` too, so it always builds from nothing (see `_clean_docs` in `noxfile.py`).
 
 ## Custom extensions (`_ext/`)
 

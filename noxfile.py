@@ -69,24 +69,35 @@ def _pytest(session: nox.Session) -> None:
     session.run("pytest", *coverage, *session.posargs)
 
 
-def _generated_gallery() -> list[Path]:
-    """Return the folders that sphinx-gallery writes into the documentation during a build.
+def _clean_docs(session: nox.Session) -> None:
+    """Delete what an earlier build of the documentation left on the disk.
 
-    There is one folder for every family of examples, and one for the back references. They are
-    not in git (see .gitignore), they stay on the disk after a build, and sphinx-gallery writes
-    them with the line endings of the operating system, so the style checks must not read them.
+    There are two kinds of leftovers, and neither is in git (see .gitignore). One is the folders
+    that sphinx-gallery writes into the documentation during a build: one for every family of
+    examples, and one for the back references. The style tools cannot be told to skip a folder
+    (sphinx-lint reads no configuration file, rstcheck has no setting for paths, and doc8 matches
+    globs against "/" paths), and sphinx-gallery writes the folders with the line endings of the
+    operating system, so the tools must not find them. The other is the build folder, which holds
+    the saved environment of Sphinx and would hide the warnings of the pages that did not change.
+    Both are deleted, so the checks and the build always start from nothing, with the same code on
+    every system. The ``index.rst`` of the examples is in git and stays, and so does the folder
+    of the ``linkcheck`` session. ``make clean`` of ``docs/Makefile`` and ``docs/make.bat`` follows
+    the same rule for the generated folders.
+
+    Parameters
+    ----------
+    session : nox.Session
+        Session that reports the error when a folder cannot be deleted.
     """
     examples = Path(_DOCS_SOURCE, "examples")
-    return sorted(path for path in examples.iterdir() if path.is_dir()) if examples.is_dir() else []
-
-
-def _rst_files(generated: list[Path]) -> list[str]:
-    """Return the reStructuredText files of the documentation that people write by hand."""
-    return sorted(
-        str(path)
-        for path in Path(_DOCS_SOURCE).rglob("*.rst")
-        if not any(path.is_relative_to(folder) for folder in generated)
-    )
+    generated = [path for path in examples.iterdir() if path.is_dir()] if examples.is_dir() else []
+    for folder in (*generated, Path(_DOCS_HTML)):
+        if not folder.is_dir():
+            continue
+        try:
+            shutil.rmtree(folder)
+        except OSError as error:
+            session.error(f"could not delete {folder}: {error}. Close the programs that use it.")
 
 
 def _minimum_requirements() -> list[str]:
@@ -176,17 +187,16 @@ def tests_min(session: nox.Session) -> None:
 
 @nox.session(python=DEFAULT_PYTHON)
 def docs(session: nox.Session) -> None:
-    """Check the style of the documentation and build it with warnings as errors."""
+    """Check the style of the documentation and build it with warnings as errors.
+
+    The old build is deleted first (see ``_clean_docs``), so every example runs again.
+    """
     sync(session, "--group", "docs")
-    # None of the three tools can be told to skip a folder in the same way (sphinx-lint reads
-    # no configuration file, rstcheck has no setting for paths, and doc8 matches globs against
-    # "/" paths), so the generated folders are left out here, with the same path on every system.
-    generated = _generated_gallery()
-    ignore = [argument for folder in generated for argument in ("--ignore", str(folder))]
-    session.run("sphinx-lint", *ignore, str(Path(_DOCS_SOURCE)))
-    session.run("doc8", *_rst_files(generated))
-    session.run("rstcheck", *_rst_files(generated))
-    session.run("sphinx-build", "-b", "html", "-W", "--keep-going", "-E", _DOCS_SOURCE, _DOCS_HTML)
+    _clean_docs(session)
+    session.run("sphinx-lint", _DOCS_SOURCE)
+    session.run("doc8", _DOCS_SOURCE)
+    session.run("rstcheck", "--recursive", _DOCS_SOURCE)
+    session.run("sphinx-build", "-b", "html", "-W", "--keep-going", _DOCS_SOURCE, _DOCS_HTML)
 
 
 @nox.session(python=DEFAULT_PYTHON)
