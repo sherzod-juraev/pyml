@@ -320,8 +320,9 @@ Do not repeat in `TestValidateParams` what the registry already proves.
   deleted after the merge. There is no long-lived development branch.
 - `__version__` in `pyml/__init__.py` is the single source of truth, `pyproject.toml` and the
   docs read it. A new model family or a breaking change is a MINOR bump while the version is
-  0.x, and a bug fix that changes behavior is a PATCH bump. Housekeeping commits, such as
-  tooling, performance and documentation changes, do not change it.
+  0.x. A bug fix that changes behavior, or a performance change that users notice (for
+  example a lower time complexity), is a PATCH bump. Other housekeeping commits, such as
+  tooling, small optimizations and documentation changes, do not change it.
 - Versions before 0.4.2 predate these rules, see the
   [changelog](docs/source/changelog/index.rst).
 

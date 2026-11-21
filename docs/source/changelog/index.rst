@@ -8,8 +8,9 @@ the `GitHub Releases <https://github.com/sherzod-juraev/pyml/releases>`_ page.
 
 .. note::
 
-   The versioning rules in the project guide (new model family is a MINOR bump, a bug fix is a
-   PATCH bump, tests, tooling and documentation changes do not bump) apply from 0.4.2.
+   The versioning rules in the project guide (a new model family is a MINOR bump, a bug fix or
+   a performance change that users notice is a PATCH bump, tests, tooling and documentation
+   changes do not bump) apply from 0.4.2.
    Earlier releases, such as 0.1.1, 0.2.0 and 0.4.1, were also bumped for test, CI and
    tooling work, so their numbers do not follow these rules. They are kept as released.
 
