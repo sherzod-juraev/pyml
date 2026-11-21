@@ -1,0 +1,17 @@
+0.5.1
+=====
+
+Performance
+-----------
+
+- ``DecisionTreeClassifier`` and ``DecisionTreeRegressor`` find the best split of a node from
+  cumulative statistics of the sorted feature instead of a Python loop over every threshold.
+  For a given ``max_depth`` the fitting time now grows close to linearly with the number of
+  samples and is many times shorter on large data. Predictions are unchanged, except that
+  ``DecisionTreeRegressor`` can now pick between two splits of exactly equal gain in a different
+  order, because of floating-point rounding. (#54)
+
+Development
+-----------
+
+- ``tests/tree/`` compares the split search with a slow exhaustive search. (#54)
