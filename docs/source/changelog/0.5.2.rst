@@ -1,0 +1,20 @@
+0.5.2
+=====
+
+Performance
+-----------
+
+- ``LinearRegression``, ``Ridge``, ``Lasso`` and ``ElasticNet`` no longer validate the inputs
+  of the loss on every iteration, because ``fit`` has already validated the data. Fitting is
+  about 20-25% faster on a data set of 500 samples and 8 features. The fitted coefficients and
+  the number of iterations are unchanged. A fit that diverges still stops with the same
+  ``ValueError``; it is now raised as soon as the loss stops being finite, so if the
+  predictions are finite but their squares overflow, it stops one step earlier than before.
+  (#64)
+
+Development
+-----------
+
+- ``tests/linear_model/`` checks that a diverging fit raises ``ValueError``. (#64)
+- ``benchmarks/run.py profile`` profiles a script with ``pyinstrument`` and ``cProfile``. The
+  ``dev-profile`` dependency group installs ``pyinstrument``. (#62)
