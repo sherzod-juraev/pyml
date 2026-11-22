@@ -116,6 +116,72 @@ class TestFit:
         assert model.tree_.left.counts is None  # type: ignore[union-attr]
         assert model.tree_.right.counts is None  # type: ignore[union-attr]
 
+    def test_flat_tree_lists_the_nodes_in_preorder(self, rng, preorder_nodes):
+        X = rng.uniform(0, 10, size=(80, 3))
+        y = rng.uniform(0, 10, size=80)
+
+        model = DecisionTreeRegressor(max_depth=4).fit(X, y)
+        nodes = preorder_nodes(model.tree_)
+        flat = model._flat
+
+        assert len(nodes) == flat.value.shape[0] == flat.left.shape[0]
+        for i, node in enumerate(nodes):
+            if node.is_leaf:
+                assert flat.left[i] == flat.right[i] == -1
+                assert flat.value[i] == node.value
+            else:
+                assert flat.feature_idx[i] == node.feature_idx
+                assert flat.threshold[i] == node.threshold
+                assert nodes[flat.left[i]] is node.left
+                assert nodes[flat.right[i]] is node.right
+
+    def test_flat_tree_of_a_single_leaf_has_one_node(self):
+        X = np.arange(4, dtype=float).reshape(-1, 1)
+        y = np.array([1.0, 2.0, 3.0, 6.0])
+
+        flat = DecisionTreeRegressor(max_depth=0).fit(X, y)._flat
+
+        assert flat.left.shape == (1,)
+        assert flat.left[0] == flat.right[0] == -1
+        assert flat.value[0] == 3.0
+
+    def test_flat_values_are_floats(self, linear_data):
+        X, y = linear_data(n_samples=40)
+
+        flat = DecisionTreeRegressor(max_depth=3).fit(X, y)._flat
+
+        assert flat.value.dtype == np.float64
+
+    def test_flat_tree_keeps_no_class_counts(self, linear_data):
+        X, y = linear_data(n_samples=40)
+
+        model = DecisionTreeRegressor(max_depth=3).fit(X, y)
+
+        assert model._flat.counts is None
+
+    def test_refit_replaces_the_flat_tree(self, rng, leaf_of_each_sample):
+        X = rng.uniform(0, 10, size=(60, 2))
+        model = DecisionTreeRegressor(max_depth=3).fit(X, rng.uniform(0, 10, size=60))
+
+        model.fit(X, X[:, 0] * 2.0)
+        expected = [leaf.value for leaf in leaf_of_each_sample(model, X)]
+
+        assert np.array_equal(model.predict(X), expected)
+
+    def test_rejected_max_features_keeps_the_fitted_tree(self, rng):
+        X = rng.uniform(0, 10, size=(30, 3))
+        y = rng.uniform(0, 10, size=30)
+        model = DecisionTreeRegressor(max_depth=3).fit(X, y)
+        before = model.predict(X)
+        flat = model._flat
+
+        model.max_features = 4
+        with pytest.raises(InvalidParameterError, match="max_features"):
+            model.fit(X, y)
+
+        assert model._flat is flat
+        assert np.array_equal(model.predict(X), before)
+
 
 class TestBestSplit:
     @pytest.mark.parametrize("shift", [0.0, 1e6, 1e8], ids=["no-shift", "shift-1e6", "shift-1e8"])
@@ -236,6 +302,43 @@ class TestPredict:
         prediction = model.predict(np.array([[1.0]]))
 
         assert np.isclose(prediction[0], 2.0)
+
+    @pytest.mark.parametrize("max_depth", [0, 1, 3, 8])
+    def test_matches_a_walk_of_the_tree_for_every_sample(self, rng, leaf_of_each_sample, max_depth):
+        X = rng.normal(size=(300, 4))
+        y = X[:, 0] ** 2 + X[:, 1] + rng.normal(0, 0.1, size=300)
+        model = DecisionTreeRegressor(max_depth=max_depth).fit(X, y)
+
+        for data in (X, rng.normal(size=(100, 4))):
+            expected = np.array([leaf.value for leaf in leaf_of_each_sample(model, data)])
+            prediction = model.predict(data)
+
+            assert prediction.dtype == expected.dtype
+            assert np.array_equal(prediction, expected)
+
+    def test_apply_returns_the_position_of_the_leaf_of_each_sample(
+        self, rng, leaf_of_each_sample, preorder_nodes
+    ):
+        X = rng.normal(size=(200, 3))
+        y = X[:, 0] ** 2 + rng.normal(0, 0.1, size=200)
+        model = DecisionTreeRegressor(max_depth=5).fit(X, y)
+        nodes = preorder_nodes(model.tree_)
+
+        positions = model._apply(X)
+
+        assert positions.dtype == np.intp
+        assert [nodes[i] for i in positions] == leaf_of_each_sample(model, X)
+        assert all(nodes[i].is_leaf for i in positions)
+
+    def test_value_equal_to_the_threshold_goes_left(self):
+        X = np.array([[0.0], [1.0]])
+        y = np.array([0.0, 10.0])
+        model = DecisionTreeRegressor(max_depth=1).fit(X, y)
+
+        prediction = model.predict(np.array([[0.5], [0.5000001]]))
+
+        assert model.tree_.threshold == 0.5
+        assert np.array_equal(prediction, [0.0, 10.0])
 
 
 class TestValidateParams:

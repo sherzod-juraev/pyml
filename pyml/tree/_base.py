@@ -60,6 +60,42 @@ class _Node:
     counts: npt.NDArray[np.intp] | None = field(default=None, compare=False)
 
 
+@dataclass(eq=False)
+class _FlatTree:
+    """A fitted tree stored as flat arrays, one entry per node.
+
+    Node ``i`` is the node at position ``i`` of a preorder walk, so the
+    root is node 0 and the left child of an internal node comes right
+    after it. Leaves have ``left == right == -1``. The arrays are what lets
+    ``predict`` move every sample one level down with a few array lookups
+    instead of walking ``_Node`` objects one sample at a time.
+
+    Parameters
+    ----------
+    feature_idx : numpy.ndarray of int
+        Feature each node splits on, of shape (n_nodes,). Unused (0) at leaves.
+    threshold : numpy.ndarray of float
+        Split threshold of each node, of shape (n_nodes,). Unused (0.0) at leaves.
+    left, right : numpy.ndarray of int
+        Index of the left and right child of each node, of shape (n_nodes,).
+        -1 at leaves.
+    value : numpy.ndarray
+        Prediction stored at each node, of shape (n_nodes,). Only the entries of
+        leaves are meaningful. The dtype is that of the leaf values (integer
+        for classifiers, float for regressors).
+    counts : numpy.ndarray of int or None
+        Number of training samples of each class at each leaf, of shape
+        (n_nodes, n_classes). None for a regression tree.
+    """
+
+    feature_idx: npt.NDArray[np.intp]
+    threshold: npt.NDArray[np.float64]
+    left: npt.NDArray[np.intp]
+    right: npt.NDArray[np.intp]
+    value: npt.NDArray[np.integer[Any] | np.floating[Any]]
+    counts: npt.NDArray[np.intp] | None
+
+
 class _DecisionTreeBase(ABC):
     r"""Abstract base class for binary decision trees fit via recursive splitting.
 
@@ -174,6 +210,75 @@ class _DecisionTreeBase(ABC):
         if self.random_state is not None:
             check_integer("random_state", self.random_state, minimum=0)
 
+    def _flatten_tree(self, root: _Node) -> _FlatTree:
+        """Convert a fitted ``_Node`` tree into flat arrays.
+
+        The nodes are numbered in preorder (a node, then its whole left
+        subtree, then its right subtree), so the root is 0. The walk uses an
+        explicit stack, so it makes one pass over the nodes and does not
+        recurse.
+
+        Parameters
+        ----------
+        root : _Node
+            Root of the fitted tree.
+
+        Returns
+        -------
+        _FlatTree
+            The same tree as arrays, with ``n_nodes`` entries each.
+        """
+        # Preorder walk: pop a node, record it, push right first so left is popped first.
+        nodes: list[_Node] = []
+        stack = [root]
+        while stack:
+            node = stack.pop()
+            nodes.append(node)
+            if not node.is_leaf:
+                stack.append(cast(_Node, node.right))
+                stack.append(cast(_Node, node.left))
+
+        n_nodes = len(nodes)
+        # The id of a node is its position in `nodes`; children are looked up by identity.
+        node_id = {id(node): i for i, node in enumerate(nodes)}
+
+        feature_idx = np.zeros(n_nodes, dtype=np.intp)
+        threshold = np.zeros(n_nodes, dtype=np.float64)
+        # -1 marks "no child", which is how predict recognizes a leaf.
+        left = np.full(n_nodes, -1, dtype=np.intp)
+        right = np.full(n_nodes, -1, dtype=np.intp)
+
+        # The root can be an internal node, whose value and counts are None, so the dtype
+        # of `value` and the number of classes are read from a leaf (the first one in preorder).
+        first_leaf = next(node for node in nodes if node.is_leaf)
+        is_int = isinstance(first_leaf.value, (int, np.integer))
+        value = np.zeros(n_nodes, dtype=np.intp if is_int else np.float64)
+        counts = (
+            None
+            if first_leaf.counts is None
+            else np.zeros((n_nodes, first_leaf.counts.shape[0]), dtype=np.intp)
+        )
+
+        for i, node in enumerate(nodes):
+            if node.is_leaf:
+                value[i] = cast(float, node.value)
+                if counts is not None and node.counts is not None:
+                    counts[i] = node.counts
+            else:
+                feature_idx[i] = cast(int, node.feature_idx)
+                threshold[i] = cast(float, node.threshold)
+                left[i] = node_id[id(node.left)]
+                right[i] = node_id[id(node.right)]
+
+        return _FlatTree(
+            feature_idx=feature_idx,
+            threshold=threshold,
+            left=left,
+            right=right,
+            value=cast(npt.NDArray[np.integer[Any] | np.floating[Any]], value),
+            counts=counts,
+        )
+
     def _fit(self, X: FeatureMatrix, y: ClassificationTarget | RegressionTarget, /) -> None:
         """Grow the tree recursively from the root.
 
@@ -196,7 +301,13 @@ class _DecisionTreeBase(ABC):
             )
         self._before_build(y)
         rng = np.random.default_rng(self.random_state)
-        self.tree_ = self._build_tree(X, y, 0, rng)
+        new_tree = self._build_tree(X, y, 0, rng)
+        new_flat = self._flatten_tree(new_tree)
+
+        # Both are set together, only after both are built: if the build or the flatten
+        # raises, a previously fitted model is left intact and tree_ always matches _flat.
+        self.tree_ = new_tree
+        self._flat = new_flat
 
     def _before_build(self, y: ClassificationTarget | RegressionTarget, /) -> None:  # noqa: B027
         """Prepare the model for growing the tree.
@@ -213,8 +324,68 @@ class _DecisionTreeBase(ABC):
             Target values of shape (n_samples,).
         """
 
+    def _apply(self, X: FeatureMatrix, /) -> npt.NDArray[np.intp]:
+        """Find the leaf that each sample reaches.
+
+        Uses the flattened arrays (``self._flat``) to move all samples through
+        the tree at once, one level per iteration, instead of walking each
+        sample individually. The value of a sample is compared with the
+        threshold of its node in float64, and a value equal to the threshold
+        goes left, as in fit.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Input data of shape (n_samples, n_features).
+
+        Returns
+        -------
+        numpy.ndarray of int
+            Index of the leaf reached by each sample, of shape (n_samples,).
+            The index is the position of the leaf in the arrays of
+            ``self._flat``.
+        """
+        n_samples = X.shape[0]
+        # current_nodes[i] is the node sample i is at now (every sample starts at the root, 0).
+        current_nodes = np.zeros(n_samples, dtype=np.intp)
+        # active[i] is True while sample i has not reached a leaf and must still go down.
+        active = np.ones(n_samples, dtype=bool)
+
+        # One iteration moves every active sample down one level, so the number of
+        # iterations is the height of the tree, not the number of samples.
+        while np.any(active):
+            nodes = current_nodes[active]
+            # left == -1 only at leaves: that is how _flatten_tree marks them.
+            is_leaf = self._flat.left[nodes] == -1
+            active_indices = np.where(active)[0]
+
+            # Samples that reached a leaf stop; current_nodes[i] stays at that leaf.
+            active[active_indices[is_leaf]] = False
+
+            internal_indices = active_indices[~is_leaf]
+            if len(internal_indices) == 0:
+                break
+
+            # Feature and threshold of the node each remaining sample is at, for all
+            # samples at once (fancy indexing).
+            internal_nodes = current_nodes[internal_indices]
+            features = self._flat.feature_idx[internal_nodes]
+            thresholds = self._flat.threshold[internal_nodes]
+
+            # Each sample reads the feature of its own node: X[i, features[i]].
+            feature_values = X[internal_indices, features]
+            # Same rule as in fit: <= goes left, > goes right.
+            go_left = feature_values <= thresholds
+
+            next_nodes = np.where(
+                go_left, self._flat.left[internal_nodes], self._flat.right[internal_nodes]
+            )
+            current_nodes[internal_indices] = next_nodes
+
+        return current_nodes
+
     def _predict(self, X: FeatureMatrix, /) -> ClassificationTarget | RegressionTarget:
-        """Predict by traversing the fitted tree for each sample.
+        """Predict by reading the value of the leaf each sample reaches.
 
         Parameters
         ----------
@@ -227,10 +398,8 @@ class _DecisionTreeBase(ABC):
             Predicted values of shape (n_samples,), one leaf value per
             sample.
         """
-        return cast(
-            ClassificationTarget | RegressionTarget,
-            np.array([self._find_leaf(x, self.tree_).value for x in X]),
-        )
+        leaves = self._apply(X)
+        return cast(ClassificationTarget | RegressionTarget, self._flat.value[leaves])
 
     def _build_tree(
         self,
@@ -266,6 +435,7 @@ class _DecisionTreeBase(ABC):
             The root of the constructed subtree.
         """
         n = X.shape[0]
+        # Stopping rules: max depth reached, too few samples, or all targets equal (pure node).
         if depth >= self.max_depth or n < self.min_samples or (np.all(y == y[0])):
             return self._make_leaf(y)
         split_result = self._best_split(X, y, rng)
@@ -274,6 +444,8 @@ class _DecisionTreeBase(ABC):
         feature_idx, threshold, quality_gain = split_result
         if quality_gain < self.min_impurity_decrease:
             return self._make_leaf(y)
+        # predict uses this same `<=` rule, so the split by mask here and the later
+        # traversal send every sample the same way.
         left_mask = X[:, feature_idx] <= threshold
         right_mask = ~left_mask
         left_child = self._build_tree(X[left_mask], y[left_mask], depth + 1, rng)
@@ -343,12 +515,16 @@ class _DecisionTreeBase(ABC):
             valid split exists (e.g. every candidate feature is constant).
         """
         n_samples = X.shape[0]
+        # rng is used only when max_features < n_features; otherwise the tree is
+        # deterministic and the state of rng does not change.
         if self.max_features is None or self.max_features == X.shape[1]:
             features = np.arange(X.shape[1])
         else:
             features = rng.choice(X.shape[1], self.max_features, replace=False)
 
         current_impurity = self._split_quality(y)
+        # Split i sends the first i samples left (i = 1..n-1). The weights do not depend
+        # on the feature, so they are computed once, before the loop.
         n_left = np.arange(1, n_samples)
         n_right = n_samples - n_left
         w_left = n_left / n_samples
@@ -364,49 +540,30 @@ class _DecisionTreeBase(ABC):
             X_sorted = feature_col[sort_idx]
             y_sorted = y[sort_idx]
 
+            # A threshold cannot go between two equal values, so only the places where the
+            # value changes are candidates. A constant feature has none and is skipped.
             distinct = X_sorted[1:] != X_sorted[:-1]
             if not np.any(distinct):
                 continue
             child_impurity = self._weighted_child_impurity(y_sorted, w_left, w_right)
 
             gains = current_impurity - child_impurity
+            # -inf so that an invalid split can never win the argmax.
             gains = np.where(distinct, gains, -np.inf)
 
             local_idx = int(np.argmax(gains))
             local_gain = float(gains[local_idx])
+            # Strict `>`: on equal gain the candidate examined first is kept (tie rule).
             if local_gain > best_gain:
                 best_gain = local_gain
                 best_feature = int(feature_id)
+                # The threshold is the midpoint of the two neighbouring values.
                 best_threshold = float(X_sorted[local_idx] + X_sorted[local_idx + 1]) / 2.0
 
         if best_feature is None or best_threshold is None:
             return None
 
         return int(best_feature), float(best_threshold), best_gain
-
-    def _find_leaf(self, x: _FloatArray, node: _Node, /) -> _Node:
-        """Follow a single sample down the tree to its leaf.
-
-        Parameters
-        ----------
-        x : FloatArray
-            A single sample's feature values, of shape (n_features,).
-        node : _Node
-            The node to evaluate, starting from the root.
-
-        Returns
-        -------
-        _Node
-            The leaf reached by this sample.
-        """
-        if node.is_leaf:
-            return node
-        feature_idx = cast(int, node.feature_idx)
-        threshold = cast(float, node.threshold)
-        left, right = cast(_Node, node.left), cast(_Node, node.right)
-        if x[feature_idx] <= threshold:
-            return self._find_leaf(x, left)
-        return self._find_leaf(x, right)
 
     @abstractmethod
     def _split_quality(self, y: ClassificationTarget | RegressionTarget, /) -> float:

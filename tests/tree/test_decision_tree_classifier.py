@@ -141,6 +141,38 @@ class TestFit:
 
         assert np.array_equal(model.classes_, [0, 1])
 
+    def test_flat_counts_are_those_of_the_leaves(self, rng, preorder_nodes):
+        X = rng.uniform(0, 10, size=(90, 2))
+        y = rng.choice([2, 5, 9], size=90)
+
+        model = DecisionTreeClassifier(max_depth=4).fit(X, y)
+        nodes = preorder_nodes(model.tree_)
+        counts = model._flat.counts
+
+        assert not model.tree_.is_leaf
+        assert counts is not None
+        assert counts.shape == (len(nodes), 3)
+        for i, node in enumerate(nodes):
+            if node.is_leaf:
+                assert np.array_equal(counts[i], node.counts)
+
+    def test_flat_values_are_integer_labels(self, two_blobs):
+        X, y = two_blobs(n_per_class=20)
+
+        flat = DecisionTreeClassifier(max_depth=3).fit(X, y)._flat
+
+        assert flat.value.dtype == np.intp
+
+    def test_flat_counts_exist_when_the_root_splits(self):
+        X = np.arange(8, dtype=float).reshape(-1, 1)
+        y = np.array([0, 0, 1, 0, 1, 1, 1, 1])
+
+        model = DecisionTreeClassifier(max_depth=1).fit(X, y)
+
+        assert model.tree_.counts is None
+        assert model._flat.counts is not None
+        assert np.array_equal(model._flat.counts[1:], [[3, 1], [0, 4]])
+
 
 class TestBestSplit:
     @pytest.mark.parametrize(
@@ -267,6 +299,32 @@ class TestPredict:
 
         assert prediction[0] == 0
 
+    @pytest.mark.parametrize("labels", [[0, 1], [2, 5, 9]])
+    @pytest.mark.parametrize("max_depth", [0, 1, 3, 8])
+    def test_matches_a_walk_of_the_tree_for_every_sample(
+        self, rng, leaf_of_each_sample, labels, max_depth
+    ):
+        X = rng.normal(size=(300, 4))
+        y = rng.choice(labels, size=300)
+        model = DecisionTreeClassifier(max_depth=max_depth).fit(X, y)
+
+        for data in (X, rng.normal(size=(100, 4))):
+            expected = np.array([leaf.value for leaf in leaf_of_each_sample(model, data)])
+            prediction = model.predict(data)
+
+            assert prediction.dtype == np.intp
+            assert np.array_equal(prediction, expected)
+
+    def test_value_equal_to_the_threshold_goes_left(self):
+        X = np.array([[0.0], [1.0]])
+        y = np.array([3, 8])
+        model = DecisionTreeClassifier(max_depth=1).fit(X, y)
+
+        prediction = model.predict(np.array([[0.5], [0.5000001]]))
+
+        assert model.tree_.threshold == 0.5
+        assert np.array_equal(prediction, [3, 8])
+
 
 class TestPredictProba:
     def test_single_leaf_gives_the_class_frequencies(self):
@@ -342,6 +400,21 @@ class TestPredictProba:
         model = DecisionTreeClassifier(max_depth=2).fit(X, y)
 
         assert np.array_equal(model.predict_proba(X[::-1]), model.predict_proba(X)[::-1])
+
+    @pytest.mark.parametrize("max_depth", [0, 1, 3, 8])
+    def test_matches_the_counts_of_the_leaf_of_each_sample(
+        self, rng, leaf_of_each_sample, max_depth
+    ):
+        X = rng.normal(size=(300, 4))
+        y = rng.choice([2, 5, 9], size=300)
+        model = DecisionTreeClassifier(max_depth=max_depth).fit(X, y)
+
+        for data in (X, rng.normal(size=(100, 4))):
+            expected = np.array(
+                [leaf.counts / leaf.counts.sum() for leaf in leaf_of_each_sample(model, data)]
+            )
+
+            assert np.array_equal(model.predict_proba(data), expected)
 
 
 class TestValidateParams:
