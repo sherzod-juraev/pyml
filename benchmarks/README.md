@@ -140,17 +140,85 @@ asv compare v0.5.1 v0.5.2
 - The numbers belong to this machine. Do not run two revisions on a loaded computer, and never
   compare a number from one machine with a number from another.
 
+### Compare your changes with the old code in one session
+
+`asv run` of a committed revision builds a new environment. For a quick answer while the code is
+still being written, run the suite in the current environment instead:
+
+```bash
+asv run --python=same --bench LogisticFamilyFit   # new code (the working tree)
+git stash push -- pyml/linear_model               # old code; benchmarks/ stays
+asv run --python=same --bench LogisticFamilyFit
+git stash pop
+asv run --python=same --bench LogisticFamilyFit   # new code again
+```
+
+- `--python=same` uses the Python that is running `asv` and the `pyml` installed in it. `uv sync`
+  installs `pyml` in editable mode, so the working tree is what is measured. The results are
+  printed, not saved.
+- `--bench` takes a regular expression of the benchmark names.
+- Stash only the folder of the change. A plain `git stash` would also take the benchmarks away.
+- The "new, old, new" order shows the drift of the machine: if the two runs of the same code
+  differ by more than the change, the change is lost in the noise. A step of 2-4% cannot be
+  resolved on its own; measure the sum of several steps.
+
+### Look at the history in a graph
+
+```bash
+asv publish
+asv preview
+```
+
+`asv publish` collects the stored results into `.asv/html/`, and `asv preview` serves it at
+`http://127.0.0.1:8080` (`--port` changes the port). `asv publish` plots only the commits that
+are in the `branches` of `asv.conf.json` (`main`) or have a tag. For a commit on another branch,
+add the branch to `branches` for the time of the work, and do not commit that change.
+
+### Check that the results stay identical
+
+A speed-up that changes the result is a change of the model, not an optimization. Before the
+change, save what the old code produces, and compare after it:
+
+1. Fix the data sets and the seeds, and save the results of the old code (`git stash push --
+   pyml/<family>` gives the old code; `np.savez` keeps the arrays): the fitted attributes
+   (`coef_`, `intercept_`, `n_iter_`) and the predictions, for several data sets and settings
+   (with and without the intercept, `tol=0.0` and `tol > 0`).
+2. Save also the intermediate values the change touches (the loss, the gradient). The loss only
+   steers the stop of the loop, so the coefficients and `n_iter_` can stay equal while the loss
+   changes in the last digit.
+3. After the change, compare byte for byte (`tobytes()`, or `np.array_equal` with
+   `equal_nan=True`). The expected number of differences is 0.
+4. Break the behaviour on purpose (for example, replace `sum` by `mean`) and see that the check
+   fails. A check that was never seen to fail proves nothing.
+
+The check depends on the change, so it is not kept in the repository.
+
 ### Add a benchmark
 
-A benchmark is a class in a file `benchmarks/asv/bench_*.py`:
+A benchmark is a class in a file `benchmarks/asv/bench_<family>.py`. The files follow the
+folders of `pyml/` (`linear_model`, `tree`, ...). A family gets a file when a change to it needs
+a measurement, not before.
 
-- `params` and `param_names` list the values to try (here, the number of samples).
+- **One class per model and behaviour:** `<Model>Fit`, `<Model>Predict`. The methods are
+  `time_fit` and `time_predict`.
+- `params` and `param_names` are always given. A parameter that is a size takes it from
+  `benchmarks/asv/_data.py` (`N_SMALL`, `N_LARGE`).
+- **The data comes from `_data.py`**, from a fixed seed, so that two revisions are timed on the
+  same data. Add a builder there instead of creating data in the class.
 - `setup(self, ...)` prepares the data. It is run before each measurement and is not timed.
+  Data is never created inside a `time_*` method.
 - A method whose name starts with `time_` is timed.
-- Fix the amount of work (`tol=0.0` with a fixed `max_iter` for the gradient descent models), so
-  that two revisions do the same work and the ratio shows the cost of one step.
+- **Fix the amount of work** (`tol=0.0` with a fixed `max_iter` for the gradient descent
+  models), so that two revisions do the same work and the ratio shows the cost of one step. Then
+  check that `n_iter_` equals `max_iter`: a model that stops early (a loss that repeats exactly)
+  measures a fraction of the work.
+- **Do not rename a benchmark or change its parameters.** Results are stored under the name and
+  the parameters, so a change drops the old results out of the comparison. Add a new
+  benchmark next to the old one instead.
+- **Write the benchmark before the optimization** and measure the baseline on the old code.
 - Use only the public API of `pyml` that exists in the revisions you want to compare. `asv`
   reports a benchmark that raises as failed for that revision.
+- `asv check` imports the suite and reports the errors without running it.
 
 ## Conventions
 
