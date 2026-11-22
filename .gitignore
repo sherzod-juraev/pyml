@@ -75,3 +75,6 @@ docs/source/examples/*/
 
 # ===== Profiling results (benchmarks/) =====
 benchmarks/results/
+
+# ===== asv environments and results (benchmarks/asv/) =====
+.asv/

@@ -1,0 +1,33 @@
+{
+    // asv reads this file from the folder it is run in. Comments with // are allowed.
+    "version": 1,
+    "project": "pyml",
+    "project_url": "https://github.com/sherzod-juraev/pyml",
+
+    // Where the versions come from: this repository, and the branch "asv run" follows
+    // when it is given a branch name instead of a revision.
+    "repo": ".",
+    "branches": ["main"],
+
+    // One virtual environment per revision, created by uv.
+    "environment_type": "uv",
+    "pythons": ["3.13"],
+    "install_timeout": 600,
+
+    // Build only pyml. The default command also builds numpy and scipy, and fails with
+    // "Found multiple wheels". "build" in the matrix below puts the tool into the environment.
+    "build_command": ["python -m build --wheel -o {build_cache_dir} {build_dir}"],
+    "matrix": {
+        "req": {
+            "build": []
+        }
+    },
+
+    // The suite is read from the working tree, so revisions without it can still be measured.
+    "benchmark_dir": "benchmarks/asv",
+
+    // Everything asv writes. The folder is ignored by git.
+    "env_dir": ".asv/env",
+    "results_dir": ".asv/results",
+    "html_dir": ".asv/html"
+}
