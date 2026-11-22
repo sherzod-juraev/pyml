@@ -1,7 +1,13 @@
 # Benchmarks and profiling
 
-Tools that answer "where does the time go?" with a measurement instead of a guess. They are
-for the maintainers: nothing here is part of the package, and nothing here runs in the CI.
+Tools that answer "where does the time go?" and "how much did a change move it?" with a
+measurement instead of a guess. They are for the maintainers: nothing here is part of the package,
+and nothing here runs in the CI.
+
+| Question | Tool |
+|:--|:--|
+| Where does the time of this script go? | `run.py profile` (below) |
+| How much faster or slower is this version than that one? | `asv` ([Compare versions with asv](#compare-versions-with-asv)) |
 
 ## Setup
 
@@ -80,9 +86,75 @@ In the `pyinstrument` tree, `_compute_loss` is about half of `_fit`. It calls th
 `cProfile` table, `_validate_regression_inputs` has almost the same `ncalls` as `_compute_loss`:
 the input is validated again on every iteration of the loop.
 
+## Compare versions with asv
+
+`asv` (airspeed velocity) builds `pyml` of any revision in its own virtual environment, runs the
+suite of `benchmarks/asv/` against it and prints two revisions side by side. It is configured by
+`asv.conf.json` in the repository root. Profile first to find *where* the time goes, then use
+`asv` to show *how much* a change moved it.
+
+### Setup
+
+```bash
+uv sync --group dev-bench
+asv machine --yes
+```
+
+`asv machine --yes` runs once per computer. It stores the name and the hardware of this machine
+in `~/.asv-machine.json` and accepts the defaults without asking. `asv` needs `uv` on the `PATH`,
+because the configuration uses `uv` to create the environments.
+
+### Compare two releases
+
+```bash
+asv run "v0.5.1^!"
+asv run "v0.5.2^!"
+asv compare v0.5.1 v0.5.2
+```
+
+- `<revision>^!` means "this commit only". Without it, `asv run v0.5.2` would measure every
+  commit back to the start of the history. A tag, a branch name or a hash all work.
+- The first `asv run` of a revision creates its environment, which takes a minute. A result is
+  stored in `.asv/results/`, in the repository root (not in `benchmarks/`), so a revision is
+  measured once and `asv compare` is instant.
+- To compare your branch with `main`, commit first: `asv` builds a committed revision, not
+  the files of the working tree. The suite itself is read from the working tree.
+
+| Option of `asv compare` | Meaning |
+|:--|:--|
+| `--only-changed` | Hide the rows that did not change. |
+| `--factor 1.2` | Call a row "changed" from 20% (default 1.1, that is 10%). |
+| `--split` | Three tables: improved, same, worse. |
+| `--sort ratio` | Sort by the size of the change. |
+
+### Reading the table
+
+- **Ratio** is `After / Before`. Below 1 is faster, above 1 is slower.
+- **`±`** is the spread of the repeated measurements. A ratio smaller than the spread is noise.
+- A `~` before a ratio means that `asv` found the difference not significant. Treat the two
+  revisions as equal in that row.
+- The first column marks a significant change: `-` improved, `+` got worse.
+- The numbers belong to this machine. Do not run two revisions on a loaded computer, and never
+  compare a number from one machine with a number from another.
+
+### Add a benchmark
+
+A benchmark is a class in a file `benchmarks/asv/bench_*.py`:
+
+- `params` and `param_names` list the values to try (here, the number of samples).
+- `setup(self, ...)` prepares the data. It is run before each measurement and is not timed.
+- A method whose name starts with `time_` is timed.
+- Fix the amount of work (`tol=0.0` with a fixed `max_iter` for the gradient descent models), so
+  that two revisions do the same work and the ratio shows the cost of one step.
+- Use only the public API of `pyml` that exists in the revisions you want to compare. `asv`
+  reports a benchmark that raises as failed for that revision.
+
 ## Conventions
 
-- `benchmarks/results/` is ignored by git. No measured numbers are committed.
+- `benchmarks/results/` holds the reports of `run.py profile`. It is ignored by git.
+- `.asv/` in the repository root holds the environments, results and HTML report of `asv` (see
+  `asv.conf.json`). It is ignored by git.
+- No measured numbers are committed.
 - A file in this folder must not have the name of a standard library module (`profile.py`,
   `random.py`, ...). Running `run.py` puts this folder first on `sys.path`, so such a file
   would hide the real module.
