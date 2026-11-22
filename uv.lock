@@ -1905,8 +1905,8 @@ nox = [{ name = "nox", specifier = ">=2026.10.20" }]
 
 [[package]]
 name = "pyml-datasets"
-version = "0.10.0"
-source = { git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main#759fecb401fbb4b11690463cb894a9b5eba6ecf3" }
+version = "0.23.0"
+source = { git = "https://github.com/sherzod-juraev/pyml-datasets.git?branch=main#51b8e2b2582fe7d16b6af5babecdf1982c14bb6c" }
 dependencies = [
     { name = "numpy" },
 ]

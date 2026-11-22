@@ -1,0 +1,24 @@
+0.5.3
+=====
+
+Performance
+-----------
+
+- ``LogisticRegression``, ``RidgeClassifier``, ``LassoClassifier`` and ``ElasticNetClassifier``
+  no longer go through the dispatch layers of ``np.sum`` and ``np.clip`` in every iteration of
+  the gradient descent, and the labels are converted to floats once. Fitting is about 20%
+  faster for ``RidgeClassifier``, ``LassoClassifier`` and ``ElasticNetClassifier`` and about
+  10% faster for ``LogisticRegression`` on a data set of 500 samples and 30 features. The
+  fitted coefficients, the intercept and the number of iterations are identical bit for bit.
+  (#74)
+
+Development
+-----------
+
+- ``benchmarks/asv`` compares the speed of two versions of pyml with ``asv``, and the
+  ``dev-bench`` dependency group installs it. It times ``Ridge``, ``DecisionTreeRegressor``
+  and the four logistic models. (#68, #74)
+- ``pyproject.toml`` and ``docs/source/conf.py`` explain their settings in comments, and the
+  README links the guides for contributors. (#70)
+- The unused ``ignore_rules`` option of ``rstcheck`` is removed. The checks do not change. (#72)
+- The examples use ``pyml-datasets`` 0.23.0 (it was 0.10.0). (#76)
