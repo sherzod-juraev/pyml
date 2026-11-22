@@ -15,7 +15,7 @@ import numpy.typing as npt
 from ..core.base import Regressor
 from ..core.dtypes import FeatureMatrix, RegressionTarget
 from ..core.param_checks import check_integer, check_non_negative, check_positive
-from ..metrics import mean_squared_error
+from ..metrics.regression import _mean_squared_error
 
 _FloatArray = npt.NDArray[np.floating[Any]]
 
@@ -108,6 +108,12 @@ class _LinearModelBase(Regressor):
             Training data of shape (n_samples, n_features).
         y : RegressionTarget
             Continuous target values of shape (n_samples,).
+
+        Raises
+        ------
+        ValueError
+            If the loss becomes NaN or infinite, which means that the fit diverges, for
+            example because ``learning_rate`` is too large.
         """
         self.coef_ = np.zeros(X.shape[1])
         self.intercept_ = 0.0
@@ -116,6 +122,11 @@ class _LinearModelBase(Regressor):
             y_pred = self._predict(X)
             residuals = y_pred - y
             J_new = self._compute_loss(y, y_pred)
+            if ~np.isfinite(J_new):
+                raise ValueError(
+                    "Input y_pred contains NaN, infinity or a value too large for"
+                    f" dtype('{y_pred.dtype.name}')"
+                )
             grad_coef, grad_intercept = self._compute_gradient(X, residuals)
             self.coef_ -= self.learning_rate * grad_coef
             if self.fit_intercept:
@@ -145,7 +156,7 @@ class _LinearModelBase(Regressor):
         float
             The loss value.
         """
-        return mean_squared_error(y_true, y_pred) + self._penalty_loss()
+        return _mean_squared_error(y_true, y_pred) + self._penalty_loss()
 
     def _compute_gradient(
         self, X: FeatureMatrix, residuals: _FloatArray, /
