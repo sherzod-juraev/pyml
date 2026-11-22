@@ -9,6 +9,9 @@ and nothing here runs in the CI.
 | Where does the time of this script go? | `run.py profile` (below) |
 | How much faster or slower is this version than that one? | `asv` ([Compare versions with asv](#compare-versions-with-asv)) |
 
+The dependency groups and the Nox sessions are described in
+[CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## Setup
 
 ```bash

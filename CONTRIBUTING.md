@@ -45,7 +45,7 @@ pyml/
 │   ├── workflows/              # CI workflows
 │   └── PULL_REQUEST_TEMPLATE.md  # Pull request template
 ├── assets/                     # Branding
-├── benchmarks/                 # Profiling tools for the maintainers (not part of the package)
+├── benchmarks/                 # Profiling and speed comparison tools (not part of the package)
 ├── docs/                       # Sphinx documentation and changelog
 ├── examples/                   # Example scripts, one folder per family (run by the docs build)
 ├── pyml/                       # Source code
@@ -98,7 +98,9 @@ runtime dependencies (NumPy and SciPy) stay in `[project].dependencies`.
 | `dev-lint`      |                       ruff                        |
 | `dev-types`     |                    mypy, scipy-stubs              |
 | `dev-docstring` |                    interrogate                    |
-| `dev`           |           All four `dev-*` groups above           |
+| `dev-profile`   |                   pyinstrument                    |
+| `dev-bench`     |                        asv                        |
+| `dev`           |           All the `dev-*` groups above            |
 | `examples`      |    matplotlib and pyml-datasets (the example scripts) |
 | `docs-lint`     |          doc8, rstcheck, sphinx-lint              |
 | `docs-build`    | `examples`, Sphinx, sphinx-gallery and the other extensions |
@@ -154,7 +156,7 @@ commands. This guarantees reproducibility across machines and Python versions.
 | Session      |      Python       |                             What it runs                              |
 |:-------------|:-----------------:|:---------------------------------------------------------------------:|
 | `lint`       |       3.13        |                  ruff check and ruff format --check                   |
-| `types`      |       3.13        |                  mypy (strict) on `pyml`, `tests` and `examples`        |
+| `types`      |       3.13        |                  mypy (strict) on `pyml`, `tests`, `examples` and `benchmarks` |
 | `docstrings` |       3.13        |             interrogate, docstring coverage must be 100%              |
 | `tests`      | 3.12, 3.13, 3.14  |                   pytest and the coverage of `pyml`                   |
 | `docs`       |       3.13        |  deletes the old build; sphinx-lint, doc8, rstcheck, `sphinx-build -W`; runs every example |
@@ -174,6 +176,9 @@ uv run nox -R                   # reuse the existing virtual environments
 ```
 
 These commands assume Nox is installed in `.venv` (`uv sync --group nox`).
+
+Nox does not measure speed. Profiling a script and comparing the speed of two versions of pyml
+with `asv` are described in [benchmarks/README.md](benchmarks/README.md).
 
 ## Live documentation
 
