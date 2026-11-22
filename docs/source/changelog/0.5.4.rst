@@ -1,0 +1,24 @@
+0.5.4
+=====
+
+Performance
+-----------
+
+- ``DecisionTreeRegressor`` and ``DecisionTreeClassifier`` store the fitted tree also as flat
+  arrays, and ``predict`` and ``predict_proba`` move all the samples down the tree together,
+  one level per step, instead of walking the nodes of each sample in a Python loop. Predicting
+  is about 4 to 17 times faster, depending on the number of samples and the depth, and
+  ``RandomForestRegressor`` and ``RandomForestClassifier`` predict about 6 to 8 times faster
+  (500 samples, 25 trees of depth 8). Fitting is not slower in a way that the benchmarks can
+  tell apart (within 4%). The predictions and the probabilities are identical bit for bit for
+  float64 input. A float32 value is now compared with the thresholds in float64, so it can go
+  the other way only when it lies between a threshold and the rounding of the threshold to
+  float32. (#80, #81)
+
+Development
+-----------
+
+- The ``asv`` benchmarks share their data in ``benchmarks/asv/_data.py``, and
+  ``benchmarks/README.md`` lists the conventions for adding a benchmark. (#78, #79)
+- ``benchmarks/asv`` times the ``predict`` of the decision trees and of the random forests.
+  (#80, #81)
