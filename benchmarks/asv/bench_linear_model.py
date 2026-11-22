@@ -6,8 +6,6 @@ same amount of work and only the cost of one iteration is compared.
 
 from typing import ClassVar
 
-import numpy as np
-
 from pyml.linear_model import (
     ElasticNetClassifier,
     LassoClassifier,
@@ -15,6 +13,8 @@ from pyml.linear_model import (
     Ridge,
     RidgeClassifier,
 )
+
+from ._data import N_LARGE, N_SMALL, classification_data, regression_data
 
 _N_FEATURES = 8
 # The classifiers use as many features as the examples (breast cancer data).
@@ -28,15 +28,12 @@ _ALPHA = 0.001
 class RidgeFit:
     """Time of ``Ridge.fit`` for a growing number of samples."""
 
-    params: ClassVar[list[list[int]]] = [[500, 5000]]
+    params: ClassVar[list[list[int]]] = [[N_SMALL, N_LARGE]]
     param_names: ClassVar[list[str]] = ["n_samples"]
 
     def setup(self, n_samples: int) -> None:
         """Create a linear data set with noise. This is not timed."""
-        rng = np.random.default_rng(0)
-        self.X = rng.normal(size=(n_samples, _N_FEATURES))
-        coef = rng.normal(size=_N_FEATURES)
-        self.y = self.X @ coef + 1.0 + rng.normal(0.0, 0.5, size=n_samples)
+        self.X, self.y = regression_data(n_samples, _N_FEATURES)
 
     def time_fit(self, n_samples: int) -> None:
         """Fit a ridge regression for 2000 iterations."""
@@ -73,17 +70,13 @@ class LogisticFamilyFit:
 
     params: ClassVar[list[list[int] | list[str]]] = [
         ["LogisticRegression", "RidgeClassifier", "LassoClassifier", "ElasticNetClassifier"],
-        [500, 5000],
+        [N_SMALL, N_LARGE],
     ]
     param_names: ClassVar[list[str]] = ["model", "n_samples"]
 
     def setup(self, model: str, n_samples: int) -> None:
         """Create two overlapping classes. This is not timed."""
-        rng = np.random.default_rng(0)
-        self.X = rng.normal(size=(n_samples, _N_FEATURES_CLASSIFIER))
-        coef = rng.normal(size=_N_FEATURES_CLASSIFIER)
-        noise = rng.normal(0.0, 1.0, size=n_samples)
-        self.y = (self.X @ coef + noise > 0.0).astype(int)
+        self.X, self.y = classification_data(n_samples, _N_FEATURES_CLASSIFIER)
 
     def time_fit(self, model: str, n_samples: int) -> None:
         """Fit the classifier for 5000 iterations."""
