@@ -153,7 +153,7 @@ class _LogisticRegressionBase(Classifier):
                 f"classes in y, but found {classes.shape[0]}."
             )
         self.classes_ = classes
-        y_enc = (y == self.classes_[1]).astype(int)
+        y_enc = (y == self.classes_[1]).astype(float)
         self.coef_ = np.zeros(X.shape[1])
         self.intercept_ = 0.0
         J_old: float = np.inf
@@ -172,7 +172,7 @@ class _LogisticRegressionBase(Classifier):
         else:
             self.n_iter_ = self.max_iter
 
-    def _compute_loss(self, y_true: ClassificationTarget, y_pred: _FloatArray, /) -> float:
+    def _compute_loss(self, y_true: _FloatArray, y_pred: _FloatArray, /) -> float:
         """Compute binary cross-entropy loss for the given probabilities.
 
         Subclasses implement ``_penalty_loss`` to add a regularization term.
@@ -189,13 +189,8 @@ class _LogisticRegressionBase(Classifier):
         float
             The loss value.
         """
-        return (
-            -float(
-                (1 / y_true.shape[0])
-                * np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred))
-            )
-            + self._penalty_loss()
-        )
+        log_likelihood = y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred)
+        return -float((1 / y_true.shape[0]) * log_likelihood.sum()) + self._penalty_loss()
 
     def _compute_gradient(
         self, X: FeatureMatrix, residuals: _FloatArray, /
@@ -222,7 +217,7 @@ class _LogisticRegressionBase(Classifier):
         grad_coef = (1 / X.shape[0]) * (X.T @ residuals) + self._penalty_gradient()
         grad_intercept = 0.0
         if self.fit_intercept:
-            grad_intercept = (1 / X.shape[0]) * np.sum(residuals)
+            grad_intercept = (1 / X.shape[0]) * residuals.sum()
         return grad_coef, float(grad_intercept)
 
     @abstractmethod
@@ -333,9 +328,9 @@ class _LogisticRegressionBase(Classifier):
             (n_samples,), in the open interval (0, 1).
         """
         z = X @ self.coef_ + self.intercept_
-        np.clip(z, -3e2, 3e2, out=z)
+        z.clip(-3e2, 3e2, out=z)
         y_pred = 1 / (1 + np.exp(-z))
-        np.clip(y_pred, 1e-15, 1 - 1e-15, out=y_pred)
+        y_pred.clip(1e-15, 1 - 1e-15, out=y_pred)
         return y_pred
 
     def _validate_params(self) -> None:
