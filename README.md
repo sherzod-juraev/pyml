@@ -101,7 +101,17 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 ## Development
 
 The development setup, the Nox sessions and the project conventions are described in
-[CONTRIBUTING.md](CONTRIBUTING.md).
+[CONTRIBUTING.md](CONTRIBUTING.md). Where to read what:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md): development setup, dependency groups, Nox sessions,
+  conventions, adding a model, releasing.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): how everyone is expected to behave in the issues and
+  the pull requests.
+- [SECURITY.md](SECURITY.md): how to report a vulnerability privately.
+- [docs/README.md](docs/README.md): how the documentation is built, and what breaks quietly.
+- [docs/AUTHORING.md](docs/AUTHORING.md): how to add a page, an API entry or an example.
+- [benchmarks/README.md](benchmarks/README.md): profiling a script and comparing the speed of two
+  versions with `asv`.
 
 ## License
 

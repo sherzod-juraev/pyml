@@ -1,12 +1,17 @@
 [build-system]
+# setuptools turns the source into a wheel. `uv build` and `python -m build` call it.
 requires = ["setuptools>=84.2.1"]
 build-backend = "setuptools.build_meta"
 
 # --- Project --- #
 [project]
 name = "pyml"
+# The version is not written here: setuptools reads it from `pyml.__version__`, see
+# [tool.setuptools.dynamic].
 dynamic = ["version"]
 description = "A machine learning library built from scratch"
+# The oldest Python that pyml supports. The Ruff `target-version` and the mypy `python_version`
+# follow it, and the nox session `tests-min` runs on it.
 requires-python = ">=3.12"
 authors = [
     {name = "Sherzod Juraev", email = "juraevsherzod9943@gmail.com"},
@@ -18,6 +23,8 @@ keywords = [
     "from-scratch",
     "machine-learning",
 ]
+# Trove classifiers: tags that describe the project (audience, topic, Python versions). The
+# Python versions are those of PYTHON_VERSIONS in noxfile.py.
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Education",
@@ -33,6 +40,8 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
+# What pyml needs at run time. The lower bounds are the oldest versions that the nox session
+# `tests-min` still tests.
 dependencies = [
     "numpy>=1.26.0",
     "scipy>=1.11.2",
@@ -41,16 +50,25 @@ dependencies = [
 # --- Dependency groups --- #
 [dependency-groups]
 # --- Development tools --- #
+# pytest runs the tests, pytest-cov measures the coverage, pytest-sugar shows the progress.
+# Used by the nox sessions `tests`, `tests-min` and `types`.
 dev-test = [
     "pytest>=9.2.0",
     "pytest-cov>=7.1.0",
     "pytest-sugar>=1.0",
 ]
+# ruff checks and formats the code (nox session `lint`).
 dev-lint = ["ruff>=0.17.5"]
+# mypy checks the types in strict mode, scipy-stubs gives it the types of SciPy (nox session
+# `types`).
 dev-types = ["mypy>=2.4.1", "scipy-stubs>=1.18.1.1", ]
+# interrogate counts the docstrings (nox session `docstrings`).
 dev-docstring = ["interrogate>=1.7.0"]
+# pyinstrument profiles a script, see benchmarks/README.md.
 dev-profile = ["pyinstrument>=5.1.3",]
+# asv compares the speed of two versions of pyml, see benchmarks/README.md.
 dev-bench = ["asv>=0.6.6",]
+# All the `dev-*` groups above. `uv sync` installs this group by default.
 dev = [
     {include-group = "dev-test"},
     {include-group = "dev-lint"},
@@ -60,16 +78,21 @@ dev = [
     {include-group = "dev-bench"},
 ]
 # --- Documentation tools --- #
+# The checks of the reStructuredText sources: doc8 (style), rstcheck (markup) and sphinx-lint
+# (Sphinx-specific mistakes). The nox session `docs` runs them.
 docs-lint = [
     "doc8>=1.0.0",
     "rstcheck>=6.3.1",
     "sphinx-lint>=1.0.0",
 ]
 # --- Examples: the scripts in examples/ and the docs that run them --- #
+# matplotlib draws the plots of the examples, pyml-datasets gives their data.
 examples = [
     "matplotlib>=3.9.0",
     "pyml-datasets",
 ]
+# Sphinx with the theme and the extensions that build the HTML and PDF documentation. Used by
+# the nox session `linkcheck`.
 docs-build = [
     {include-group = "examples"},
     "autodocsumm>=0.2.14",
@@ -83,17 +106,24 @@ docs-build = [
     "sphinxext-opengraph>=0.13.0",
     "sphinx-sitemap>=2.6.0",
 ]
+# Everything that the nox session `docs` needs: the checks and the build.
 docs = [
     {include-group = "docs-lint"},
     {include-group = "docs-build"},
 ]
+# `docs-build` and sphinx-autobuild, which rebuilds the pages and reloads the browser while you
+# edit (see "Live documentation" in CONTRIBUTING.md).
 docs-live = [
     {include-group = "docs-build"},
     "sphinx-autobuild>=2025.8.25",
 ]
+# Nox, which runs all the checks (`uv sync --group nox`).
 nox = ["nox>=2026.10.20"]
 
 # --- Source of dependencies that are not on PyPi --- #
+# pyml-datasets (group `examples`) is installed from the main branch of its repository.
+# `uv lock --upgrade-package pyml-datasets` moves it to the newest commit, see "Releasing" in
+# CONTRIBUTING.md.
 [tool.uv.sources]
 pyml-datasets = { git = "https://github.com/sherzod-juraev/pyml-datasets.git", branch = "main" }
 
@@ -105,8 +135,11 @@ Repository = "https://github.com/sherzod-juraev/pyml"
 
 # --- Setuptools --- #
 [tool.setuptools.dynamic]
+# The version lives in one place: `__version__` in pyml/__init__.py.
 version = {attr = "pyml.__version__"}
 
+# Package only `pyml` and its sub-packages (`include`); `tests` and `docs` are also excluded by
+# name. The nox session `package` checks the contents of the wheel.
 [tool.setuptools.packages.find]
 where = [".",]
 include = ["pyml", "pyml.*",]
@@ -115,33 +148,49 @@ exclude = [
     "docs", "docs.*",
 ]
 
+# Ship the type stubs (`*.pyi`) and the `py.typed` marker, so that type checkers use the
+# annotations of pyml.
 [tool.setuptools.package-data]
 pyml = ["**/*.pyi", "py.typed"]
 
 # --- Pytest --- #
 [tool.pytest.ini_options]
+# Stop with a clear message on an older pytest.
 minversion = "9.0"
+# Where the tests are, and how a test file, a class and a function are named.
 testpaths = ["tests",]
 python_files = ["test_*.py", "*_test.py",]
 python_classes = ["Test*",]
 python_functions = ["test_*",]
+# -v: one line per test. --tb=short: short tracebacks. --strict-markers: an unknown marker is an
+# error. --strict-config: a mistake in this table is an error.
 addopts = "-v --tb=short --strict-markers --strict-config"
+# Every warning is an error, so a new deprecation is seen at once. A test that expects a warning
+# uses `pytest.warns`.
 filterwarnings = ["error"]
 
 # --- Pytest-cov --- #
 [tool.coverage.run]
+# Measure only the package, not the tests.
 source = ["pyml"]
+# Count each branch of an `if`, not only each line.
 branch = true
 
 [tool.coverage.report]
+# List the lines that no test runs.
 show_missing = true
+# Do not list the files with 100% coverage.
 skip_covered = true
+# Fail when the total coverage is below 99%.
 fail_under = 99
 
 # --- Ruff --- #
 [tool.ruff]
+# The oldest Python that pyml supports. Rules such as UP suggest syntax that is valid from it.
 target-version = "py312"
+# The maximum line length, for the formatter and for the rule E501.
 line-length = 100
+# Only these files are checked and formatted.
 include = [
     "pyml/**/*.py",
     "tests/**/*.py",
@@ -149,6 +198,7 @@ include = [
     "benchmarks/**/*.py",
     "noxfile.py",
 ]
+# Folders of compiled files are skipped.
 exclude = [
     "pyml/__pycache__", "pyml/**/__pycache__",
     "tests/__pycache__", "tests/**/__pycache__",
@@ -156,24 +206,39 @@ exclude = [
 ]
 
 [tool.ruff.format]
+# Format the code in the examples of the docstrings too, with lines of at most 88 characters.
 docstring-code-format = true
 docstring-code-line-length = 88
 
 [tool.ruff.lint]
 select = [
-    "B", "C4", "D", "E", "F", "I", "N", "UP",
-    "RUF012", "RUF022",
-    "SIM", "W",
+    "B",       # flake8-bugbear: likely bugs, for example a mutable default argument
+    "C4",      # flake8-comprehensions: simpler comprehensions and calls
+    "D",       # pydocstyle: docstrings are present and well formed (numpy convention, see below)
+    "E",       # pycodestyle errors, for example a line longer than line-length
+    "F",       # Pyflakes: unused imports and variables, undefined names
+    "I",       # isort: sorted imports
+    "N",       # pep8-naming: snake_case functions, CapWords classes
+    "UP",      # pyupgrade: modern syntax for the oldest supported Python (py312)
+    "RUF012",  # a mutable class attribute needs a ClassVar annotation
+    "RUF022",  # __all__ must be sorted
+    "SIM",     # flake8-simplify: shorter equivalent code
+    "W",       # pycodestyle warnings, for example trailing whitespace
 ]
+# Switched off: N803 (an argument name must be lowercase) and N806 (a variable in a function
+# must be lowercase), so that the feature matrix can be called `X`.
 ignore = [
     "N803",
     "N806",
 ]
 
 [tool.ruff.lint.pydocstyle]
+# The docstring rules (D) follow the numpy convention: sections such as Parameters and Returns.
 convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
+# Tests: no docstring rules (the tests carry no docstrings, see "Tests" in CONTRIBUTING.md), no
+# N802 (function names) and no SIM (simplification) rules.
 "tests/**/*.py" = [
     "D",
     "N802",
@@ -186,9 +251,12 @@ convention = "numpy"
 
 # --- Mypy --- #
 [tool.mypy]
+# Check against the oldest supported Python.
 python_version = "3.12"
+# All the strict checks of mypy, for example no function without annotations.
 strict = true
 
+# The tests may leave a function without annotations.
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
@@ -196,16 +264,22 @@ disallow_incomplete_defs = false
 
 # --- Interrogate --- #
 [tool.interrogate]
+# The docstring coverage must be 100%.
 fail-under = 100
+# Show the result of each file.
 verbose = 1
 quiet = false
+# Regular expressions of names that are skipped: none.
 whitelist-regex = []
 color = true
+# Folders that are not checked.
 exclude = [
     "docs",
     "examples",
     "tests",
 ]
+# All the ignore-* options are false, so nothing is exempt: a private function, an `__init__`, a
+# magic method, a nested function and a module need a docstring like everything else.
 ignore-init-method = false
 ignore-init-module = false
 ignore-magic = false
@@ -221,6 +295,10 @@ ignore-nested-classes = false
 # the folders that sphinx-gallery generates in it (see _clean_docs in noxfile.py). sphinx-lint
 # reads no configuration file, so it has no table here.
 [tool.rstcheck]
+# Directives of Sphinx and its extensions are not known to rstcheck: autodoc (autoclass,
+# autofunction), sphinx-design (button-*, card*, dropdown, grid*, tab-*), sphinx-gallery
+# (image-sg), matplotlib (plot), Sphinx itself (only, toctree) and the custom extension in
+# docs/source/_ext (dataset-info).
 ignore_directives = [
     "autoclass", "autofunction",
     "button-link", "button-ref",
@@ -234,10 +312,13 @@ ignore_directives = [
     "tab-item", "tab-set",
     "toctree",
 ]
+# Substitutions that are defined in `rst_prolog` of docs/source/conf.py.
 ignore_substitutions = [
     "home_description",
     "nuu_link",
 ]
+# A link target that is defined elsewhere, for example `nuu_link` in `rst_prolog`, is reported by
+# docutils as an unknown target name.
 ignore_messages = [
     "Unknown target name",
 ]
@@ -248,8 +329,12 @@ ignore_rules = [
     "meth",
     "ref",
 ]
+# Report the warnings and everything above them, not the information notes.
 report_level = "warning"
 
 [tool.doc8]
+# The same maximum line length as in Ruff.
 max-line-length = 100
+# D000 (invalid reStructuredText) is switched off. Plain docutils does not know the Sphinx
+# directives, and the markup is checked by rstcheck and by `sphinx-build -W`.
 ignore = ["D000",]
