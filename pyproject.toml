@@ -322,13 +322,6 @@ ignore_substitutions = [
 ignore_messages = [
     "Unknown target name",
 ]
-ignore_rules = [
-    "class",
-    "doc",
-    "func",
-    "meth",
-    "ref",
-]
 # Report the warnings and everything above them, not the information notes.
 report_level = "warning"
 
