@@ -226,7 +226,7 @@ select = [
     "W",       # pycodestyle warnings, for example trailing whitespace
 ]
 # Switched off: N803 (an argument name must be lowercase) and N806 (a variable in a function
-# must be lowercase).
+# must be lowercase), so that the feature matrix can be called `X`.
 ignore = [
     "N803",
     "N806",
