@@ -43,6 +43,13 @@ class TestFit:
 
         assert 0 < model.n_iter_ <= 5000
 
+    def test_raises_when_the_fit_diverges(self, linear_data):
+        X, y = linear_data()
+        model = LinearRegression(learning_rate=10.0, max_iter=5000)
+
+        with np.errstate(all="ignore"), pytest.raises(ValueError, match="NaN, infinity"):
+            model.fit(X, y)
+
 
 class TestScore:
     def test_perfect_fit_gives_high_r2(self, linear_data):

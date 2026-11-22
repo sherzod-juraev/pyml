@@ -54,6 +54,13 @@ class TestFit:
 
         assert np.allclose(ridge.coef_, ols.coef_, atol=1e-6)
 
+    def test_raises_when_the_fit_diverges(self, linear_data):
+        X, y = linear_data()
+        model = Ridge(alpha=1.0, learning_rate=10.0, max_iter=5000)
+
+        with np.errstate(all="ignore"), pytest.raises(ValueError, match="NaN, infinity"):
+            model.fit(X, y)
+
 
 class TestValidateParams:
     @pytest.mark.parametrize(

@@ -56,6 +56,27 @@ def _validate_regression_inputs(y_true: RegressionTarget, y_pred: RegressionTarg
         )
 
 
+def _mean_squared_error(y_true: RegressionTarget, y_pred: RegressionTarget, /) -> float:
+    """Compute the mean squared error without validating the inputs.
+
+    The training loop of the gradient-descent models calls this on every iteration, after
+    ``fit`` has validated the data once. Use ``mean_squared_error`` everywhere else.
+
+    Parameters
+    ----------
+    y_true : RegressionTarget
+        Ground truth target values.
+    y_pred : RegressionTarget
+        Predicted target values, with the same shape as ``y_true``.
+
+    Returns
+    -------
+    float
+        The mean squared error.
+    """
+    return float(np.mean((y_true - y_pred) ** 2))
+
+
 def mean_squared_error(y_true: RegressionTarget, y_pred: RegressionTarget, /) -> float:
     r"""Compute the mean squared error between true and predicted values.
 
@@ -76,7 +97,7 @@ def mean_squared_error(y_true: RegressionTarget, y_pred: RegressionTarget, /) ->
         perfect match.
     """
     _validate_regression_inputs(y_true, y_pred)
-    return float(np.mean((y_true - y_pred) ** 2))
+    return _mean_squared_error(y_true, y_pred)
 
 
 def root_mean_squared_error(y_true: RegressionTarget, y_pred: RegressionTarget, /) -> float:
