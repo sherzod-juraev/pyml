@@ -161,6 +161,8 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
             of samples of each class of ``classes_``.
         """
         leaf = super()._make_leaf(y)
+        # searchsorted maps each label to its position in classes_ (which is sorted);
+        # minlength keeps a column of zeros for classes absent from this leaf.
         leaf.counts = np.bincount(
             np.searchsorted(self.classes_, y), minlength=self.classes_.shape[0]
         )
@@ -179,6 +181,7 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
         ClassificationTarget
             Predicted class label for each sample, of shape (n_samples,).
         """
+        # _leaf_node returns the label as an int, so the base `value` array is already intp.
         return cast(ClassificationTarget, super()._predict(X))
 
     def predict_proba(self, X: FeatureMatrix, /) -> _FloatArray:
@@ -233,10 +236,15 @@ class DecisionTreeClassifier(_DecisionTreeBase, Classifier):
         FloatArray
             Class probabilities of shape (n_samples, n_classes).
         """
-        counts = np.array(
-            [self._find_leaf(x, self.tree_).counts for x in X], dtype=np.float64
-        ).reshape(X.shape[0], self.classes_.shape[0])
-        probabilities: _FloatArray = counts / counts.sum(axis=1, keepdims=True)
+        leaf_counts = self._flat.counts
+        # A classifier always fills counts in fit; the assert is only for mypy (not None).
+        assert leaf_counts is not None
+
+        # Class counts of each sample's leaf, normalized to shares (each row sums to 1).
+        # A leaf holds at least one training sample, so the division is never by zero.
+        final_counts = leaf_counts[self._apply(X)].astype(np.float64)
+
+        probabilities = final_counts / final_counts.sum(axis=1, keepdims=True)
         return probabilities
 
     def _impurity_from_counts(
