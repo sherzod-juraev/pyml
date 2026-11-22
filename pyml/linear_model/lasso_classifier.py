@@ -158,7 +158,7 @@ class LassoClassifier(_LogisticRegressionBase):
         float
             The value of alpha * sum(abs(``coef_``)).
         """
-        return float(self.alpha * np.sum(np.abs(self.coef_)))
+        return float(self.alpha * np.abs(self.coef_).sum())
 
     def _penalty_gradient(self) -> _FloatArray:
         """Compute the subgradient of the L1 penalty with respect to ``coef_``.
