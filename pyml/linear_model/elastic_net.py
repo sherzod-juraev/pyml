@@ -175,8 +175,8 @@ class ElasticNet(_LinearModelBase):
         return float(
             self.alpha
             * (
-                self.l1_ratio * np.sum(np.abs(self.coef_))
-                + ((1 - self.l1_ratio) / 2) * np.sum(self.coef_**2)
+                self.l1_ratio * np.abs(self.coef_).sum()
+                + ((1 - self.l1_ratio) / 2) * (self.coef_**2).sum()
             )
         )
 

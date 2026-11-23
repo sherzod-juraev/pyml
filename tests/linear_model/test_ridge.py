@@ -58,7 +58,10 @@ class TestFit:
         X, y = linear_data()
         model = Ridge(alpha=1.0, learning_rate=10.0, max_iter=5000)
 
-        with np.errstate(all="ignore"), pytest.raises(ValueError, match="NaN, infinity"):
+        with (
+            np.errstate(all="ignore"),
+            pytest.raises(ValueError, match="NaN, infinity.*learning_rate"),
+        ):
             model.fit(X, y)
 
 
