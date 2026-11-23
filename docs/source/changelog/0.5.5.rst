@@ -1,0 +1,27 @@
+0.5.5
+=====
+
+Performance
+-----------
+
+- ``LinearRegression``, ``Ridge``, ``Lasso`` and ``ElasticNet`` call ``ndarray.sum`` instead of
+  ``np.sum`` in every iteration of the gradient descent, so they no longer go through the
+  dispatch layer of ``np.sum``. Fitting is about 13 to 18% faster on a data set of 500 samples
+  and 8 features, and 5 to 10% faster on 5000 samples. The fitted coefficients, the intercept,
+  the predictions, the loss and the number of iterations are identical bit for bit. (#83)
+
+Changed
+-------
+
+- A fit of ``LinearRegression``, ``Ridge``, ``Lasso`` or ``ElasticNet`` that diverges still
+  raises ``ValueError``. The message now says that the loss became NaN, infinity or too large
+  and suggests a smaller ``learning_rate`` or scaled features. It used to say "Input y_pred
+  contains NaN", which did not name the cause. (#83)
+
+Development
+-----------
+
+- ``benchmarks/asv`` times ``LinearRegression``, ``Lasso`` and ``ElasticNet`` too, next to
+  ``Ridge``. (#83)
+- ``tests/linear_model/`` checks that the error of a diverging fit mentions ``learning_rate``.
+  (#83)
