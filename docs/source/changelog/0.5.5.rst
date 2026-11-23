@@ -1,6 +1,14 @@
 0.5.5
 =====
 
+Fixed
+-----
+
+- A fit of ``LinearRegression``, ``Ridge``, ``Lasso`` or ``ElasticNet`` that diverges still
+  raises ``ValueError``. The message now says that the loss became NaN, infinity or too large
+  and suggests a smaller ``learning_rate`` or scaled features. It used to say "Input y_pred
+  contains NaN", which did not name the cause. (#83, #84)
+
 Performance
 -----------
 
@@ -9,14 +17,6 @@ Performance
   dispatch layer of ``np.sum``. Fitting is about 13 to 18% faster on a data set of 500 samples
   and 8 features, and 5 to 10% faster on 5000 samples. The fitted coefficients, the intercept,
   the predictions, the loss and the number of iterations are identical bit for bit. (#83, #84)
-
-Changed
--------
-
-- A fit of ``LinearRegression``, ``Ridge``, ``Lasso`` or ``ElasticNet`` that diverges still
-  raises ``ValueError``. The message now says that the loss became NaN, infinity or too large
-  and suggests a smaller ``learning_rate`` or scaled features. It used to say "Input y_pred
-  contains NaN", which did not name the cause. (#83, #84)
 
 Development
 -----------
