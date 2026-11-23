@@ -7,8 +7,11 @@ same amount of work and only the cost of one iteration is compared.
 from typing import ClassVar
 
 from pyml.linear_model import (
+    ElasticNet,
     ElasticNetClassifier,
+    Lasso,
     LassoClassifier,
+    LinearRegression,
     LogisticRegression,
     Ridge,
     RidgeClassifier,
@@ -38,6 +41,43 @@ class RidgeFit:
     def time_fit(self, n_samples: int) -> None:
         """Fit a ridge regression for 2000 iterations."""
         Ridge(alpha=0.1, learning_rate=0.01, max_iter=2000, tol=0.0).fit(self.X, self.y)
+
+
+def _make_regressor(model: str) -> LinearRegression | Lasso | ElasticNet:
+    """Create a regressor of the linear family by name, with the same settings for all."""
+    # Small on purpose: with 0.01 the loss stops changing after about 850 iterations and the fit
+    # stops (``tol=0.0``), so a case would time less than half of the budget.
+    learning_rate = 0.003
+    max_iter = 2000
+    if model == "LinearRegression":
+        return LinearRegression(learning_rate=learning_rate, max_iter=max_iter, tol=0.0)
+    if model == "Lasso":
+        return Lasso(learning_rate=learning_rate, max_iter=max_iter, tol=0.0, alpha=0.1)
+    return ElasticNet(
+        learning_rate=learning_rate, max_iter=max_iter, tol=0.0, alpha=0.1, l1_ratio=0.5
+    )
+
+
+class RegressorFamilyFit:
+    """Time of ``fit`` of the other linear regressors, for a growing number of samples.
+
+    ``Ridge`` stays in ``RidgeFit``, so that its results keep their names. The three models here
+    run all 2000 iterations on the same data.
+    """
+
+    params: ClassVar[list[list[int] | list[str]]] = [
+        ["LinearRegression", "Lasso", "ElasticNet"],
+        [N_SMALL, N_LARGE],
+    ]
+    param_names: ClassVar[list[str]] = ["model", "n_samples"]
+
+    def setup(self, model: str, n_samples: int) -> None:
+        """Create a linear data set with noise. This is not timed."""
+        self.X, self.y = regression_data(n_samples, _N_FEATURES)
+
+    def time_fit(self, model: str, n_samples: int) -> None:
+        """Fit the regressor for 2000 iterations."""
+        _make_regressor(model).fit(self.X, self.y)
 
 
 def _make_classifier(
