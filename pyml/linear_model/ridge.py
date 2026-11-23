@@ -1,7 +1,5 @@
 """Ridge regression (L2-regularized linear regression)."""
 
-import numpy as np
-
 from ..core.param_checks import check_non_negative
 from ._linear_base import _FloatArray, _LinearModelBase
 
@@ -140,7 +138,7 @@ class Ridge(_LinearModelBase):
         float
             The value of alpha * sum(``coef_`` ** 2).
         """
-        return float(self.alpha * np.sum(self.coef_**2))
+        return float(self.alpha * (self.coef_**2).sum())
 
     def _penalty_gradient(self) -> _FloatArray:
         """Compute the gradient of the L2 penalty with respect to ``coef_``.

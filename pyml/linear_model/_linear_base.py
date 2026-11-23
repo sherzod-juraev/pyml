@@ -182,7 +182,7 @@ class _LinearModelBase(Regressor):
         grad_coef = (2 / X.shape[0]) * (X.T @ residuals) + self._penalty_gradient()
         grad_intercept = 0.0
         if self.fit_intercept:
-            grad_intercept = (2 / X.shape[0]) * np.sum(residuals)
+            grad_intercept = (2 / X.shape[0]) * residuals.sum()
         return grad_coef, float(grad_intercept)
 
     @abstractmethod
