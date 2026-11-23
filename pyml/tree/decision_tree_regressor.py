@@ -131,7 +131,8 @@ class DecisionTreeRegressor(_DecisionTreeBase, Regressor):
         RegressionTarget
             Predicted value for each sample, of shape (n_samples,).
         """
-        return cast(RegressionTarget, super()._predict(X))
+        raw_pred = super()._predict(X)
+        return cast(RegressionTarget, raw_pred)
 
     def _weighted_child_impurity(
         self,
