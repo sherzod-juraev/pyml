@@ -124,8 +124,9 @@ class _LinearModelBase(Regressor):
             J_new = self._compute_loss(y, y_pred)
             if ~np.isfinite(J_new):
                 raise ValueError(
-                    "Input y_pred contains NaN, infinity or a value too large for"
-                    f" dtype('{y_pred.dtype.name}')"
+                    "The loss became NaN, infinity or a value too large for"
+                    f" dtype('{y_pred.dtype.name}'), so the fit diverges. Try a smaller"
+                    " learning_rate or scale the features."
                 )
             grad_coef, grad_intercept = self._compute_gradient(X, residuals)
             self.coef_ -= self.learning_rate * grad_coef
