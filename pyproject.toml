@@ -43,7 +43,7 @@ classifiers = [
 # What pyml needs at run time. The lower bounds are the oldest versions that the nox session
 # `tests-min` still tests.
 dependencies = [
-    "numpy>=1.26.0",
+    "numpy>=2.5.5",
     "scipy>=1.11.2",
 ]
 
@@ -58,7 +58,7 @@ dev-test = [
     "pytest-sugar>=1.0",
 ]
 # ruff checks and formats the code (nox session `lint`).
-dev-lint = ["ruff>=0.17.5"]
+dev-lint = ["ruff>=0.17.6"]
 # mypy checks the types in strict mode, scipy-stubs gives it the types of SciPy (nox session
 # `types`).
 dev-types = ["mypy>=2.4.1", "scipy-stubs>=1.18.1.1", ]
@@ -98,7 +98,7 @@ docs-build = [
     "autodocsumm>=0.2.14",
     "pydata-sphinx-theme>=0.24.0",
     "sphinx>=9.1.1",
-    "sphinx-autodoc-typehints>=3.17.5",
+    "sphinx-autodoc-typehints>=3.17.6",
     "sphinx-copybutton>=0.5.0",
     "sphinx-design>=0.8.0",
     "sphinx-gallery>=0.22.1",
