@@ -23,6 +23,7 @@ __all__ = [
     "model_selection",
     "naive_bayes",
     "neighbors",
+    "pipeline",
     "preprocessing",
     "tree",
 ]

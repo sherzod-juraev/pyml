@@ -1,0 +1,42 @@
+0.6.0
+=====
+
+Added
+-----
+
+- ``Pipeline``, in the new ``pyml.pipeline`` package. It chains transformers and a last step, a
+  regressor, a classifier or a clusterer, into one estimator. ``fit`` fits each transformer on
+  the output of the one before it and then the last step, and ``predict``, ``predict_proba`` and
+  ``score`` pass the data through the fitted transformers to the last step. The steps are fitted
+  in place. ``steps`` is checked before every use: the names must be unique, non-empty and
+  without ``__``, every step but the last must be a transformer, and the last must be a model
+  or a clusterer, otherwise ``InvalidParameterError`` names the step. A supervised last step
+  needs ``y`` and a clusterer rejects it. ``pipeline["name"]`` and ``pipeline[-1]`` return a
+  step, and ``len(pipeline)`` counts them. (#91)
+- ``pyml.core.protocols`` with ``SupportsParams``, ``TransformerLike``, ``SupervisedLike``,
+  ``ClustererLike``, ``PredictableClustererLike`` and ``SupportsPredictProba``. Each names the
+  methods that one part of pyml needs from another, so ``Pipeline`` can type its steps without
+  asking the estimators to inherit from anything. They also work with ``isinstance``, which
+  checks the method names only, not the signatures. (#91)
+
+Documentation
+-------------
+
+- API pages for ``Pipeline`` and for the protocols, and a note on the ``versionadded`` and
+  ``versionchanged`` markers in ``docs/AUTHORING.md`` and ``docs/README.md``. (#91)
+
+Development
+-----------
+
+- ``tests/pipeline/`` and ``tests/core/test_protocols.py`` cover the new code. The registry
+  completeness test in ``tests/test_estimator_contract.py`` skips meta-estimators such as
+  ``Pipeline``, which are tested in their own files. (#91)
+- ``tests/test_estimator_contract.py`` also checks, for every estimator in the registry, that
+  ``predict`` and ``transform`` of a fitted estimator return an empty result for no samples.
+  ``tests/test_lazy_imports.py`` imports every submodule on first access, and
+  ``tests/tree/`` checks the Gini impurity of an empty node. Line and branch coverage of
+  ``pyml`` is 100%. (#91)
+- The branch of ``DBSCAN`` that marks a point as noise is a plain ``else``. The condition it
+  replaces was always true, so the clustering does not change. (#91)
+- The private protocol that a forest needs from its trees moved from ``pyml.ensemble`` to
+  ``pyml.core.protocols``. (#91)

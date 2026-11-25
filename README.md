@@ -78,7 +78,7 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 
 ## What's inside
 
-| Category              |                                     Models                                      |
+| Category              |                                Models and tools                                 |
 |:----------------------|:-------------------------------------------------------------------------------:|
 | Linear regression     |                  Linear Regression, Ridge, Lasso, Elastic Net                   |
 | Linear classification | Logistic Regression, Ridge Classifier, Lasso Classifier, Elastic Net Classifier |
@@ -88,6 +88,7 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 | Ensemble              |                Random Forest Classifier, Random Forest Regressor                |
 | Clustering            |                                 KMeans, DBSCAN                                  |
 | Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                  |
+| Pipeline              |                                    Pipeline                                     |
 | Model selection       |                                Train/test split                                 |
 
 ## Documentation

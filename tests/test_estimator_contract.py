@@ -2,7 +2,9 @@
 
 The estimators come from ``tests/registry.py``. A completeness test
 fails when a public estimator is missing from the registry, so a new
-model cannot skip these checks.
+model cannot skip these checks. Meta-estimators such as Pipeline wrap other
+estimators and do not fit this contract, so they are listed in
+``META_ESTIMATORS`` and tested in their own files.
 """
 
 import copy
@@ -18,14 +20,17 @@ import pyml
 from pyml.core.base.estimator import BaseEstimator
 from pyml.core.base.validation import DataValidatorMixin
 from pyml.core.exceptions import InvalidParameterError, NotFittedError, ShapeMismatchError
+from pyml.pipeline import Pipeline
 from tests.registry import ENTRIES, Entry, by_family, ids
 
 CLASSIFIERS = by_family("classifier")
 PROBA_CLASSIFIERS = [entry for entry in CLASSIFIERS if hasattr(entry.cls, "predict_proba")]
 REGRESSORS = by_family("regressor")
+SUPERVISED = CLASSIFIERS + REGRESSORS
 TRANSFORMERS = by_family("transformer")
 ALL_CLUSTERERS = by_family("clusterer")
 PREDICTABLE_CLUSTERERS = by_family("clusterer", predictable=True)
+META_ESTIMATORS: set[type[BaseEstimator]] = {Pipeline}
 INVALID_PARAMS = [(entry, params) for entry in ENTRIES for params in entry.invalid]
 INVALID_PARAM_IDS = [f"{entry.name}-{params}" for entry, params in INVALID_PARAMS]
 
@@ -76,6 +81,7 @@ def _public_estimator_classes() -> set[type[BaseEstimator]]:
                 inspect.isclass(member)
                 and issubclass(member, BaseEstimator)
                 and not inspect.isabstract(member)
+                and member not in META_ESTIMATORS
             ):
                 classes.add(member)
     return classes
@@ -273,6 +279,32 @@ class TestClustererContract:
         model = entry.build().fit(X)
         with pytest.raises(ShapeMismatchError):
             model.predict(X[:, :2])
+
+
+class TestEmptyInputContract:
+    @pytest.mark.parametrize("entry", SUPERVISED, ids=ids(SUPERVISED))
+    def test_predict_on_no_samples_returns_an_empty_array(self, entry, X, y_class, y_reg):
+        model = entry.build().fit(*_fit_args(entry, X, y_class, y_reg))
+
+        result = model.predict(X[:0])
+
+        assert result.shape == (0,)
+
+    @pytest.mark.parametrize("entry", TRANSFORMERS, ids=ids(TRANSFORMERS))
+    def test_transform_on_no_samples_keeps_the_feature_count(self, entry, X):
+        model = entry.build().fit(X)
+
+        result = model.transform(X[:0])
+
+        assert result.shape == (0, X.shape[1])
+
+    @pytest.mark.parametrize("entry", PREDICTABLE_CLUSTERERS, ids=ids(PREDICTABLE_CLUSTERERS))
+    def test_clusterer_predict_on_no_samples_returns_an_empty_array(self, entry, X):
+        model = entry.build().fit(X)
+
+        result = model.predict(X[:0])
+
+        assert result.shape == (0,)
 
 
 class TestParamsContract:

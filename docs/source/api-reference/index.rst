@@ -18,6 +18,7 @@ then unsupervised, then utilities. The same order is used in
     ensemble/index
     cluster/index
     preprocessing/index
+    pipeline/index
     model-selection/index
     metrics/index
 
@@ -186,6 +187,26 @@ then unsupervised, then utilities. The same order is used in
                     :expand:
 
                     Open Preprocessing
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            .. card-header::
+
+                Pipeline
+
+            Chains transformers and a final model or clusterer into one
+            estimator.
+
+            .. card-footer::
+
+                .. button-ref:: pipeline/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Pipeline
 
         .. grid-item-card::
             :text-align: center
