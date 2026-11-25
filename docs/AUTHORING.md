@@ -39,6 +39,12 @@ class. Copy a page of the same family and change the class name, so that the hea
   that is in no toctree makes the build fail (`-W`).
 - The content comes from the class docstring, which is where the math, the parameters and the
   `.. plot::` demo are written, see "Docstrings" in CONTRIBUTING.md. The page itself stays short.
+- A class that is added, changed or deprecated carries `.. versionadded:: X.Y.Z`,
+  `.. versionchanged:: X.Y.Z` or `.. deprecated:: X.Y.Z` in its docstring, directly after the
+  one-line summary. Sphinx draws it as a note on the page, so the reader sees from which release a
+  class exists. `X.Y.Z` is the version being developed, and it must have a page in `changelog/`.
+  The rule and the check before a release are in "Docstrings" in CONTRIBUTING.md. Classes
+  released before the rule have no marker.
 - A new family also needs a card in `docs/source/api-reference/index.rst`.
 - Cards in an index page are written as header, body and footer button:
 
