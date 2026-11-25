@@ -174,6 +174,31 @@ class TestFit:
         assert np.array_equal(model._flat.counts[1:], [[3, 1], [0, 4]])
 
 
+class TestSplitQuality:
+    def test_empty_node_has_zero_impurity(self):
+        model = DecisionTreeClassifier(max_depth=3)
+
+        assert model._split_quality(np.array([], dtype=int)) == 0.0
+
+    def test_pure_node_has_zero_impurity(self):
+        model = DecisionTreeClassifier(max_depth=3)
+
+        assert model._split_quality(np.array([2, 2, 2, 2])) == 0.0
+
+    @pytest.mark.parametrize(
+        ("y", "expected"),
+        [
+            (np.array([0, 0, 1, 1]), 0.5),
+            (np.array([0, 1, 2]), 2 / 3),
+            (np.array([0, 0, 0, 1]), 1 - (0.75**2 + 0.25**2)),
+        ],
+    )
+    def test_matches_the_gini_formula(self, y, expected):
+        model = DecisionTreeClassifier(max_depth=3)
+
+        assert model._split_quality(y) == pytest.approx(expected)
+
+
 class TestBestSplit:
     @pytest.mark.parametrize(
         "labels",
