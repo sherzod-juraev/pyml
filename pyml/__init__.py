@@ -7,7 +7,7 @@ is imported directly, e.g. ``from pyml.linear_model import Ridge`` —
 pyml itself never re-exports individual classes or functions.
 """
 
-__version__ = "0.5.5"
+__version__ = "0.6.0"
 __author__ = "Sherzod Juraev"
 
 import importlib
@@ -23,6 +23,7 @@ __all__ = [
     "model_selection",
     "naive_bayes",
     "neighbors",
+    "pipeline",
     "preprocessing",
     "tree",
 ]

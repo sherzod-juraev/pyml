@@ -204,7 +204,7 @@ class DBSCAN(Clusterer):
                 mask = self.labels_[neigh_idx] < 0
                 self.labels_[neigh_idx[mask]] = cluster_idx
                 cluster_idx += 1
-            elif self.labels_[i] == -2:
+            else:
                 self.labels_[i] = -1
 
     def _get_labels(self) -> ClusterLabels:

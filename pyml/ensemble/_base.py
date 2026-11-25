@@ -10,65 +10,17 @@ regression.
 
 import math
 from abc import ABC, abstractmethod
-from typing import Any, Literal, Protocol, Self, cast, get_args
+from typing import Any, Literal, cast, get_args
 
 import numpy as np
-import numpy.typing as npt
 
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
 from ..core.exceptions import InvalidParameterError
 from ..core.param_checks import check_bool, check_choice, check_integer
+from ..core.protocols import _ForestTree
 
 _MaxFeatures = Literal["sqrt"]
 """Names accepted by max_features besides an int or None."""
-
-
-class _ForestTree(Protocol):
-    """What a forest needs from each of its trees.
-
-    The forest only grows its trees, checks their parameters and asks them for
-    predictions, so any tree with these methods fits. Because this is a
-    protocol, the decision trees do not have to inherit from it.
-    """
-
-    def fit(self, X: FeatureMatrix, y: npt.NDArray[Any], /) -> Self:
-        """Fit the tree on the given samples.
-
-        Parameters
-        ----------
-        X : FeatureMatrix
-            Training data of shape (n_samples, n_features).
-        y : numpy.ndarray
-            Target values of shape (n_samples,).
-
-        Returns
-        -------
-        Self
-            The fitted tree.
-        """
-
-    def predict(self, X: FeatureMatrix, /) -> npt.NDArray[Any]:
-        """Predict the target of each sample.
-
-        Parameters
-        ----------
-        X : FeatureMatrix
-            Input data of shape (n_samples, n_features).
-
-        Returns
-        -------
-        numpy.ndarray
-            Predictions of shape (n_samples,).
-        """
-
-    def _validate_params(self) -> None:
-        """Check the hyper-parameters of the tree.
-
-        Raises
-        ------
-        InvalidParameterError
-            If a hyper-parameter of the tree is invalid.
-        """
 
 
 class _ForestBase[TreeT: _ForestTree](ABC):

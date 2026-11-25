@@ -6,6 +6,7 @@ Core
 
     base/index
     exceptions/index
+    protocols
     distance-metrics
 
 .. only:: html
@@ -52,3 +53,23 @@ Core
                     :expand:
 
                     Open Exceptions
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            .. card-header::
+
+                Protocols
+
+            The method sets that parts of pyml rely on, such as what a
+            Pipeline needs from its steps.
+
+            .. card-footer::
+
+                .. button-ref:: protocols
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Protocols

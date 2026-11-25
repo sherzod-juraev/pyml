@@ -17,7 +17,7 @@ CONTRIBUTING.md.
 | `index.rst`, `getting-started.rst`, `about.rst`, `404.rst` | Top-level pages. The `toctree` of `index.rst` sets the order of the header links. |
 | `examples/`               | `index.rst` (tracked) and one generated folder per family, made by sphinx-gallery from the scripts in `<repo>/examples/` (ignored by git). |
 | `api-reference/`          | API reference: one folder per family with one page per class (`autoclass`). The order is deliberate, see "Known trade-offs" below. |
-| `changelog/`              | One file per release.                                                     |
+| `changelog/`              | One file per release. The `versionadded` and `versionchanged` markers in the docstrings name these versions. |
 | `_ext/`                   | Custom Sphinx extensions (below).                                         |
 | `_plot_styles/`           | `light.mplstyle` and `dark.mplstyle`: colors of the plots.                |
 | `_latex/pyml.sty`         | Style of the PDF: fonts, colors, cover page, chapter headings.            |

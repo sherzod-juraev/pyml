@@ -34,6 +34,12 @@ PACKAGES = _lazy_packages()
 PACKAGE_IDS = [module.__name__ for module in PACKAGES]
 PUBLIC_NAMES = [(module, name) for module in PACKAGES for name in module.__all__]
 PUBLIC_NAME_IDS = [f"{module.__name__}.{name}" for module, name in PUBLIC_NAMES]
+SUBMODULES = [
+    (module, name)
+    for module, name in PUBLIC_NAMES
+    if name not in vars(module).get("_LAZY_IMPORTS", {})
+]
+SUBMODULE_IDS = [f"{module.__name__}.{name}" for module, name in SUBMODULES]
 
 
 def _stub_names(module: ModuleType) -> set[str]:
@@ -62,6 +68,15 @@ class TestLazyImports:
         member = getattr(module, name)
 
         assert member.__name__ in {name, f"{module.__name__}.{name}"}
+
+    @pytest.mark.parametrize(("module", "name"), SUBMODULES, ids=SUBMODULE_IDS)
+    def test_submodule_is_imported_on_first_access(self, module, name, monkeypatch):
+        monkeypatch.delattr(module, name, raising=False)
+
+        member = getattr(module, name)
+
+        assert inspect.ismodule(member)
+        assert member.__name__ == f"{module.__name__}.{name}"
 
     @pytest.mark.parametrize("module", PACKAGES, ids=PACKAGE_IDS)
     def test_unknown_attribute_raises_attribute_error(self, module):
