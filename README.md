@@ -114,6 +114,13 @@ The development setup, the Nox sessions and the project conventions are describe
 - [benchmarks/README.md](benchmarks/README.md): profiling a script and comparing the speed of two
   versions with `asv`.
 
+## Elsewhere
+
+pyml is indexed, with the author's permission, as a reference corpus in the
+[XERJ Corpus Hub](https://hub.xerj.org/corpus/sherzod-juraev--pyml), where AI coding agents can
+search it. The hub keeps a copy pinned at one commit (`8b5e738f05`, 2026-10-25), so it may be
+older than the latest release.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
