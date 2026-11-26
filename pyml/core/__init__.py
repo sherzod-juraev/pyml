@@ -1,6 +1,6 @@
 """Public API for pyml's core infrastructure.
 
-Lazily exposes the base, exceptions, dtypes, and protocols submodules so that
+Lazily exposes the base, clone, exceptions, dtypes, and protocols submodules so that
 importing pyml.core does not eagerly load their contents.
 """
 
@@ -10,6 +10,7 @@ from typing import Any
 # Lazy-load all public API
 __all__ = [
     "base",
+    "clone",
     "dtypes",
     "exceptions",
     "protocols",
