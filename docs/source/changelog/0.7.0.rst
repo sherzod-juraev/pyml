@@ -1,0 +1,28 @@
+0.7.0
+=====
+
+Added
+-----
+
+- ``clone`` in ``pyml.core.clone``. It returns a new, unfitted estimator of the same class with
+  the same parameters, built from ``get_params()``. The parameters are copied deeply, and an
+  estimator inside them is cloned in turn, so cloning a ``Pipeline`` gives a new pipeline with
+  new, unfitted steps. A plain ``list``, ``tuple`` or ``dict`` is rebuilt and its items are
+  cloned, and any other value is copied with ``copy.deepcopy``. ``TypeError`` is raised for a
+  class instead of an instance, for an object without ``get_params`` and ``set_params``, and
+  for a subclass of ``list``, ``tuple`` or ``dict``, such as a named tuple or an
+  ``OrderedDict``, at any depth. (#98)
+
+Documentation
+-------------
+
+- API page for ``clone``, and its mention on the Core card of the API reference. The README
+  table and the project structure in ``CONTRIBUTING.md`` list ``clone`` and the ``pipeline``
+  package. (#98)
+
+Development
+-----------
+
+- ``tests/core/test_clone.py`` clones every estimator in the registry and checks the nesting
+  rules on dummy estimators and on a fitted ``Pipeline``. Line and branch coverage of
+  ``pyml`` stays at 100%. (#98)
