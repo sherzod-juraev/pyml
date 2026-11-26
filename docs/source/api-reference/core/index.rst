@@ -7,6 +7,7 @@ Core
     base/index
     exceptions/index
     protocols
+    clone
     distance-metrics
 
 .. only:: html
@@ -73,3 +74,23 @@ Core
                     :expand:
 
                     Open Protocols
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            .. card-header::
+
+                Clone
+
+            Build a new, unfitted estimator with the same parameters,
+            including the estimators inside it.
+
+            .. card-footer::
+
+                .. button-ref:: clone
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Clone
