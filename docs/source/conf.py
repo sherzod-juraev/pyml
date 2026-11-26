@@ -73,9 +73,11 @@ extensions = [
 # warning fails it.
 nitpicky = True
 # References that are known not to resolve and are accepted: numpy.typing.NDArray, the type of the
-# arrays in the signatures.
+# arrays in the signatures, and P, the type variable of `clone`, which has no page (the signature
+# `clone[P: SupportsParams]` shows its bound).
 nitpick_ignore = [
     ("py:class", "numpy.typing.NDArray"),
+    ("py:class", "P"),
 ]
 
 # --- Autodoc --- #

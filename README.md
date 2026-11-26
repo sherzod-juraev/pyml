@@ -90,6 +90,7 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 | Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                  |
 | Pipeline              |                                    Pipeline                                     |
 | Model selection       |                                Train/test split                                 |
+| Utilities             |                                      Clone                                      |
 
 ## Documentation
 

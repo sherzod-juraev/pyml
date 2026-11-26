@@ -36,8 +36,9 @@ then unsupervised, then utilities. The same order is used in
 
                 Core
 
-            Shared base classes, exceptions, and type aliases used
-            across all pyml estimators.
+            Shared base classes, exceptions, protocols, and type aliases
+            used across all pyml estimators, and clone, which copies an
+            estimator without what it has learned.
 
             .. card-footer::
 
