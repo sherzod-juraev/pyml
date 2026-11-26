@@ -50,13 +50,14 @@ pyml/
 ├── examples/                   # Example scripts, one folder per family (run by the docs build)
 ├── pyml/                       # Source code
 │   ├── cluster/                # Clustering
-│   ├── core/                   # Base classes, validation, exceptions, type aliases
+│   ├── core/                   # Shared base: base classes, validation, exceptions, protocols, clone
 │   ├── ensemble/               # Random forests
 │   ├── linear_model/           # Linear models
 │   ├── metrics/                # Metrics
 │   ├── model_selection/        # Train/test split
 │   ├── naive_bayes/            # Naive Bayes
 │   ├── neighbors/              # KNN, Radius
+│   ├── pipeline/               # Pipeline: transformers and a final model as one estimator
 │   ├── preprocessing/          # Scalers
 │   └── tree/                   # Decision trees
 ├── tests/                      # Test suite, mirrors pyml/
