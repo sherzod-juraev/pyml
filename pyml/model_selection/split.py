@@ -1,9 +1,14 @@
-"""Utilities for splitting data into training and test sets."""
+"""Utilities for splitting data into training, validation and test sets."""
+
+from collections.abc import Iterator
+from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 from ..core.dtypes import ClassificationTarget, FeatureMatrix, RegressionTarget
-from ..core.exceptions import ShapeMismatchError
+from ..core.exceptions import InvalidParameterError, ShapeMismatchError
+from ..core.param_checks import check_bool, check_integer
 
 
 def _validate_inputs(
@@ -124,3 +129,140 @@ def train_test_split(
     test_idx = indices[:n_test]
     train_idx = indices[n_test:]
     return X[train_idx], X[test_idx], y[train_idx], y[test_idx]
+
+
+class KFold:
+    """Split samples into consecutive train and validation folds.
+
+    .. versionadded:: 0.8.0
+
+    The samples are divided into ``n_splits`` groups, the folds. ``split`` yields
+    one pair of index arrays per fold: the fold is the validation set and the
+    other folds together are the training set. Every sample is in a validation
+    set exactly once and in a training set ``n_splits - 1`` times, and the
+    validation sets do not overlap.
+
+    ``KFold`` only gives the indices. Fitting a model on them and scoring it is
+    what ``cross_val_score`` does.
+
+    Parameters
+    ----------
+    n_splits : int, optional
+        Number of folds, at least 2. It must not be greater than the number of
+        samples, which ``split`` checks. Defaults to 5.
+    shuffle : bool, optional
+        Whether to shuffle the samples before they are divided into folds. If
+        False, the folds are consecutive blocks of the samples in their original
+        order. Defaults to False.
+    random_state : int or None, optional
+        Non-negative seed of the generator that shuffles the samples. It has an
+        effect only when ``shuffle`` is True. If None, every call of ``split``
+        shuffles differently. Defaults to None.
+
+    Attributes
+    ----------
+    n_splits : int
+        The number of folds, as given.
+    shuffle : bool
+        Whether the samples are shuffled, as given.
+    random_state : int or None
+        The seed of the shuffling, as given.
+
+    Notes
+    -----
+    The folds are not stratified: a fold does not keep the proportions of the
+    classes. When the labels are sorted by class, use ``shuffle=True``, because
+    otherwise a training set can miss a whole class. The first
+    ``n_samples % n_splits`` folds have one sample more than the others.
+    """
+
+    def __init__(
+        self,
+        n_splits: int = 5,
+        *,
+        shuffle: bool = False,
+        random_state: int | None = None,
+    ) -> None:
+        """Create a K-fold splitter.
+
+        Parameters
+        ----------
+        n_splits : int, optional
+            Number of folds, at least 2. Defaults to 5.
+        shuffle : bool, optional
+            Whether to shuffle the samples before dividing them into folds.
+            Defaults to False.
+        random_state : int or None, optional
+            Non-negative seed of the shuffling. Defaults to None.
+
+        Raises
+        ------
+        InvalidParameterError
+            If n_splits is not an integer of at least 2, shuffle is not a bool,
+            or random_state is not None and is not a non-negative integer.
+        """
+        check_integer("n_splits", n_splits, minimum=2)
+        check_bool("shuffle", shuffle)
+        if random_state is not None:
+            check_integer("random_state", random_state, minimum=0)
+
+        self.n_splits = n_splits
+        self.shuffle = shuffle
+        self.random_state = random_state
+
+    def split(
+        self, X: FeatureMatrix, y: npt.NDArray[Any] | None = None
+    ) -> Iterator[tuple[npt.NDArray[np.intp], npt.NDArray[np.intp]]]:
+        """Yield the training and validation indices of each fold.
+
+        Parameters
+        ----------
+        X : FeatureMatrix
+            Feature matrix of shape (n_samples, n_features). Only its number of
+            samples is used.
+        y : ndarray or None, optional
+            Targets of shape (n_samples,). Only its number of samples is
+            checked. Defaults to None.
+
+        Yields
+        ------
+        train_idx : ndarray
+            Indices of the training samples of the fold, in increasing order.
+        val_idx : ndarray
+            Indices of the validation samples of the fold, in increasing order.
+
+        Raises
+        ------
+        InvalidParameterError
+            If n_splits is greater than the number of samples.
+        ShapeMismatchError
+            If X and y have a different number of samples.
+
+        Notes
+        -----
+        ``split`` is a generator, so the errors above are raised when the first
+        fold is requested, not when ``split`` is called.
+        """
+        n_samples = X.shape[0]
+        if y is not None and y.shape[0] != n_samples:
+            raise ShapeMismatchError(
+                "Found input variables with inconsistent numbers of samples: "
+                f"[{n_samples}, {y.shape[0]}]"
+            )
+        if self.n_splits > n_samples:
+            raise InvalidParameterError(
+                f"n_splits={self.n_splits} is greater than the number of samples, {n_samples}."
+            )
+
+        # The type is set, because the default integer is 32 bit on Windows with NumPy 1.x.
+        indices = np.arange(n_samples, dtype=np.intp)
+        if self.shuffle:
+            # A new generator on every call, so a fixed random_state gives the same folds each time.
+            np.random.default_rng(self.random_state).shuffle(indices)
+
+        # The first n_samples % n_splits folds get one sample more than the others.
+        for fold in np.array_split(indices, self.n_splits):
+            val_idx = np.sort(fold)
+            is_train = np.ones(n_samples, dtype=np.bool_)
+            is_train[val_idx] = False
+            yield np.flatnonzero(is_train), val_idx

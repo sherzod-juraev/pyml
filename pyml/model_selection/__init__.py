@@ -9,12 +9,16 @@ from typing import Any
 
 # Lazy-load all public API
 __all__ = [
+    "KFold",
+    "cross_val_score",
     "train_test_split",
 ]
 
 
 # Mapping: symbol → (module, name)
 _LAZY_IMPORTS = {
+    "KFold": ("split", "KFold"),
+    "cross_val_score": ("validation", "cross_val_score"),
     "train_test_split": ("split", "train_test_split"),
 }
 
