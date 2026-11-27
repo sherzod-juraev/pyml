@@ -89,7 +89,7 @@ uv add git+https://github.com/sherzod-juraev/pyml-datasets.git        # uv
 | Clustering            |                                 KMeans, DBSCAN                                  |
 | Preprocessing         |                  Standard Scaler, MinMax Scaler, Robust Scaler                  |
 | Pipeline              |                                    Pipeline                                     |
-| Model selection       |                                Train/test split                                 |
+| Model selection       |                Train/test split, K-fold, Cross-validation score                 |
 | Utilities             |                                      Clone                                      |
 
 ## Documentation
