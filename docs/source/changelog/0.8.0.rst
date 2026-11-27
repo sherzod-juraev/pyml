@@ -1,0 +1,28 @@
+0.8.0
+=====
+
+Added
+-----
+
+- ``KFold`` and ``cross_val_score`` in ``pyml.model_selection``. ``KFold`` divides the samples
+  into ``n_splits`` consecutive folds, after shuffling them when ``shuffle`` is true, and its
+  ``split`` yields the training and validation indices of each fold, so every sample is
+  validated exactly once. ``cross_val_score`` fits a new, unfitted copy of the estimator (made
+  with ``clone``) on the training part of each fold, scores it on the validation part and
+  returns one score per fold. The estimator itself is never fitted, and a ``Pipeline`` fits its
+  preprocessing on each training part only. ``cv`` is an integer or a ``KFold``, and ``scoring``
+  is a callable ``scoring(estimator, X_val, y_val)``, or the ``score`` method of the estimator
+  when it is ``None``. The folds are not stratified. (#100)
+
+Documentation
+-------------
+
+- API pages for ``KFold`` and ``cross_val_score``. The README table and the project structure
+  in ``CONTRIBUTING.md`` list them. (#100)
+
+Development
+-----------
+
+- ``tests/model_selection/test_split.py`` covers ``KFold`` and the new
+  ``tests/model_selection/test_validation.py`` covers ``cross_val_score``. Line and branch
+  coverage of ``pyml`` stays at 100%. (#100)
