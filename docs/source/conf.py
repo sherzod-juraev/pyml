@@ -73,10 +73,14 @@ extensions = [
 # warning fails it.
 nitpicky = True
 # References that are known not to resolve and are accepted: numpy.typing.NDArray, the type of the
-# arrays in the signatures, and P, the type variable of `clone`, which has no page (the signature
+# arrays in the signatures, numpy.float64 and numpy.int64, the element types of the arrays that
+# `cross_val_score` and `KFold.split` return (the NumPy inventory lists them as attributes, not
+# classes), and P, the type variable of `clone`, which has no page (the signature
 # `clone[P: SupportsParams]` shows its bound).
 nitpick_ignore = [
     ("py:class", "numpy.typing.NDArray"),
+    ("py:class", "numpy.float64"),
+    ("py:class", "numpy.int64"),
     ("py:class", "P"),
 ]
 

@@ -217,8 +217,8 @@ then unsupervised, then utilities. The same order is used in
 
                 Model Selection
 
-            Splitting feature matrices and target arrays into train and
-            test subsets for model evaluation.
+            Train and test splitting, K-fold cross-validation, and
+            cross-validated scores for model evaluation.
 
             .. card-footer::
 

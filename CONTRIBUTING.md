@@ -54,7 +54,7 @@ pyml/
 │   ├── ensemble/               # Random forests
 │   ├── linear_model/           # Linear models
 │   ├── metrics/                # Metrics
-│   ├── model_selection/        # Train/test split
+│   ├── model_selection/        # Train/test split, K-fold, cross-validation score
 │   ├── naive_bayes/            # Naive Bayes
 │   ├── neighbors/              # KNN, Radius
 │   ├── pipeline/               # Pipeline: transformers and a final model as one estimator
