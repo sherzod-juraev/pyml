@@ -16,6 +16,7 @@ are always in agreement.
     ensemble/index
     cluster/index
     preprocessing/index
+    workflow/index
 
 .. only:: html
 
@@ -155,3 +156,22 @@ are always in agreement.
                     :expand:
 
                     Open Preprocessing
+
+        .. grid-item-card::
+            :text-align: center
+            :shadow: md
+
+            .. card-header::
+
+                Machine Learning Workflow
+
+            Measure a model on several splits and keep the preprocessing inside each fold.
+
+            .. card-footer::
+
+                .. button-ref:: workflow/index
+                    :ref-type: doc
+                    :color: primary
+                    :expand:
+
+                    Open Workflow
