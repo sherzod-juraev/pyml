@@ -9,9 +9,9 @@ body:
         pyml is a personal, educational project, so a proposal may be slow to get an answer or
         may be declined. A clear proposal still helps to discuss the idea.
   - type: textarea
-    id: motivation
+    id: rationale
     attributes:
-      label: Motivation
+      label: Rationale
       description: What problem does this solve, and why is it a good fit for pyml?
     validations:
       required: true
