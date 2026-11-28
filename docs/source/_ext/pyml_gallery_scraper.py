@@ -86,6 +86,7 @@ EXAMPLE_ORDER = (
     "min-max-scaler",
     "robust-scaler",
     "standard-scaler",
+    "cross-validation",
 )
 
 

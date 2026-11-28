@@ -160,6 +160,10 @@ name fails the build and lists the available ones.
 2. Add `<family>/index` to the `toctree` and a card to `docs/source/examples/index.rst`. Without
    them the build warns that the generated index is in no toctree.
 
+Not every group is a model family. The `workflow` group holds the pages about the tools around
+the models (splitting, pipelines, cross-validation). A topic that belongs to no model family goes
+there, in `examples/workflow/`, and it is added to `EXAMPLE_ORDER` like any other example.
+
 ### Groups on a family page
 
 sphinx-gallery writes the cards of a family as one grid. `pyml_gallery_groups` in `conf.py`
